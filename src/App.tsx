@@ -10,6 +10,8 @@ import HomePage from '@/pages/HomePage';
 import WorkDetailPage from '@/pages/WorkDetailPage';
 import ChapterViewerPage from '@/pages/ChapterViewerPage';
 import LibraryPage from '@/pages/LibraryPage';
+import LoginPage from '@/pages/Auth/LoginPage';
+import RegisterPage from '@/pages/Auth/RegisterPage';
 
 // TanStack Query 클라이언트
 const queryClient = new QueryClient({
@@ -35,6 +37,10 @@ function App() {
 
           {/* 인증 필요 페이지 */}
           <Route path="/library" element={<LibraryPage />} />
+
+          {/* 인증 페이지 */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

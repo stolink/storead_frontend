@@ -109,25 +109,19 @@ export const useToggleCommentLike = () => {
       const { data } = await api.post(`/comments/${commentId}/like`);
       return data;
     },
-    // 낙관적 업데이트
+    // 낙관적 업데이트 (setQueriesData로 간소화)
     onMutate: async (commentId) => {
       await queryClient.cancelQueries({ queryKey: ["comments"] });
 
-      // 모든 댓글 페이지에서 해당 댓글 찾아서 업데이트
-      const queryCache = queryClient.getQueryCache();
-      const commentQueries = queryCache.findAll({ queryKey: ["comments"] });
-
-      commentQueries.forEach((query) => {
-        queryClient.setQueryData(query.queryKey, (oldData: unknown) => {
-          if (!oldData || typeof oldData !== "object") return oldData;
-
-          // InfiniteQuery 데이터 구조 처리
-          const data = oldData as { pages?: PaginatedResponse<Comment>[] };
-          if (!data.pages) return oldData;
+      // setQueriesData로 'comments' 키를 포함하는 모든 쿼리 일괄 업데이트
+      queryClient.setQueriesData<{ pages?: PaginatedResponse<Comment>[] }>(
+        { queryKey: ["comments"] },
+        (oldData) => {
+          if (!oldData?.pages) return oldData;
 
           return {
-            ...data,
-            pages: data.pages.map((page) => ({
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
               ...page,
               data: page.data.map((comment) =>
                 comment.id === commentId
@@ -142,8 +136,8 @@ export const useToggleCommentLike = () => {
               ),
             })),
           };
-        });
-      });
+        }
+      );
 
       return {};
     },

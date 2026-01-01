@@ -20,6 +20,7 @@ export const useLibrary = () => {
       const { data } = await api.get("/library");
       return data;
     },
+    select: (data: any) => data.items, // API 응답에서 items 배열만 추출
     enabled: isAuthenticated, // 로그인된 경우에만 API 호출
   });
 };
@@ -56,12 +57,15 @@ export const useRemoveFromLibrary = () => {
     // 낙관적 업데이트
     onMutate: async (workId) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
-      const previousLibrary = queryClient.getQueryData<Library[]>(["library"]);
+      const previousLibrary = queryClient.getQueryData<any>(["library"]);
 
-      queryClient.setQueryData<Library[]>(
-        ["library"],
-        (old) => old?.filter((item) => item.workId !== workId) ?? []
-      );
+      queryClient.setQueryData<any>(["library"], (old: any) => {
+        if (!old?.items) return old;
+        return {
+          ...old,
+          items: old.items.filter((item: Library) => item.workId !== workId),
+        };
+      });
 
       return { previousLibrary };
     },

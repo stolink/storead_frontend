@@ -13,6 +13,7 @@ import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import HomePage from '@/pages/HomePage';
 import WorkDetailPage from '@/pages/WorkDetailPage';
 import ChapterViewerPage from '@/pages/ChapterViewerPage';
+import ChapterCommentsPage from '@/pages/ChapterCommentsPage';
 import LibraryPage from '@/pages/LibraryPage';
 
 // 인증 페이지
@@ -60,6 +61,9 @@ function App() {
 
           {/* 챕터 뷰어 (전체 화면, 헤더 없음) */}
           <Route path="/chapters/:id" element={<ChapterViewerPage />} />
+
+          {/* 챕터 댓글 페이지 */}
+          <Route path="/chapters/:id/comments" element={<ChapterCommentsPage />} />
 
           {/* 인증 페이지 (헤더 없음) */}
           <Route path="/login" element={<LoginPage />} />

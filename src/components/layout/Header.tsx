@@ -1,10 +1,13 @@
 /**
  * 공통 헤더 컴포넌트
- * 네비게이션 및 사용자 메뉴
+ * 검색바, 탭 네비게이션, 사용자 메뉴
+ * 전역 테마 지원
  */
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Search, User } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Button } from '@/components/ui/button';
+import { useThemeStore, headerThemeClasses } from '@/stores/useTheme';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     DropdownMenu,
@@ -16,63 +19,96 @@ import {
 
 export const Header = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, isAuthenticated, logout } = useAuthStore();
+    const { theme } = useThemeStore();
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // 현재 탭 결정
+    const currentTab =
+        location.pathname === '/'
+            ? '전체'
+            : location.pathname === '/library'
+                ? '내 서재'
+                : location.pathname.startsWith('/author')
+                    ? '작품 관리'
+                    : '전체';
 
     const handleLogout = () => {
         logout();
         navigate('/');
     };
 
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+        }
+    };
+
+    // 테마별 텍스트 색상
+    const textColor =
+        theme === 'light'
+            ? 'text-zinc-900'
+            : theme === 'dark'
+                ? 'text-zinc-100'
+                : 'text-amber-900';
+
+    const mutedTextColor =
+        theme === 'light'
+            ? 'text-zinc-600'
+            : theme === 'dark'
+                ? 'text-zinc-400'
+                : 'text-amber-700';
+
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-zinc-800 dark:bg-zinc-900/95">
-            <div className="max-w-6xl mx-auto px-4">
-                <div className="flex h-16 items-center justify-between">
-                    {/* 로고 */}
-                    <Link to="/" className="flex items-center gap-2">
-                        <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        <header
+            className={`sticky top-0 z-50 w-full border-b backdrop-blur transition-colors duration-300 ${headerThemeClasses[theme]}`}
+        >
+            <div className="container mx-auto px-6 py-4">
+                {/* 메인 헤더 행 */}
+                <div className="flex items-center justify-between gap-8">
+                    {/* 로고 - 테마와 관계없이 항상 명확하게 표시 */}
+                    <Link to="/" className="text-2xl font-bold">
+                        <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                             StoRead
                         </span>
                     </Link>
 
-                    {/* 네비게이션 */}
-                    <nav className="hidden md:flex items-center gap-6">
-                        <Link
-                            to="/"
-                            className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                        >
-                            탐색
-                        </Link>
-                        {isAuthenticated && (
-                            <>
-                                <Link
-                                    to="/library"
-                                    className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                                >
-                                    내 서재
-                                </Link>
-                                <Link
-                                    to="/author"
-                                    className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                                >
-                                    작품 관리
-                                </Link>
-                            </>
-                        )}
-                    </nav>
+                    {/* 중앙 검색바 */}
+                    <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-auto">
+                        <div className="relative">
+                            <Search
+                                className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${mutedTextColor}`}
+                            />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="검색"
+                                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:border-purple-600 transition-colors ${theme === 'light'
+                                    ? 'border-zinc-300 bg-white text-zinc-900'
+                                    : theme === 'dark'
+                                        ? 'border-zinc-600 bg-zinc-800 text-zinc-100'
+                                        : 'border-amber-300 bg-amber-50 text-amber-900'
+                                    }`}
+                            />
+                        </div>
+                    </form>
 
-                    {/* 사용자 메뉴 */}
+                    {/* 프로필 아이콘 */}
                     <div className="flex items-center gap-4">
                         {isAuthenticated ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <button className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2">
-                                        <Avatar className="h-8 w-8">
+                                    <button className="flex items-center justify-center w-10 h-10 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2">
+                                        <Avatar className="h-10 w-10">
                                             <AvatarImage
                                                 src={user?.profileImageUrl}
                                                 alt={user?.nickname}
                                             />
-                                            <AvatarFallback>
-                                                {user?.nickname?.charAt(0)?.toUpperCase() || 'U'}
+                                            <AvatarFallback className="bg-zinc-200">
+                                                <User className="w-5 h-5 text-zinc-700" />
                                             </AvatarFallback>
                                         </Avatar>
                                     </button>
@@ -102,21 +138,45 @@ export const Header = () => {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => navigate('/login')}
-                                >
-                                    로그인
-                                </Button>
-                                <Button size="sm" onClick={() => navigate('/register')}>
-                                    회원가입
-                                </Button>
-                            </div>
+                            <Link to="/login">
+                                <button className="flex items-center justify-center w-10 h-10 bg-zinc-200 rounded-full hover:bg-zinc-300 transition-colors">
+                                    <User className="w-5 h-5 text-zinc-700" />
+                                </button>
+                            </Link>
                         )}
                     </div>
                 </div>
+
+                {/* 탭 네비게이션 */}
+                <nav className="flex gap-8 mt-4">
+                    <Link
+                        to="/"
+                        className={`pb-2 border-b-2 transition-colors ${currentTab === '전체'
+                            ? 'border-purple-600 text-purple-600'
+                            : `border-transparent ${mutedTextColor} hover:${textColor}`
+                            }`}
+                    >
+                        전체
+                    </Link>
+                    <Link
+                        to="/library"
+                        className={`pb-2 border-b-2 transition-colors ${currentTab === '내 서재'
+                            ? 'border-purple-600 text-purple-600'
+                            : `border-transparent ${mutedTextColor} hover:${textColor}`
+                            }`}
+                    >
+                        내 서재
+                    </Link>
+                    <Link
+                        to="/author"
+                        className={`pb-2 border-b-2 transition-colors ${currentTab === '작품 관리'
+                            ? 'border-purple-600 text-purple-600'
+                            : `border-transparent ${mutedTextColor} hover:${textColor}`
+                            }`}
+                    >
+                        작품 관리
+                    </Link>
+                </nav>
             </div>
         </header>
     );

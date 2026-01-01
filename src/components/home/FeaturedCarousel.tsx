@@ -1,0 +1,133 @@
+/**
+ * 추천 캐러셀 컴포넌트
+ * 메인 페이지 상단의 추천 작품 슬라이드
+ */
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import type { Work } from '@/types';
+
+interface FeaturedCarouselProps {
+    works: Work[];
+}
+
+export function FeaturedCarousel({ works }: FeaturedCarouselProps) {
+    const [currentSlide, setCurrentSlide] = useState(0);
+
+    // 표시할 작품이 없으면 빈 상태 렌더링
+    if (!works || works.length === 0) {
+        return null;
+    }
+
+    // 최대 5개만 표시
+    const featuredWorks = works.slice(0, 5);
+
+    // 자동 슬라이드 (5초마다)
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % featuredWorks.length);
+        }, 5000);
+
+        return () => clearInterval(timer);
+    }, [featuredWorks.length]);
+
+    const goToPrevious = () => {
+        setCurrentSlide((prev) =>
+            prev === 0 ? featuredWorks.length - 1 : prev - 1
+        );
+    };
+
+    const goToNext = () => {
+        setCurrentSlide((prev) => (prev + 1) % featuredWorks.length);
+    };
+
+    return (
+        <div className="relative bg-zinc-100 overflow-hidden">
+            <div className="container mx-auto px-6 py-12">
+                <div className="relative h-[400px] rounded-lg overflow-hidden bg-white shadow-lg">
+                    {/* 캐러셀 슬라이드 */}
+                    <div
+                        className="flex transition-transform duration-500 ease-out h-full"
+                        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                    >
+                        {featuredWorks.map((work) => {
+                            const avgRating =
+                                work.ratingCount > 0
+                                    ? work.ratingSum / work.ratingCount / 2
+                                    : 0;
+
+                            return (
+                                <Link
+                                    key={work.id}
+                                    to={`/works/${work.id}`}
+                                    className="min-w-full h-full relative flex items-center"
+                                >
+                                    {/* 배경 이미지 */}
+                                    {work.coverImageUrl ? (
+                                        <img
+                                            src={work.coverImageUrl}
+                                            alt={work.title}
+                                            className="absolute inset-0 w-full h-full object-cover opacity-40"
+                                        />
+                                    ) : (
+                                        <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-purple-600 opacity-40" />
+                                    )}
+
+                                    {/* 콘텐츠 오버레이 */}
+                                    <div className="relative z-10 px-12 w-full max-w-2xl">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                                            <span className="text-2xl text-zinc-900">
+                                                {avgRating.toFixed(1)}
+                                            </span>
+                                        </div>
+                                        <h2 className="text-4xl font-bold mb-3 text-zinc-900">
+                                            {work.title}
+                                        </h2>
+                                        <p className="text-xl text-zinc-700 line-clamp-2">
+                                            {work.synopsis || work.author?.nickname}
+                                        </p>
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </div>
+
+                    {/* 네비게이션 버튼 */}
+                    <button
+                        onClick={goToPrevious}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-all shadow-lg z-20"
+                        aria-label="이전 슬라이드"
+                    >
+                        <ChevronLeft className="w-6 h-6 text-zinc-700" />
+                    </button>
+
+                    <button
+                        onClick={goToNext}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-all shadow-lg z-20"
+                        aria-label="다음 슬라이드"
+                    >
+                        <ChevronRight className="w-6 h-6 text-zinc-700" />
+                    </button>
+
+                    {/* 인디케이터 */}
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                        {featuredWorks.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => setCurrentSlide(index)}
+                                className={`h-2 rounded-full transition-all ${index === currentSlide
+                                    ? 'bg-zinc-900 w-8'
+                                    : 'bg-zinc-400 w-2 hover:bg-zinc-600'
+                                    }`}
+                                aria-label={`슬라이드 ${index + 1}로 이동`}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default FeaturedCarousel;

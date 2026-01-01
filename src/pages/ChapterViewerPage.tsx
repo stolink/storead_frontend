@@ -6,7 +6,7 @@
  * - 책 모드: CSS columnCount 2단 + columnRule 중앙 구분선
  * - 클릭 영역으로 페이지 전환 (시각적 피드백)
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
@@ -132,8 +132,9 @@ export const ChapterViewerPage = () => {
       ? sortedChapters[currentIndex + 1]
       : null;
 
-  // 페이지 모드용 콘텐츠 분할 (2단 레이아웃이므로 2개씩 묶음)
-  const contentPages = chapter?.content?.split('\n\n').filter(Boolean) || [];
+  // cleanContent에서 페이지 모드용 콘텐츠 분할 (HTML 태그 제거된 콘텐츠 기반)
+  const rawContent = useMemo(() => stripHeaderTags(chapter?.content || ''), [chapter?.content]);
+  const contentPages = useMemo(() => rawContent.split('\n\n').filter(Boolean), [rawContent]);
   // 2단 레이아웃: 한 페이지에 2개의 문단 표시
   const totalPages = Math.max(1, Math.ceil(contentPages.length / 2));
 
@@ -154,16 +155,21 @@ export const ChapterViewerPage = () => {
     }
   }, [currentPage, totalPages, nextChapter, navigate]);
 
-  // 읽은 위치 저장 (기존 로직 유지)
+  // 읽은 위치 저장 (throttle + ref로 중복 호출 방지)
+  const lastSavedPosition = useRef<number>(0);
   useEffect(() => {
     if (!id || !isAuthenticated || viewMode !== 'scroll') return;
 
+    let timeoutId: ReturnType<typeof setTimeout>;
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      saveBookmark.mutate({ chapterId: id, position: scrollPosition });
+      // 이전 저장 위치와 100px 이상 차이가 있을 때만 저장
+      if (Math.abs(scrollPosition - lastSavedPosition.current) > 100) {
+        lastSavedPosition.current = scrollPosition;
+        saveBookmark.mutate({ chapterId: id, position: scrollPosition });
+      }
     };
 
-    let timeoutId: ReturnType<typeof setTimeout>;
     const debouncedScroll = () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(handleScroll, 1000);

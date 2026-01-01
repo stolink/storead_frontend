@@ -3,6 +3,7 @@
  * 추천 많은 댓글 1~2개를 카드 형태로 표시
  * 테마 연동
  */
+import { useMemo } from 'react';
 import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -23,10 +24,12 @@ export const BestCommentPreview = ({
 }: BestCommentPreviewProps) => {
     const { theme } = useThemeStore();
 
-    // 추천 많은 순으로 정렬 후 상위 2개
-    const bestComments = [...comments]
-        .sort((a, b) => b.likeCount - a.likeCount)
-        .slice(0, 2);
+    // 추천 많은 순으로 정렬 후 상위 2개 (메모이제이션)
+    const bestComments = useMemo(() => {
+        return [...comments]
+            .sort((a, b) => b.likeCount - a.likeCount)
+            .slice(0, 2);
+    }, [comments]);
 
     if (bestComments.length === 0) return null;
 

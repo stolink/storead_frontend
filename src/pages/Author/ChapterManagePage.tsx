@@ -86,7 +86,6 @@ export const ChapterManagePage = () => {
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-// 잘못된 import 제거
             {/* 헤더 */}
             <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 font-serif">
                 <div className="max-w-6xl mx-auto px-4 py-6">

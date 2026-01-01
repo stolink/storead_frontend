@@ -3,7 +3,7 @@ name: Frontend CICD
 on:
   push:
     branches:
-      - dev1111111111
+      - dev
       #일단 안함
 
 permissions:

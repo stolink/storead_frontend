@@ -1,6 +1,8 @@
 /**
  * 작가용 내보내기(Export) 관련 훅
  * React Hook Form + Zod 스키마
+ *
+ * 참고: 백엔드에 실제 데이터가 존재하므로 데모 폴백 제거됨
  */
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
@@ -66,10 +68,18 @@ export const useMyWorks = () => {
         queryKey: ['myWorks'],
         queryFn: async () => {
             const { data } = await api.get('/works');
-            return data;
+            // 백엔드 응답: { code, status, data: { works: [...], pagination: {...} } }
+            // 또는 { code, status, data: [...] } 형태일 수 있음
+            const responseData = data.data;
+            const works = Array.isArray(responseData)
+                ? responseData
+                : (responseData?.works || []);
+
+            return works;
         },
     });
 };
+
 
 /**
  * 작품 생성

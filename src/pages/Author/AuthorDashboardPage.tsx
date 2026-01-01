@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMyWorks } from '@/hooks/useExportChapter';
 import { useDeleteWork } from '@/hooks/useWorks';
+import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -95,13 +96,24 @@ export const AuthorDashboardPage = () => {
             <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
                 <div className="max-w-6xl mx-auto px-4 py-6">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
-                                내 작품 관리
-                            </h1>
-                            <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-                                작품을 관리하고 새로운 챕터를 작성하세요
-                            </p>
+                        <div className="flex items-center gap-4">
+                            {/* 뒤로가기 버튼 - 홈으로 이동 */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => navigate('/')}
+                                aria-label="홈으로 이동"
+                            >
+                                <ChevronLeft className="h-5 w-5" />
+                            </Button>
+                            <div>
+                                <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+                                    내 작품 관리
+                                </h1>
+                                <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+                                    작품을 관리하고 새로운 챕터를 작성하세요
+                                </p>
+                            </div>
                         </div>
                         <Button onClick={() => navigate('/author/works/new')}>
                             + 새 작품 만들기
@@ -115,14 +127,18 @@ export const AuthorDashboardPage = () => {
                 {works && works.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {works.map((work) => (
-                            <Card key={work.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                            <Card
+                                key={work.id}
+                                className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                                onClick={() => navigate(`/author/works/${work.id}/chapters`)}
+                            >
                                 {/* 커버 이미지 */}
                                 <div className="aspect-[3/4] bg-gradient-to-br from-indigo-500 to-purple-600 relative">
                                     {work.coverImageUrl ? (
                                         <img
                                             src={work.coverImageUrl}
                                             alt={work.title}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                         />
                                     ) : (
                                         <div className="absolute inset-0 flex items-center justify-center">
@@ -140,7 +156,9 @@ export const AuthorDashboardPage = () => {
                                 </div>
 
                                 <CardHeader className="pb-2">
-                                    <CardTitle className="line-clamp-1">{work.title}</CardTitle>
+                                    <CardTitle className="line-clamp-1 group-hover:text-indigo-600 transition-colors">
+                                        {work.title}
+                                    </CardTitle>
                                     <CardDescription className="flex items-center gap-2">
                                         <Badge variant="outline">
                                             {GENRE_LABELS[work.genre] || work.genre}
@@ -159,27 +177,15 @@ export const AuthorDashboardPage = () => {
                                     </p>
                                 </CardContent>
 
-                                <CardFooter className="flex gap-2">
+                                <CardFooter className="flex justify-end pt-2">
                                     <Button
-                                        variant="outline"
+                                        variant="ghost"
                                         size="sm"
-                                        className="flex-1"
-                                        onClick={() => navigate(`/author/works/${work.id}`)}
-                                    >
-                                        관리
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex-1"
-                                        onClick={() => navigate(`/author/works/${work.id}/chapters`)}
-                                    >
-                                        챕터
-                                    </Button>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => setDeleteTarget(work)}
+                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteTarget(work);
+                                        }}
                                     >
                                         삭제
                                     </Button>

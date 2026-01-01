@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { EXTERNAL_EDITOR_URL } from '@/constants';
 import { useWork } from '@/hooks/useWorks';
 import { useWorkChapters, useDeleteChapter } from '@/hooks/useChapters';
 import { Button } from '@/components/ui/button';
@@ -86,13 +87,13 @@ export const ChapterManagePage = () => {
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
             {/* 헤더 */}
-            <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
+            <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 font-serif">
                 <div className="max-w-6xl mx-auto px-4 py-6">
                     <div className="flex items-center justify-between">
                         <div>
                             <button
                                 onClick={() => navigate('/author')}
-                                className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 mb-2 text-sm"
+                                className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 mb-2 text-sm sans-serif"
                             >
                                 ← 작품 목록으로
                             </button>
@@ -103,7 +104,10 @@ export const ChapterManagePage = () => {
                                 챕터 관리 · 총 {chapters?.length || 0}개
                             </p>
                         </div>
-                        <Button onClick={() => navigate(`/author/works/${workId}/chapters/new`)}>
+                        <Button
+                            onClick={() => window.location.href = `${EXTERNAL_EDITOR_URL}/editor/works/${workId}/chapters/new`}
+                            className="bg-zinc-900 text-white hover:bg-zinc-800"
+                        >
                             + 새 챕터 작성
                         </Button>
                     </div>
@@ -111,67 +115,67 @@ export const ChapterManagePage = () => {
             </header>
 
             {/* 챕터 목록 */}
-            <main className="max-w-6xl mx-auto px-4 py-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>챕터 목록</CardTitle>
+            <main className="max-w-6xl mx-auto px-4 py-8 font-serif">
+                <Card className="border-none shadow-none bg-transparent">
+                    <CardHeader className="px-0 pt-0 pb-6">
+                        <CardTitle>회차 목록</CardTitle>
                         <CardDescription>
-                            챕터를 선택하여 수정하거나 삭제할 수 있습니다
+                            회차를 선택하여 수정하거나 삭제할 수 있습니다
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-0 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
                         {chapters && chapters.length > 0 ? (
-                            <Table>
+                            <Table className="divide-y divide-[#EEEEEE]">
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-16">회차</TableHead>
-                                        <TableHead>제목</TableHead>
-                                        <TableHead className="w-24 text-center">조회수</TableHead>
-                                        <TableHead className="w-24 text-center">별점</TableHead>
-                                        <TableHead className="w-32">작성일</TableHead>
-                                        <TableHead className="w-40 text-right">작업</TableHead>
+                                    <TableRow className="bg-zinc-50/50 hover:bg-zinc-50/50">
+                                        <TableHead className="w-20 text-center font-medium text-zinc-500">번호</TableHead>
+                                        <TableHead className="font-medium text-zinc-500">회차 제목</TableHead>
+                                        <TableHead className="w-32 text-center font-medium text-zinc-500">상태</TableHead>
+                                        <TableHead className="w-32 text-center font-medium text-zinc-500">등록일</TableHead>
+                                        <TableHead className="w-24 text-right font-medium text-zinc-500">작업</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <TableBody>
+                                <TableBody className="divide-y divide-[#EEEEEE]">
                                     {chapters
                                         .sort((a, b) => a.chapterNumber - b.chapterNumber)
                                         .map((chapter) => (
-                                            <TableRow key={chapter.id}>
-                                                <TableCell>
-                                                    <Badge variant="outline">
-                                                        {chapter.chapterNumber}화
-                                                    </Badge>
+                                            <TableRow key={chapter.id} className="hover:bg-zinc-50/50 transition-colors border-b border-[#EEEEEE]">
+                                                <TableCell className="text-center text-zinc-500">
+                                                    {chapter.chapterNumber}
                                                 </TableCell>
-                                                <TableCell className="font-medium">
+                                                <TableCell className="font-medium text-zinc-900 dark:text-zinc-100">
                                                     {chapter.title}
                                                 </TableCell>
-                                                <TableCell className="text-center text-zinc-500">
-                                                    {chapter.viewCount.toLocaleString()}
-                                                </TableCell>
                                                 <TableCell className="text-center">
-                                                    {chapter.ratingCount > 0
-                                                        ? `⭐ ${(chapter.ratingSum / chapter.ratingCount).toFixed(1)}`
-                                                        : '-'}
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className={`font-normal ${chapter.status === 'PUBLISHED'
+                                                            ? 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
+                                                            : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                                                            }`}
+                                                    >
+                                                        {chapter.status === 'PUBLISHED' ? '발행' : '임시저장'}
+                                                    </Badge>
                                                 </TableCell>
-                                                <TableCell className="text-zinc-500 text-sm">
+                                                <TableCell className="text-center text-zinc-500 text-sm">
                                                     {formatDate(chapter.createdAt)}
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex gap-2 justify-end">
                                                         <Button
-                                                            variant="outline"
+                                                            variant="ghost"
                                                             size="sm"
+                                                            className="text-zinc-500 hover:text-zinc-900"
                                                             onClick={() =>
-                                                                navigate(
-                                                                    `/author/chapters/${chapter.id}/edit`
-                                                                )
+                                                                window.location.href = `${EXTERNAL_EDITOR_URL}/editor/chapters/${chapter.id}/edit`
                                                             }
                                                         >
                                                             수정
                                                         </Button>
                                                         <Button
-                                                            variant="destructive"
+                                                            variant="ghost"
                                                             size="sm"
+                                                            className="text-red-400 hover:text-red-600 hover:bg-red-50"
                                                             onClick={() => setDeleteTarget(chapter)}
                                                         >
                                                             삭제
@@ -183,14 +187,15 @@ export const ChapterManagePage = () => {
                                 </TableBody>
                             </Table>
                         ) : (
-                            <div className="text-center py-12">
-                                <p className="text-zinc-500 dark:text-zinc-400 mb-4">
-                                    아직 작성된 챕터가 없습니다.
+                            <div className="text-center py-20">
+                                <p className="text-zinc-400 dark:text-zinc-500 mb-6 font-serif">
+                                    아직 작성된 회차가 없습니다.
                                 </p>
                                 <Button
-                                    onClick={() => navigate(`/author/works/${workId}/chapters/new`)}
+                                    onClick={() => window.location.href = `${EXTERNAL_EDITOR_URL}/editor/works/${workId}/chapters/new`}
+                                    className="bg-zinc-900 text-white hover:bg-zinc-800"
                                 >
-                                    첫 번째 챕터 작성하기
+                                    첫 번째 회차 작성하기
                                 </Button>
                             </div>
                         )}

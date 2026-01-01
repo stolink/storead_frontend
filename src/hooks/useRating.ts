@@ -91,6 +91,7 @@ export const useSubmitRating = () => {
         },
         // 에러 시 롤백
         onError: (_err, { chapterId }, context) => {
+            console.error('[DEBUG] Rating API error:', _err);
             if (context?.previousRating) {
                 queryClient.setQueryData(['chapterRating', chapterId], context.previousRating);
             }

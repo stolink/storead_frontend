@@ -2,24 +2,24 @@
  * 탐색(Discovery) 관련 TanStack Query 훅
  * 공개 작품 목록, 검색, 작품/챕터 상세 조회
  */
-import { useQuery } from '@tanstack/react-query';
-import api from '@/api/client';
-import type { Work, Chapter, Genre, PaginatedResponse } from '@/types';
+import { useQuery } from "@tanstack/react-query";
+import api from "@/api/client";
+import type { Work, Chapter, Genre, PaginatedResponse } from "@/types";
 
 interface DiscoveryParams {
-    genre?: Genre;
-    sort?: 'latest' | 'popular' | 'rating';
-    page?: number;
-    limit?: number;
+  genre?: Genre;
+  sort?: "latest" | "popular" | "rating";
+  page?: number;
+  limit?: number;
 }
 
 // TODO: 백엔드 연결 시 제거 (데모 데이터)
-import { DEMO_WORKS, DEMO_CHAPTERS } from '@/data/demo';
+import { DEMO_WORKS, DEMO_CHAPTERS } from "@/data/demo";
 
 interface SearchParams {
-    q: string;
-    genre?: Genre;
-    page?: number;
+  q: string;
+  genre?: Genre;
+  page?: number;
 }
 
 /**
@@ -27,47 +27,50 @@ interface SearchParams {
  * GET /api/discovery
  */
 export const useDiscoveryWorks = (params?: DiscoveryParams) => {
-    return useQuery<PaginatedResponse<Work>>({
-        queryKey: ['discovery', params],
-        queryFn: async () => {
-            try {
-                const { data } = await api.get('/discovery', { params });
-                return data;
-            } catch (error) {
-                console.warn('[Demo] 백엔드 연결 실패, 데모 데이터를 사용합니다.');
-                return {
-                    data: DEMO_WORKS,
-                    hasMore: false,
-                };
-            }
-        },
-    });
+  return useQuery<PaginatedResponse<Work>>({
+    queryKey: ["discovery", params],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get("/discovery/works", { params });
+        return data;
+      } catch (error) {
+        console.warn("[Demo] 백엔드 연결 실패, 데모 데이터를 사용합니다.");
+        return {
+          data: DEMO_WORKS,
+          hasMore: false,
+        };
+      }
+    },
+  });
 };
 
 /**
  * 작품 검색
  * GET /api/discovery/search
  */
-export const useSearchWorks = (query: string, params?: Omit<SearchParams, 'q'>) => {
-    return useQuery<PaginatedResponse<Work>>({
-        queryKey: ['search', query, params],
-        queryFn: async () => {
-            try {
-                const { data } = await api.get('/discovery/search', {
-                    params: { q: query, ...params },
-                });
-                return data;
-            } catch (error) {
-                // 데모 검색 (제목 필터링)
-                const filtered = DEMO_WORKS.filter(w => w.title.includes(query));
-                return {
-                    data: filtered,
-                    hasMore: false,
-                };
-            }
-        },
-        enabled: query.length > 0, // 검색어가 있을 때만 요청
-    });
+export const useSearchWorks = (
+  query: string,
+  params?: Omit<SearchParams, "q">
+) => {
+  return useQuery<PaginatedResponse<Work>>({
+    queryKey: ["search", query, params],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get("/discovery/search", {
+          params: { q: query, ...params },
+        });
+        return data;
+      } catch (error) {
+        // 데모 검색 (제목 필터링)
+        const filtered = DEMO_WORKS.filter((w) => w.title.includes(query));
+        return {
+          data: filtered,
+          hasMore: false,
+        };
+      }
+    },
+    enabled: query.length > 0, // 검색어가 있을 때만 요청
+  });
 };
 
 /**
@@ -75,20 +78,20 @@ export const useSearchWorks = (query: string, params?: Omit<SearchParams, 'q'>) 
  * GET /api/discovery/works/{id}
  */
 export const usePublicWork = (id: string) => {
-    return useQuery<Work>({
-        queryKey: ['work', id],
-        queryFn: async () => {
-            try {
-                const { data } = await api.get(`/discovery/works/${id}`);
-                return data;
-            } catch (error) {
-                const work = DEMO_WORKS.find(w => w.id === id);
-                if (!work) throw error;
-                return work;
-            }
-        },
-        enabled: !!id,
-    });
+  return useQuery<Work>({
+    queryKey: ["work", id],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get(`/discovery/works/${id}`);
+        return data;
+      } catch (error) {
+        const work = DEMO_WORKS.find((w) => w.id === id);
+        if (!work) throw error;
+        return work;
+      }
+    },
+    enabled: !!id,
+  });
 };
 
 /**
@@ -96,18 +99,18 @@ export const usePublicWork = (id: string) => {
  * GET /api/discovery/works/{workId}/chapters (공개용은 discovery 경로 사용)
  */
 export const usePublicChapters = (workId: string) => {
-    return useQuery<Chapter[]>({
-        queryKey: ['chapters', workId],
-        queryFn: async () => {
-            try {
-                const { data } = await api.get(`/discovery/chapters/${workId}`);
-                return data;
-            } catch (error) {
-                return DEMO_CHAPTERS[workId] || [];
-            }
-        },
-        enabled: !!workId,
-    });
+  return useQuery<Chapter[]>({
+    queryKey: ["chapters", workId],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get(`/discovery/chapters/${workId}`);
+        return data;
+      } catch (error) {
+        return DEMO_CHAPTERS[workId] || [];
+      }
+    },
+    enabled: !!workId,
+  });
 };
 
 /**
@@ -115,21 +118,21 @@ export const usePublicChapters = (workId: string) => {
  * GET /api/discovery/chapters/{id}
  */
 export const usePublicChapter = (id: string) => {
-    return useQuery<Chapter>({
-        queryKey: ['chapter', id],
-        queryFn: async () => {
-            try {
-                const { data } = await api.get(`/discovery/chapters/${id}`);
-                return data;
-            } catch (error) {
-                // 데모 챕터 찾기
-                for (const workId in DEMO_CHAPTERS) {
-                    const found = DEMO_CHAPTERS[workId].find(c => c.id === id);
-                    if (found) return found;
-                }
-                throw error;
-            }
-        },
-        enabled: !!id,
-    });
+  return useQuery<Chapter>({
+    queryKey: ["chapter", id],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get(`/discovery/chapters/${id}`);
+        return data;
+      } catch (error) {
+        // 데모 챕터 찾기
+        for (const workId in DEMO_CHAPTERS) {
+          const found = DEMO_CHAPTERS[workId].find((c) => c.id === id);
+          if (found) return found;
+        }
+        throw error;
+      }
+    },
+    enabled: !!id,
+  });
 };

@@ -1,29 +1,34 @@
 /**
  * 댓글 리스트 컴포넌트
- * 무한 스크롤 + Intersection Observer
+ * 무한 스크롤 + 테마 연동 + 접기/더보기 기능
  */
 import { useEffect, useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { CommentItem } from './CommentItem';
-import { useComments, useCreateComment } from '@/hooks/useComments';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useComments } from '@/hooks/useComments';
+import { cn } from '@/lib/utils';
+import {
+    useThemeStore,
+    themeClasses,
+    dividerThemeClasses,
+} from '@/stores/useTheme';
 
 interface CommentListProps {
-    /** 챕터 ID */
     chapterId: string;
+    /** 초기에 접힌 상태로 시작할지 */
+    collapsedByDefault?: boolean;
 }
 
-/**
- * 댓글 리스트 컴포넌트
- * 무한 스크롤로 댓글을 로드하고 새 댓글 작성 지원
- */
-export const CommentList = ({ chapterId }: CommentListProps) => {
-    const [newComment, setNewComment] = useState('');
+export const CommentList = ({
+    chapterId,
+    collapsedByDefault = false,
+}: CommentListProps) => {
+    const { theme } = useThemeStore();
+    const [isCollapsed, setIsCollapsed] = useState(collapsedByDefault);
+    const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest');
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
-    const { user, isAuthenticated } = useAuthStore();
     const {
         data,
         isLoading,
@@ -31,15 +36,28 @@ export const CommentList = ({ chapterId }: CommentListProps) => {
         fetchNextPage,
         isFetchingNextPage,
     } = useComments(chapterId);
-    const createComment = useCreateComment();
 
     // 모든 페이지의 댓글을 평탄화
     const comments = data?.pages.flatMap((page) => page.data) ?? [];
+
     // 최상위 댓글만 필터 (parentId가 null인 것)
     const topLevelComments = comments.filter((c) => c.parentId === null);
 
+    // 정렬 적용
+    const sortedComments = [...topLevelComments].sort((a, b) => {
+        if (sortBy === 'popular') {
+            return b.likeCount - a.likeCount;
+        }
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    // 접힌 상태면 상위 3개만 표시
+    const displayedComments = isCollapsed ? sortedComments.slice(0, 3) : sortedComments;
+
     // Intersection Observer로 무한 스크롤
     useEffect(() => {
+        if (isCollapsed) return; // 접힌 상태면 무한 스크롤 비활성화
+
         const observer = new IntersectionObserver(
             (entries) => {
                 if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -54,85 +72,92 @@ export const CommentList = ({ chapterId }: CommentListProps) => {
         }
 
         return () => observer.disconnect();
-    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-    // 새 댓글 작성
-    const handleSubmit = async () => {
-        if (!newComment.trim() || !isAuthenticated) return;
-
-        try {
-            await createComment.mutateAsync({
-                chapterId,
-                data: { content: newComment.trim() },
-            });
-            setNewComment('');
-        } catch (error) {
-            console.error('댓글 작성 실패:', error);
-        }
-    };
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage, isCollapsed]);
 
     return (
-        <div className="space-y-4">
-            {/* 댓글 작성 폼 */}
-            <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4">
-                {isAuthenticated ? (
-                    <>
-                        <Textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="댓글을 남겨보세요..."
-                            className="min-h-[100px] mb-3 resize-none"
-                        />
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs text-zinc-400">
-                                {user?.nickname}으로 작성
-                            </span>
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={!newComment.trim() || createComment.isPending}
-                            >
-                                {createComment.isPending ? '등록 중...' : '댓글 등록'}
-                            </Button>
-                        </div>
-                    </>
-                ) : (
-                    <div className="text-center py-4 text-zinc-500">
-                        댓글을 작성하려면 로그인하세요.
-                    </div>
+        <div className={cn('transition-colors', themeClasses[theme])}>
+            {/* 헤더: 댓글 수 + 정렬 */}
+            <div
+                className={cn(
+                    'flex items-center justify-between pb-4 border-b mb-4',
+                    dividerThemeClasses[theme]
                 )}
-            </div>
-
-            {/* 댓글 개수 */}
-            <div className="flex items-center justify-between">
-                <h3 className="font-semibold">
-                    댓글 {comments.length > 0 ? `(${comments.length})` : ''}
+            >
+                <h3 className="font-serif font-bold text-lg">
+                    전체 댓글 <span className="text-purple-600">{comments.length}</span>
                 </h3>
+                <div className="flex items-center gap-2 text-sm">
+                    <button
+                        onClick={() => setSortBy('latest')}
+                        className={cn(
+                            'transition-opacity',
+                            sortBy === 'latest' ? 'opacity-100 font-medium' : 'opacity-50'
+                        )}
+                    >
+                        최신순
+                    </button>
+                    <span className="opacity-30">|</span>
+                    <button
+                        onClick={() => setSortBy('popular')}
+                        className={cn(
+                            'transition-opacity',
+                            sortBy === 'popular' ? 'opacity-100 font-medium' : 'opacity-50'
+                        )}
+                    >
+                        추천순
+                    </button>
+                </div>
             </div>
 
             {/* 댓글 목록 */}
-            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <div className={cn('divide-y', dividerThemeClasses[theme])}>
                 {isLoading ? (
-                    <div className="flex justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+                    <div className="flex justify-center py-12">
+                        <Loader2 className="h-6 w-6 animate-spin opacity-50" />
                     </div>
-                ) : topLevelComments.length === 0 ? (
-                    <div className="text-center py-8 text-zinc-400">
-                        아직 댓글이 없습니다. 첫 댓글을 남겨보세요!
+                ) : displayedComments.length === 0 ? (
+                    <div className="text-center py-16 opacity-50">
+                        <p className="mb-2 font-serif">아직 댓글이 없습니다.</p>
+                        <p className="text-sm">첫 번째 댓글을 남겨보세요!</p>
                     </div>
                 ) : (
-                    topLevelComments.map((comment) => (
+                    displayedComments.map((comment) => (
                         <CommentItem key={comment.id} comment={comment} />
                     ))
                 )}
             </div>
 
+            {/* 더보기/접기 버튼 */}
+            {sortedComments.length > 3 && (
+                <div className="flex justify-center mt-6">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className="gap-1"
+                    >
+                        {isCollapsed ? (
+                            <>
+                                <ChevronDown className="w-4 h-4" />
+                                댓글 더보기 ({sortedComments.length - 3}개)
+                            </>
+                        ) : (
+                            <>
+                                <ChevronUp className="w-4 h-4" />
+                                접기
+                            </>
+                        )}
+                    </Button>
+                </div>
+            )}
+
             {/* 무한 스크롤 트리거 */}
-            <div ref={loadMoreRef} className="h-4" />
+            {!isCollapsed && <div ref={loadMoreRef} className="h-4" />}
 
             {/* 추가 로딩 중 */}
             {isFetchingNextPage && (
                 <div className="flex justify-center py-4">
-                    <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+                    <Loader2 className="h-5 w-5 animate-spin opacity-50" />
                 </div>
             )}
         </div>

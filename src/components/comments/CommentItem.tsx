@@ -3,7 +3,7 @@
  * 재귀적 렌더링으로 계층형 댓글 지원
  */
 import { useState } from 'react';
-import { Heart, MessageCircle, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Heart, MessageCircle, Trash2, ChevronDown, ChevronUp, CornerDownRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -89,12 +89,15 @@ export const CommentItem = ({
     return (
         <div
             className={cn(
-                'py-4',
-                depth > 0 && 'ml-6 border-l-2 border-zinc-200 dark:border-zinc-700 pl-4'
+                'py-4 transition-colors',
+                depth > 0 && 'ml-6 mt-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-4'
             )}
         >
             {/* 댓글 헤더 */}
             <div className="flex items-start gap-3">
+                {depth > 0 && (
+                    <CornerDownRight className="w-4 h-4 text-zinc-400 mt-2 shrink-0" />
+                )}
                 <Avatar className="h-8 w-8">
                     <AvatarImage src={comment.author?.profileImageUrl} />
                     <AvatarFallback>

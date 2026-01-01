@@ -60,8 +60,13 @@ export const useCreateComment = () => {
 
   return useMutation({
     mutationFn: async ({ chapterId, data }: CreateCommentParams) => {
+      console.log('[DEBUG] Creating comment:', { chapterId, data });
       const response = await api.post(`/chapters/${chapterId}/comments`, data);
+      console.log('[DEBUG] Comment created:', response.data);
       return response.data;
+    },
+    onError: (error) => {
+      console.error('[DEBUG] Comment creation failed:', error);
     },
     onSuccess: (_data, { chapterId }) => {
       queryClient.invalidateQueries({ queryKey: ["comments", chapterId] });
@@ -126,12 +131,12 @@ export const useToggleCommentLike = () => {
               data: page.data.map((comment) =>
                 comment.id === commentId
                   ? {
-                      ...comment,
-                      isLiked: !comment.isLiked,
-                      likeCount: comment.isLiked
-                        ? comment.likeCount - 1
-                        : comment.likeCount + 1,
-                    }
+                    ...comment,
+                    isLiked: !comment.isLiked,
+                    likeCount: comment.isLiked
+                      ? comment.likeCount - 1
+                      : comment.likeCount + 1,
+                  }
                   : comment
               ),
             })),

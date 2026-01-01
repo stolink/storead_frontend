@@ -52,20 +52,20 @@ jobs:
           BASE_BRANCH="${{ steps.pr.outputs.base_branch }}"
           git fetch origin $BASE_BRANCH
 
-          # 변경된 파일 수 (head 적용 전, 정수 보장)
-          FILES_COUNT=$(git diff origin/$BASE_BRANCH...HEAD --name-only -- '*.py' '*.yml' '*.toml' '*.sql' | wc -l | tr -d ' ')
+          # 변경된 파일 수 (head 적용 전, 정수 보장) - React/TypeScript 프로젝트용
+          FILES_COUNT=$(git diff origin/$BASE_BRANCH...HEAD --name-only -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.css' '*.json' | wc -l | tr -d ' ')
           FILES_COUNT=${FILES_COUNT:-0}
           echo "files_count=$FILES_COUNT" >> $GITHUB_OUTPUT
 
           # 변경된 파일 목록 (최대 30개)
-          FILES=$(git diff origin/$BASE_BRANCH...HEAD --name-only -- '*.py' '*.yml' '*.toml' '*.sql' | head -30)
+          FILES=$(git diff origin/$BASE_BRANCH...HEAD --name-only -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.css' '*.json' | head -30)
           echo "files<<EOF" >> $GITHUB_OUTPUT
           echo "$FILES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
           # 변경 사항 통계 (정수 보장)
           DIFF_STAT=$(git diff origin/$BASE_BRANCH...HEAD --stat | tail -1)
-          DIFF_LINES=$(git diff origin/$BASE_BRANCH...HEAD -- '*.py' '*.yml' '*.toml' '*.sql' | wc -l | tr -d ' ')
+          DIFF_LINES=$(git diff origin/$BASE_BRANCH...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.css' '*.json' | wc -l | tr -d ' ')
           DIFF_LINES=${DIFF_LINES:-0}
           echo "diff_stat=$DIFF_STAT" >> $GITHUB_OUTPUT
           echo "diff_lines=$DIFF_LINES" >> $GITHUB_OUTPUT
@@ -77,13 +77,13 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-          # 실제 코드 변경 내용 (10,000줄 제한 - Haiku 4.5는 200K 컨텍스트 지원)
-          git diff origin/$BASE_BRANCH...HEAD -- '*.py' '*.yml' '*.toml' '*.sql' | head -10000 > diff_content.txt
+          # 실제 코드 변경 내용 (10,000줄 제한)
+          git diff origin/$BASE_BRANCH...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.css' '*.json' | head -10000 > diff_content.txt
 
       - name: Skip if no changes
         if: steps.diff.outputs.skip == 'true'
         run: |
-          echo "리뷰할 코드 변경사항이 없습니다. (*.py, *.yml, *.toml, *.sql 파일 변경 없음)" > review_result.txt
+          echo "리뷰할 코드 변경사항이 없습니다. (*.ts, *.tsx, *.js, *.jsx, *.css, *.json 파일 변경 없음)" > review_result.txt
 
       - name: Prepare prompt and call Gemini API
         id: review
@@ -124,8 +124,13 @@ jobs:
           if notices:
               truncated_notice = "\n\n**Note:** " + " ".join(notices)
 
-          prompt = f"""당신은 StoLink AI Agent 프로젝트(Python/FastAPI)의 시니어 개발자입니다.
-          아래 코드 변경사항을 리뷰해주세요.
+          prompt = f"""당신은 StoRead Frontend 프로젝트(React/TypeScript)의 시니어 프론트엔드 개발자입니다.
+
+          ## 프로젝트 컨텍스트
+          - React 18 + TypeScript 5 기반 SPA
+          - Vite 빌드 시스템, TanStack Query v5로 서버 상태 관리
+          - shadcn/ui 컴포넌트 라이브러리 사용
+          - 기술 스택: React, TypeScript, TailwindCSS, React Router v6
 
           ## 변경 요약
           {diff_stat}{truncated_notice}
@@ -138,30 +143,41 @@ jobs:
           {diff_content}
           ```
 
+          ## 리뷰 우선순위
+          1. 🔴 치명적: 런타임 에러, 무한 루프, 메모리 누수, XSS 취약점
+          2. ⚠️ 경고: 불필요한 리렌더링, useEffect 의존성 누락, 접근성 이슈
+          3. 💡 제안: 코드 스타일, 컴포넌트 분리, 성능 최적화 (선택사항)
+
+          ## 주요 체크포인트
+          - useEffect 의존성 배열 누락/과다 여부
+          - useMemo/useCallback 적절한 사용
+          - 불필요한 리렌더링 유발 패턴
+          - API 호출 에러 핸들링
+          - TypeScript 타입 안전성
+
           ## 리뷰 지시사항
           - 반드시 한국어로 답변하세요
-          - 문제가 없는 섹션은 "특이사항 없음"이라고 작성하세요
-          - 아래 형식을 정확히 따르세요
+          - 🔴 치명적, ⚠️ 경고가 없으면 '✅ 코드 리뷰 통과' 출력
+          - 💡 제안은 선택사항이므로 '수정 필요'로 취급하지 않음
           - 응답 형식 외의 추가 설명이나 마무리 멘트는 작성하지 마세요
 
           ## 응답 형식
           ### 요약
           (1-2문장으로 전체 변경사항 요약)
 
-          ### 코드 품질
-          - (이슈 또는 "특이사항 없음")
+          ### 🔴 치명적 (N건)
+          **파일:라인** - 이슈 제목
+          - 문제: 설명
+          - 개선: 코드 예시
+          (없으면 이 섹션 생략)
 
-          ### 잠재적 버그
-          - (이슈 또는 "특이사항 없음")
+          ### ⚠️ 경고 (N건)
+          **파일:라인** - 이슈 제목
+          > 설명
+          (없으면 이 섹션 생략)
 
-          ### 보안
-          - (이슈 또는 "특이사항 없음")
-
-          ### 성능
-          - (성능 이슈 또는 "특이사항 없음")
-
-          ### 개선 제안
-          - (있다면 간결하게 1-3개만 제안)"""
+          ### 💡 제안
+          - (있다면 간결하게 1-3개만 제안, 없으면 생략)"""
 
           # Gemini API 호출
           api_key = os.environ.get('GEMINI_API_KEY')

@@ -1,22 +1,27 @@
 /**
  * 라이브러리(내 서재) 관련 TanStack Query 훅
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/api/client';
-import type { Library } from '@/types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/api/client";
+import { useAuthStore } from "@/stores/useAuthStore";
+import type { Library } from "@/types";
 
 /**
  * 내 서재 목록 조회
  * GET /api/library
+ * 로그인된 사용자만 호출
  */
 export const useLibrary = () => {
-    return useQuery<Library[]>({
-        queryKey: ['library'],
-        queryFn: async () => {
-            const { data } = await api.get('/library');
-            return data;
-        },
-    });
+  const { isAuthenticated } = useAuthStore();
+
+  return useQuery<Library[]>({
+    queryKey: ["library"],
+    queryFn: async () => {
+      const { data } = await api.get("/library");
+      return data;
+    },
+    enabled: isAuthenticated, // 로그인된 경우에만 API 호출
+  });
 };
 
 /**
@@ -24,17 +29,17 @@ export const useLibrary = () => {
  * POST /api/library/{workId}
  */
 export const useAddToLibrary = () => {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-    return useMutation({
-        mutationFn: async (workId: string) => {
-            const { data } = await api.post(`/library/${workId}`);
-            return data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['library'] });
-        },
-    });
+  return useMutation({
+    mutationFn: async (workId: string) => {
+      const { data } = await api.post(`/library/${workId}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
 };
 
 /**
@@ -42,38 +47,39 @@ export const useAddToLibrary = () => {
  * DELETE /api/library/{workId}
  */
 export const useRemoveFromLibrary = () => {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-    return useMutation({
-        mutationFn: async (workId: string) => {
-            await api.delete(`/library/${workId}`);
-        },
-        // 낙관적 업데이트
-        onMutate: async (workId) => {
-            await queryClient.cancelQueries({ queryKey: ['library'] });
-            const previousLibrary = queryClient.getQueryData<Library[]>(['library']);
+  return useMutation({
+    mutationFn: async (workId: string) => {
+      await api.delete(`/library/${workId}`);
+    },
+    // 낙관적 업데이트
+    onMutate: async (workId) => {
+      await queryClient.cancelQueries({ queryKey: ["library"] });
+      const previousLibrary = queryClient.getQueryData<Library[]>(["library"]);
 
-            queryClient.setQueryData<Library[]>(['library'], (old) =>
-                old?.filter((item) => item.workId !== workId) ?? []
-            );
+      queryClient.setQueryData<Library[]>(
+        ["library"],
+        (old) => old?.filter((item) => item.workId !== workId) ?? []
+      );
 
-            return { previousLibrary };
-        },
-        onError: (_err, _workId, context) => {
-            if (context?.previousLibrary) {
-                queryClient.setQueryData(['library'], context.previousLibrary);
-            }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['library'] });
-        },
-    });
+      return { previousLibrary };
+    },
+    onError: (_err, _workId, context) => {
+      if (context?.previousLibrary) {
+        queryClient.setQueryData(["library"], context.previousLibrary);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+  });
 };
 
 /**
  * 작품이 서재에 있는지 확인하는 유틸리티 훅
  */
 export const useIsInLibrary = (workId: string) => {
-    const { data: library } = useLibrary();
-    return library?.some((item) => item.workId === workId) ?? false;
+  const { data: library } = useLibrary();
+  return library?.some((item) => item.workId === workId) ?? false;
 };

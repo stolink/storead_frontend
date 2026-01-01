@@ -52,39 +52,35 @@ src/
 │
 ├── components/             # 재사용 컴포넌트
 │   ├── comments/           # 댓글 관련
-│   │   ├── CommentItem.tsx # 재귀 댓글 렌더링
-│   │   └── CommentList.tsx # 무한 스크롤 댓글 리스트
-│   ├── rating/
-│   │   └── StarRating.tsx  # 1~10점 별점 입력
-│   ├── viewer/
-│   │   ├── SecureViewer.tsx    # 보안 뷰어 (복사/우클릭 차단)
-│   │   └── ViewerSettings.tsx  # 가독성 설정 (폰트, 테마)
-│   ├── writer/
-│   │   └── ExportChapterForm.tsx # 챕터 내보내기 폼
+│   ├── layout/             # 레이아웃 (Header, ProtectedRoute)
+│   ├── rating/             # 별점 컴포넌트
+│   ├── viewer/             # 보안 뷰어 및 설정
+│   ├── writer/             # 작가 전용 컴포넌트
 │   └── ui/                 # shadcn/ui 컴포넌트
 │
 ├── hooks/                  # 커스텀 훅
+│   ├── useAuth.ts          # 인증 (로그인/회원가입/로그아웃)
 │   ├── useDiscovery.ts     # 작품 탐색/검색
-│   ├── useRating.ts        # 별점 (낙관적 업데이트)
-│   ├── useComments.ts      # 댓글 (무한 스크롤)
 │   ├── useLibrary.ts       # 내 서재
-│   ├── useBookmark.ts      # 북마크
-│   ├── useSecureContent.ts # 콘텐츠 보안
-│   └── useExportChapter.ts # 챕터 내보내기
+│   ├── useWorks.ts         # 작가 작품 관리
+│   ├── useChapters.ts      # 작가 챕터 관리
+│   └── useExportChapter.ts # 챕터 내보내기/연동
 │
 ├── pages/                  # 페이지 컴포넌트
-│   ├── HomePage.tsx        # 공개 홈 (작품 그리드)
+│   ├── Auth/               # 인증 (로그인, 회원가입)
+│   ├── Author/             # 작가 대시보드 및 관리
+│   │   ├── AuthorDashboardPage.tsx
+│   │   ├── WorkEditPage.tsx
+│   │   └── ChapterManagePage.tsx
+│   ├── Profile/            # 프로필 관리
+│   ├── HomePage.tsx        # 공개 홈
 │   ├── WorkDetailPage.tsx  # 작품 상세
-│   ├── ChapterViewerPage.tsx # 챕터 뷰어
 │   └── LibraryPage.tsx     # 내 서재
 │
 ├── stores/                 # Zustand 스토어
-│   └── useAuthStore.ts     # 인증 상태
+│   └── useAuthStore.ts     # 인증 상태 관리
 │
-├── types/                  # TypeScript 타입
-│   └── index.ts            # ERD 기반 타입 정의
-│
-└── App.tsx                 # 라우터 설정
+└── App.tsx                 # 라우터 및 보호된 경로 설정
 ```
 
 ## ✨ 주요 기능
@@ -96,53 +92,43 @@ src/
 | **작품 탐색** | 장르별 필터, 검색 |
 | **작품 상세** | 표지, 줄거리, 챕터 리스트 |
 | **보안 뷰어** | 복사/우클릭/드래그 차단 |
-| **가독성 설정** | 폰트 크기, 테마(라이트/다크/세피아), 줄 간격 |
-| **별점** | 1~10점 입력 (낙관적 업데이트) |
-| **댓글** | 계층형 대댓글, 무한 스크롤, 좋아요 |
-| **내 서재** | 관심 작품 담기 |
+| **가독성 설정** | 폰트 크기, 테마, 줄 간격 |
+| **소셜 기능** | 별점, 계층형 댓글, 좋아요 |
+| **내 서재** | 관심 작품 담기 및 정렬 |
 
 ### 작가 서비스
 
 | 기능 | 설명 |
 |------|------|
-| **챕터 내보내기** | 에디터 원고를 챕터로 배포 |
-| **작품 생성** | 표지, 장르, 줄거리 설정 |
+| **대시보드** | 내 작품 목록 조회 및 관리, 통합 뷰 |
+| **작품 관리** | 새 작품 생성, 정보(표지/줄거리) 수정, 삭제 |
+| **챕터 관리** | 챕터 목록 조회, 새 챕터 작성, 수정, 삭제, 순서 관리 |
+| **프로필 관리** | 작가 프로필 정보 수정 |
+
+## 🔗 API 엔드포인트
+
+| 영역 | 엔드포인트 | Method |
+|------|-----------|:------:|
+| **인증** | `/api/auth/login` | POST |
+| | `/api/auth/register` | POST |
+| **탐색** | `/api/discovery` | GET |
+| **작품** | `/api/works` | GET/POST |
+| | `/api/works/:id` | PUT/DELETE |
+| **챕터** | `/api/works/:workId/chapters` | GET/POST |
+| | `/api/chapters/:id` | PUT/DELETE |
+| **서재** | `/api/library` | GET/POST |
 
 ## 📝 코드 컨벤션
 
 ### 파일 네이밍
-
 - 컴포넌트: `PascalCase.tsx`
 - 훅: `useCamelCase.ts`
-- 타입: `index.ts`
 
 ### 커밋 메시지
-
-```
-feat: 새로운 기능
-fix: 버그 수정
-chore: 설정, 의존성 등
-docs: 문서
-refactor: 리팩토링
-```
-
-## 🔗 API 엔드포인트
-
-백엔드 API 명세는 [API 문서](./docs/api.md) 참고 (예정)
-
-| 영역 | 엔드포인트 |
-|------|-----------|
-| 탐색 | `GET /api/discovery` |
-| 검색 | `GET /api/discovery/search` |
-| 작품 상세 | `GET /api/discovery/works/:id` |
-| 챕터 열람 | `GET /api/discovery/chapters/:id` |
-| 별점 | `POST /api/chapters/:id/rating` |
-| 댓글 | `GET /api/chapters/:id/comments` |
-| 서재 | `GET/POST/DELETE /api/library` |
-
-## 👥 팀원
-
-- Frontend 개발
+- `feat`: 새로운 기능
+- `fix`: 버그 수정
+- `docs`: 문서
+- `refactor`: 리팩토링
 
 ## 📄 라이선스
 

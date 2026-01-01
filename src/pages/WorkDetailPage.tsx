@@ -1,61 +1,29 @@
 /**
  * 작품 상세 페이지
- * 표지, 줄거리, 챕터 리스트
+ * 표지, 줄거리, 챕터 리스트, 태그, 정렬
  */
-import { useParams, useNavigate } from "react-router-dom";
-import { Star, Heart, BookOpen, Clock, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { usePublicWork } from "@/hooks/useDiscovery";
+import { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Star, Bookmark, BookOpen, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { usePublicWork } from '@/hooks/useDiscovery';
 import {
   useAddToLibrary,
   useRemoveFromLibrary,
   useIsInLibrary,
-} from "@/hooks/useLibrary";
-import { useReadingProgress } from "@/hooks/useBookmark";
-import { useAuthStore } from "@/stores/useAuthStore";
-import type { Chapter } from "@/types";
+} from '@/hooks/useLibrary';
+import { useReadingProgress } from '@/hooks/useBookmark';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useThemeStore, backgroundThemeClasses } from '@/stores/useTheme';
 
-/**
- * 챕터 리스트 아이템
- */
-const ChapterItem = ({
-  chapter,
-  onClick,
-}: {
-  chapter: Chapter;
-  onClick: () => void;
-}) => {
-  const avgRating =
-    chapter.ratingCount > 0 ? chapter.ratingSum / chapter.ratingCount : 0;
-
-  return (
-    <Card
-      className="cursor-pointer transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
-      onClick={onClick}
-    >
-      <CardContent className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-4">
-          <span className="text-lg font-bold text-zinc-400 w-12">
-            {chapter.chapterNumber}화
-          </span>
-          <div>
-            <h4 className="font-medium">{chapter.title}</h4>
-            <p className="text-sm text-zinc-500">
-              {new Date(chapter.createdAt).toLocaleDateString("ko-KR")}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          {/* 별점 */}
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-            <span className="text-sm">{(avgRating / 2).toFixed(1)}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+// 장르 레이블 매핑
+const GENRE_LABELS: Record<string, string> = {
+  FANTASY: '판타지',
+  ROMANCE: '로맨스',
+  MARTIAL_ARTS: '무협',
+  THRILLER: '스릴러',
+  SF: 'SF',
+  DRAMA: '드라마',
 };
 
 /**
@@ -65,17 +33,25 @@ export const WorkDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const { theme } = useThemeStore();
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  const { data: work, isLoading: workLoading } = usePublicWork(id || "");
-  // 챕터 목록은 work 응답에 포함되어 있음 (work.chapters)
+  const { data: work, isLoading: workLoading } = usePublicWork(id || '');
   const chapters = work?.chapters;
-  const { data: readingProgress } = useReadingProgress(id || "");
-  const isInLibrary = useIsInLibrary(id || "");
+  const { data: readingProgress } = useReadingProgress(id || '');
+  const isInLibrary = useIsInLibrary(id || '');
   const addToLibrary = useAddToLibrary();
   const removeFromLibrary = useRemoveFromLibrary();
 
   const avgRating =
-    work && work.ratingCount > 0 ? work.ratingSum / work.ratingCount : 0;
+    work && work.ratingCount > 0 ? work.ratingSum / work.ratingCount / 2 : 0;
+
+  // 정렬된 챕터 목록
+  const sortedChapters = [...(chapters || [])].sort((a, b) => {
+    return sortOrder === 'asc'
+      ? a.chapterNumber - b.chapterNumber
+      : b.chapterNumber - a.chapterNumber;
+  });
 
   const handleLibraryToggle = () => {
     if (!id) return;
@@ -96,38 +72,29 @@ export const WorkDetailPage = () => {
 
   if (workLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
+      <div className={`min-h-screen flex items-center justify-center ${backgroundThemeClasses[theme]}`}>
+        <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full" />
       </div>
     );
   }
 
   if (!work) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${backgroundThemeClasses[theme]}`}>
         <p>작품을 찾을 수 없습니다.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-      {/* 상단 배너 */}
-      <div className="relative">
-        {/* 배경 블러 이미지 */}
-        {work.coverImageUrl && (
-          <div
-            className="absolute inset-0 bg-cover bg-center blur-xl opacity-30"
-            style={{ backgroundImage: `url(${work.coverImageUrl})` }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-50 dark:to-zinc-900" />
-
-        <div className="relative container mx-auto px-4 py-12">
-          <div className="flex flex-col md:flex-row gap-8">
+    <div className={`min-h-screen ${backgroundThemeClasses[theme]}`}>
+      <main className="container mx-auto px-6 py-12">
+        {/* 히어로 섹션 */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* 표지 */}
-            <div className="flex-shrink-0">
-              <div className="w-48 aspect-[3/4] rounded-lg overflow-hidden shadow-xl">
+            <div>
+              <div className="aspect-[3/4] bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg shadow-lg overflow-hidden">
                 {work.coverImageUrl ? (
                   <img
                     src={work.coverImageUrl}
@@ -135,90 +102,165 @@ export const WorkDetailPage = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-zinc-300 to-zinc-400 flex items-center justify-center">
-                    <BookOpen className="h-16 w-16 text-zinc-500" />
+                  <div className="w-full h-full flex items-center justify-center text-white">
+                    <BookOpen className="h-16 w-16" />
                   </div>
                 )}
               </div>
             </div>
 
-            {/* 정보 */}
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold mb-2">{work.title}</h1>
-              <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-400 mb-4">
+            {/* 작품 정보 */}
+            <div className="md:col-span-2">
+              <h1 className="text-4xl font-bold mb-2">{work.title}</h1>
+              <p className="text-zinc-600 mb-4 flex items-center gap-2">
+                <User className="h-4 w-4" />
+                작가: {work.author?.nickname || '익명'}
+              </p>
+
+              {/* 별점 */}
+              <div className="flex items-center gap-2 mb-6">
                 <div className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
-                  <span>{work.author?.nickname || "익명"}</span>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-5 h-5 ${star <= Math.round(avgRating)
+                        ? 'fill-yellow-400 text-yellow-400'
+                        : 'text-zinc-300'
+                        }`}
+                    />
+                  ))}
                 </div>
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                  <span className="font-semibold">
-                    {(avgRating / 2).toFixed(1)}
-                  </span>
-                  <span className="text-sm">({work.ratingCount}명)</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>{chapters?.length || 0}화</span>
-                </div>
+                <span className="text-xl font-semibold">{avgRating.toFixed(1)}</span>
+                <span className="text-zinc-600">
+                  ({work.ratingCount.toLocaleString()}개의 평가)
+                </span>
               </div>
 
               {/* 줄거리 */}
-              <p className="text-zinc-700 dark:text-zinc-300 mb-6 line-clamp-4">
-                {work.synopsis}
-              </p>
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">작품 소개</h3>
+                <p className="text-zinc-700 leading-relaxed">
+                  {work.synopsis || '줄거리가 없습니다.'}
+                </p>
+              </div>
 
               {/* 액션 버튼 */}
-              <div className="flex gap-3">
-                <Button size="lg" onClick={handleContinueReading}>
-                  {readingProgress ? "이어 읽기" : "첫 화 보기"}
+              <div className="flex gap-4">
+                <Button
+                  size="lg"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700"
+                  onClick={handleContinueReading}
+                >
+                  {readingProgress ? '이어 읽기' : '첫 화 보기'}
                 </Button>
                 {isAuthenticated && (
                   <Button
                     size="lg"
-                    variant={isInLibrary ? "secondary" : "outline"}
+                    variant={isInLibrary ? 'secondary' : 'outline'}
                     onClick={handleLibraryToggle}
-                  >
-                    <Heart
-                      className={`h-5 w-5 mr-2 ${
-                        isInLibrary ? "fill-current text-red-500" : ""
+                    className={`px-6 ${isInLibrary
+                      ? 'border-purple-600 bg-purple-50 text-purple-600'
+                      : 'border-zinc-300 hover:border-purple-600'
                       }`}
+                  >
+                    <Bookmark
+                      className={`w-5 h-5 mr-2 ${isInLibrary ? 'fill-purple-600' : ''
+                        }`}
                     />
-                    {isInLibrary ? "서재에서 제거" : "내 서재에 담기"}
+                    {isInLibrary ? '서재에 담김' : '내 서재에 담기'}
                   </Button>
+                )}
+              </div>
+
+              {/* 태그/장르 */}
+              <div className="mt-6 flex gap-2 flex-wrap">
+                {work.genre && (
+                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                    {GENRE_LABELS[work.genre] || work.genre}
+                  </span>
                 )}
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 챕터 리스트 */}
-      <div className="container mx-auto px-4 py-8">
-        <h2 className="text-xl font-bold mb-4">회차 목록</h2>
+        {/* 회차 목록 */}
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">회차 목록</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSortOrder('asc')}
+                className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === 'asc'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                  }`}
+              >
+                1화부터 보기
+              </button>
+              <button
+                onClick={() => setSortOrder('desc')}
+                className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === 'desc'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                  }`}
+              >
+                최신화부터 보기
+              </button>
+            </div>
+          </div>
 
-        {workLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin h-6 w-6 border-4 border-indigo-500 border-t-transparent rounded-full" />
-          </div>
-        ) : chapters?.length === 0 ? (
-          <div className="text-center py-8 text-zinc-500">
-            아직 등록된 회차가 없습니다.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {chapters
-              ?.sort((a, b) => a.chapterNumber - b.chapterNumber)
-              .map((chapter) => (
-                <ChapterItem
-                  key={chapter.id}
-                  chapter={chapter}
-                  onClick={() => navigate(`/chapters/${chapter.id}`)}
-                />
-              ))}
-          </div>
-        )}
-      </div>
+          {chapters?.length === 0 ? (
+            <div className="text-center py-8 text-zinc-500">
+              아직 등록된 회차가 없습니다.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {sortedChapters.map((chapter) => {
+                const chapterRating =
+                  chapter.ratingCount > 0
+                    ? chapter.ratingSum / chapter.ratingCount / 2
+                    : 0;
+                const isRead = false; // TODO: 읽은 챕터 표시
+
+                return (
+                  <Link
+                    key={chapter.id}
+                    to={`/chapters/${chapter.id}`}
+                    className={`block p-4 rounded-lg border transition-colors ${isRead
+                      ? 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'
+                      : 'border-zinc-200 hover:border-purple-600 hover:bg-purple-50'
+                      }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-4">
+                        <span
+                          className={`text-lg font-semibold ${isRead ? 'text-zinc-400' : 'text-purple-600'
+                            }`}
+                        >
+                          제{chapter.chapterNumber}화
+                        </span>
+                        <span className={isRead ? 'text-zinc-400' : 'text-zinc-900'}>
+                          {chapter.title}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                          <span className="text-sm">{chapterRating.toFixed(1)}</span>
+                        </div>
+                        <span className="text-sm text-zinc-500">
+                          {new Date(chapter.createdAt).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 };

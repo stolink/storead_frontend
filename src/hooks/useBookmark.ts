@@ -16,7 +16,7 @@ export const useBookmark = (chapterId: string) => {
     queryFn: async () => {
       try {
         const { data } = await api.get(`/bookmarks/${chapterId}`);
-        return data;
+        return data.data;
       } catch {
         return null; // 북마크가 없는 경우
       }
@@ -40,7 +40,7 @@ export const useSaveBookmark = () => {
   return useMutation({
     mutationFn: async ({ chapterId, position }: SaveBookmarkParams) => {
       const { data } = await api.post(`/bookmarks/${chapterId}`, { position });
-      return data;
+      return data.data;
     },
     onSuccess: (_data, { chapterId }) => {
       queryClient.invalidateQueries({ queryKey: ["bookmark", chapterId] });
@@ -67,7 +67,7 @@ export const useReadingProgress = (workId: string) => {
     queryFn: async () => {
       try {
         const { data } = await api.get(`/works/${workId}/reading-progress`);
-        return data;
+        return data.data;
       } catch {
         return null;
       }

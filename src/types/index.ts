@@ -30,6 +30,7 @@ export interface Work {
   authorId: string;
   title: string;
   synopsis: string;
+  authorNickname?: string; // 백엔드 응답 필드
   coverImageUrl?: string;
   genre: Genre;
   status: WorkStatus;

@@ -18,9 +18,9 @@ export const useLibrary = () => {
     queryKey: ["library"],
     queryFn: async () => {
       const { data } = await api.get("/library");
-      return data;
+      return data.data; // ApiResponse 언래핑
     },
-    select: (data: any) => data.items, // API 응답에서 items 배열만 추출
+    select: (data: any) => data.items, // 이제 data는 ApiResponse.data(Map)임
     enabled: isAuthenticated, // 로그인된 경우에만 API 호출
   });
 };

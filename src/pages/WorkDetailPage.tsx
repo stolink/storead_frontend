@@ -2,28 +2,28 @@
  * 작품 상세 페이지
  * 표지, 줄거리, 챕터 리스트, 태그, 정렬
  */
-import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Star, Bookmark, BookOpen, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { usePublicWork } from '@/hooks/useDiscovery';
+import { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { Star, Bookmark, BookOpen, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { usePublicWork } from "@/hooks/useDiscovery";
 import {
   useAddToLibrary,
   useRemoveFromLibrary,
   useIsInLibrary,
-} from '@/hooks/useLibrary';
-import { useReadingProgress } from '@/hooks/useBookmark';
-import { useAuthStore } from '@/stores/useAuthStore';
-import { useThemeStore, backgroundThemeClasses } from '@/stores/useTheme';
+} from "@/hooks/useLibrary";
+import { useReadingProgress } from "@/hooks/useBookmark";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useThemeStore, backgroundThemeClasses } from "@/stores/useTheme";
 
 // 장르 레이블 매핑
 const GENRE_LABELS: Record<string, string> = {
-  FANTASY: '판타지',
-  ROMANCE: '로맨스',
-  MARTIAL_ARTS: '무협',
-  THRILLER: '스릴러',
-  SF: 'SF',
-  DRAMA: '드라마',
+  FANTASY: "판타지",
+  ROMANCE: "로맨스",
+  MARTIAL_ARTS: "무협",
+  THRILLER: "스릴러",
+  SF: "SF",
+  DRAMA: "드라마",
 };
 
 /**
@@ -34,21 +34,23 @@ export const WorkDetailPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const { theme } = useThemeStore();
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  const { data: work, isLoading: workLoading } = usePublicWork(id || '');
+  const { data: work, isLoading: workLoading } = usePublicWork(id || "");
   const chapters = work?.chapters;
-  const { data: readingProgress } = useReadingProgress(id || '');
-  const isInLibrary = useIsInLibrary(id || '');
+  const { data: readingProgress } = useReadingProgress(id || "");
+  const isInLibrary = useIsInLibrary(id || "");
   const addToLibrary = useAddToLibrary();
   const removeFromLibrary = useRemoveFromLibrary();
 
   const avgRating =
-    work && work.ratingCount > 0 ? work.ratingSum / work.ratingCount / 2 : 0;
+    work && (work.ratingCount || 0) > 0
+      ? (work.ratingSum || 0) / (work.ratingCount || 0) / 2
+      : 0;
 
   // 정렬된 챕터 목록
   const sortedChapters = [...(chapters || [])].sort((a, b) => {
-    return sortOrder === 'asc'
+    return sortOrder === "asc"
       ? a.chapterNumber - b.chapterNumber
       : b.chapterNumber - a.chapterNumber;
   });
@@ -72,7 +74,9 @@ export const WorkDetailPage = () => {
 
   if (workLoading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${backgroundThemeClasses[theme]}`}>
+      <div
+        className={`min-h-screen flex items-center justify-center ${backgroundThemeClasses[theme]}`}
+      >
         <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full" />
       </div>
     );
@@ -80,7 +84,9 @@ export const WorkDetailPage = () => {
 
   if (!work) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${backgroundThemeClasses[theme]}`}>
+      <div
+        className={`min-h-screen flex items-center justify-center ${backgroundThemeClasses[theme]}`}
+      >
         <p>작품을 찾을 수 없습니다.</p>
       </div>
     );
@@ -114,7 +120,7 @@ export const WorkDetailPage = () => {
               <h1 className="text-4xl font-bold mb-2">{work.title}</h1>
               <p className="text-zinc-600 mb-4 flex items-center gap-2">
                 <User className="h-4 w-4" />
-                작가: {work.author?.nickname || '익명'}
+                작가: {work.authorNickname || work.author?.nickname || "익명"}
               </p>
 
               {/* 별점 */}
@@ -123,16 +129,19 @@ export const WorkDetailPage = () => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`w-5 h-5 ${star <= Math.round(avgRating)
-                        ? 'fill-yellow-400 text-yellow-400'
-                        : 'text-zinc-300'
-                        }`}
+                      className={`w-5 h-5 ${
+                        star <= Math.round(avgRating)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-zinc-300"
+                      }`}
                     />
                   ))}
                 </div>
-                <span className="text-xl font-semibold">{avgRating.toFixed(1)}</span>
+                <span className="text-xl font-semibold">
+                  {avgRating.toFixed(1)}
+                </span>
                 <span className="text-zinc-600">
-                  ({work.ratingCount.toLocaleString()}개의 평가)
+                  ({(work.ratingCount || 0).toLocaleString()}개의 평가)
                 </span>
               </div>
 
@@ -140,7 +149,7 @@ export const WorkDetailPage = () => {
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-2">작품 소개</h3>
                 <p className="text-zinc-700 leading-relaxed">
-                  {work.synopsis || '줄거리가 없습니다.'}
+                  {work.synopsis || "줄거리가 없습니다."}
                 </p>
               </div>
 
@@ -151,23 +160,25 @@ export const WorkDetailPage = () => {
                   className="flex-1 bg-purple-600 hover:bg-purple-700"
                   onClick={handleContinueReading}
                 >
-                  {readingProgress ? '이어 읽기' : '첫 화 보기'}
+                  {readingProgress ? "이어 읽기" : "첫 화 보기"}
                 </Button>
                 {isAuthenticated && (
                   <Button
                     size="lg"
-                    variant={isInLibrary ? 'secondary' : 'outline'}
+                    variant={isInLibrary ? "secondary" : "outline"}
                     onClick={handleLibraryToggle}
-                    className={`px-6 ${isInLibrary
-                      ? 'border-purple-600 bg-purple-50 text-purple-600'
-                      : 'border-zinc-300 hover:border-purple-600'
-                      }`}
+                    className={`px-6 ${
+                      isInLibrary
+                        ? "border-purple-600 bg-purple-50 text-purple-600"
+                        : "border-zinc-300 hover:border-purple-600"
+                    }`}
                   >
                     <Bookmark
-                      className={`w-5 h-5 mr-2 ${isInLibrary ? 'fill-purple-600' : ''
-                        }`}
+                      className={`w-5 h-5 mr-2 ${
+                        isInLibrary ? "fill-purple-600" : ""
+                      }`}
                     />
-                    {isInLibrary ? '서재에 담김' : '내 서재에 담기'}
+                    {isInLibrary ? "서재에 담김" : "내 서재에 담기"}
                   </Button>
                 )}
               </div>
@@ -190,20 +201,22 @@ export const WorkDetailPage = () => {
             <h2 className="text-2xl font-bold">회차 목록</h2>
             <div className="flex gap-2">
               <button
-                onClick={() => setSortOrder('asc')}
-                className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === 'asc'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
-                  }`}
+                onClick={() => setSortOrder("asc")}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  sortOrder === "asc"
+                    ? "bg-purple-600 text-white"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+                }`}
               >
                 1화부터 보기
               </button>
               <button
-                onClick={() => setSortOrder('desc')}
-                className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === 'desc'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
-                  }`}
+                onClick={() => setSortOrder("desc")}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  sortOrder === "desc"
+                    ? "bg-purple-600 text-white"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+                }`}
               >
                 최신화부터 보기
               </button>
@@ -227,30 +240,38 @@ export const WorkDetailPage = () => {
                   <Link
                     key={chapter.id}
                     to={`/chapters/${chapter.id}`}
-                    className={`block p-4 rounded-lg border transition-colors ${isRead
-                      ? 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'
-                      : 'border-zinc-200 hover:border-purple-600 hover:bg-purple-50'
-                      }`}
+                    className={`block p-4 rounded-lg border transition-colors ${
+                      isRead
+                        ? "border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
+                        : "border-zinc-200 hover:border-purple-600 hover:bg-purple-50"
+                    }`}
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-4">
                         <span
-                          className={`text-lg font-semibold ${isRead ? 'text-zinc-400' : 'text-purple-600'
-                            }`}
+                          className={`text-lg font-semibold ${
+                            isRead ? "text-zinc-400" : "text-purple-600"
+                          }`}
                         >
                           제{chapter.chapterNumber}화
                         </span>
-                        <span className={isRead ? 'text-zinc-400' : 'text-zinc-900'}>
+                        <span
+                          className={isRead ? "text-zinc-400" : "text-zinc-900"}
+                        >
                           {chapter.title}
                         </span>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                          <span className="text-sm">{chapterRating.toFixed(1)}</span>
+                          <span className="text-sm">
+                            {chapterRating.toFixed(1)}
+                          </span>
                         </div>
                         <span className="text-sm text-zinc-500">
-                          {new Date(chapter.createdAt).toLocaleDateString('ko-KR')}
+                          {new Date(chapter.createdAt).toLocaleDateString(
+                            "ko-KR"
+                          )}
                         </span>
                       </div>
                     </div>

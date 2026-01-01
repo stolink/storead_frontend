@@ -32,7 +32,14 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
     queryFn: async () => {
       try {
         const { data } = await api.get("/discovery/works", { params });
-        return data;
+        // 백엔드 응답: { code, status, message, data: { works: [], pagination: ... } }
+        // ApiResponse 래퍼를 벗겨내야 함 (axios response.data -> ApiResponse -> ApiResponse.data)
+        const responseData = data.data;
+
+        return {
+          data: responseData.works,
+          hasMore: responseData.pagination.hasNext,
+        };
       } catch (error) {
         console.warn("[Demo] 백엔드 연결 실패, 데모 데이터를 사용합니다.");
         return {
@@ -59,7 +66,12 @@ export const useSearchWorks = (
         const { data } = await api.get("/discovery/search", {
           params: { q: query, ...params },
         });
-        return data;
+        const responseData = data.data;
+
+        return {
+          data: responseData.works,
+          hasMore: responseData.pagination.hasNext,
+        };
       } catch (error) {
         // 데모 검색 (제목 필터링)
         const filtered = DEMO_WORKS.filter((w) => w.title.includes(query));
@@ -83,7 +95,7 @@ export const usePublicWork = (id: string) => {
     queryFn: async () => {
       try {
         const { data } = await api.get(`/discovery/works/${id}`);
-        return data;
+        return data.data;
       } catch (error) {
         const work = DEMO_WORKS.find((w) => w.id === id);
         if (!work) throw error;
@@ -104,7 +116,7 @@ export const usePublicChapters = (workId: string) => {
     queryFn: async () => {
       try {
         const { data } = await api.get(`/discovery/chapters/${workId}`);
-        return data;
+        return data.data;
       } catch (error) {
         return DEMO_CHAPTERS[workId] || [];
       }
@@ -123,7 +135,7 @@ export const usePublicChapter = (id: string) => {
     queryFn: async () => {
       try {
         const { data } = await api.get(`/discovery/chapters/${id}`);
-        return data;
+        return data.data;
       } catch (error) {
         // 데모 챕터 찾기
         for (const workId in DEMO_CHAPTERS) {

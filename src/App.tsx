@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // 레이아웃 컴포넌트
 import Layout from "@/components/layout/Layout";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
+import ScrollToTop from "@/components/layout/ScrollToTop";
 
 // 전역 AuthModal
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -149,6 +150,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ScrollToTop />
         <AppContent />
       </BrowserRouter>
     </QueryClientProvider>

@@ -2,11 +2,10 @@
  * 댓글 아이템 컴포넌트
  * 재귀적 렌더링으로 계층형 댓글 지원
  */
-import { useState } from 'react';
+import { useState, memo, useCallback } from 'react';
 import { Heart, MessageCircle, Trash2, ChevronDown, ChevronUp, CornerDownRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { ReplyForm } from './ReplyForm';
 import { cn } from '@/lib/utils';
 import type { Comment } from '@/types';
 import { useReplies, useCreateReply, useToggleCommentLike, useDeleteComment } from '@/hooks/useComments';
@@ -21,6 +20,8 @@ interface CommentItemProps {
     maxDepth?: number;
 }
 
+
+
 /**
  * 댓글 아이템 컴포넌트
  * 대댓글을 재귀적으로 렌더링
@@ -32,7 +33,7 @@ export const CommentItem = ({
 }: CommentItemProps) => {
     const [showReplies, setShowReplies] = useState(false);
     const [showReplyInput, setShowReplyInput] = useState(false);
-    const [replyContent, setReplyContent] = useState('');
+
 
     const { user } = useAuthStore();
     const { data: replies, isLoading: repliesLoading } = useReplies(comment.id, showReplies);
@@ -42,33 +43,31 @@ export const CommentItem = ({
 
     const isAuthor = user?.id === comment.userId;
 
-    // 대댓글 작성
-    const handleSubmitReply = async () => {
-        if (!replyContent.trim()) return;
+    // 대댓글 작성 핸들러
+    const handleSubmitReply = useCallback(async (content: string) => {
         try {
             await createReply.mutateAsync({
                 parentId: comment.id,
-                content: replyContent.trim(),
+                content,
             });
-            setReplyContent('');
             setShowReplyInput(false);
             setShowReplies(true);
         } catch (error) {
             console.error('대댓글 작성 실패:', error);
         }
-    };
+    }, [comment.id, createReply]);
 
     // 좋아요 토글
-    const handleToggleLike = () => {
+    const handleToggleLike = useCallback(() => {
         toggleLike.mutate(comment.id);
-    };
+    }, [comment.id, toggleLike]);
 
     // 삭제
-    const handleDelete = () => {
+    const handleDelete = useCallback(() => {
         if (window.confirm('댓글을 삭제하시겠습니까?')) {
             deleteComment.mutate(comment.id);
         }
-    };
+    }, [comment.id, deleteComment]);
 
     // 상대적 시간 계산
     const getRelativeTime = (date: string) => {
@@ -96,7 +95,9 @@ export const CommentItem = ({
             {/* 댓글 헤더 */}
             <div className="flex items-start gap-3">
                 {depth > 0 && (
-                    <CornerDownRight className="w-4 h-4 text-zinc-400 mt-2 shrink-0" />
+                    <div className="flex items-center justify-center w-6 h-6 mt-1 text-zinc-400">
+                        <CornerDownRight className="w-5 h-5" />
+                    </div>
                 )}
                 <Avatar className="h-8 w-8">
                     <AvatarImage src={comment.author?.profileImageUrl} />
@@ -162,36 +163,17 @@ export const CommentItem = ({
                         )}
                     </div>
 
-                    {/* 답글 입력 */}
+                    {/* 답글 입력 (분리된 컴포넌트로 포커스 유지) */}
                     {showReplyInput && (
-                        <div className="mt-3 space-y-2">
-                            <Textarea
-                                value={replyContent}
-                                onChange={(e) => setReplyContent(e.target.value)}
-                                placeholder="답글을 입력하세요..."
-                                className="min-h-[80px] text-sm"
-                            />
-                            <div className="flex justify-end gap-2">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setShowReplyInput(false)}
-                                >
-                                    취소
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    onClick={handleSubmitReply}
-                                    disabled={!replyContent.trim() || createReply.isPending}
-                                >
-                                    {createReply.isPending ? '등록 중...' : '등록'}
-                                </Button>
-                            </div>
-                        </div>
+                        <ReplyForm
+                            onSubmit={handleSubmitReply}
+                            onCancel={() => setShowReplyInput(false)}
+                            isPending={createReply.isPending}
+                        />
                     )}
 
-                    {/* 대댓글 토글 버튼 */}
-                    {comment.parentId === null && (replies?.length || 0) > 0 && (
+                    {/* 대댓글 토글 버튼 - replyCount 또는 로드된 replies 기반 표시 */}
+                    {comment.parentId === null && ((comment.replyCount || 0) > 0 || (replies?.length || 0) > 0) && (
                         <button
                             onClick={() => setShowReplies(!showReplies)}
                             className="flex items-center gap-1 mt-2 text-xs text-blue-500 hover:text-blue-600"
@@ -204,7 +186,7 @@ export const CommentItem = ({
                             ) : (
                                 <>
                                     <ChevronDown className="h-4 w-4" />
-                                    답글 {replies?.length}개 보기
+                                    답글 {replies?.length ?? comment.replyCount ?? 0}개 보기
                                 </>
                             )}
                         </button>
@@ -234,4 +216,4 @@ export const CommentItem = ({
     );
 };
 
-export default CommentItem;
+export default memo(CommentItem);

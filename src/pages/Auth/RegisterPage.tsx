@@ -6,17 +6,17 @@ import { useThemeStore, backgroundThemeClasses } from "@/stores/useTheme";
 import { AuthCard } from "@/components/auth/AuthCard";
 
 export const RegisterPage = () => {
-  const { theme } = useThemeStore();
+    const { theme } = useThemeStore();
 
-  return (
-    <div
-      className={`min-h-screen ${backgroundThemeClasses[theme]} flex items-center justify-center p-4`}
-    >
-      <div className="w-full max-w-[850px]">
-        <AuthCard />
-      </div>
-    </div>
-  );
+    return (
+        <div
+            className={`min-h-screen ${backgroundThemeClasses[theme]} flex items-center justify-center p-4`}
+        >
+            <div className="w-full max-w-[850px]">
+                <AuthCard />
+            </div>
+        </div>
+    );
 };
 
 export default RegisterPage;

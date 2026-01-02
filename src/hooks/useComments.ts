@@ -20,9 +20,23 @@ export const useComments = (chapterId: string) => {
     queryKey: ["comments", chapterId],
     queryFn: async ({ pageParam }) => {
       const { data } = await api.get(`/chapters/${chapterId}/comments`, {
-        params: { cursor: pageParam },
+        params: {
+          cursor: pageParam,
+          // pageParam이 문자열(커서)일 경우 page 파라미터로 전송하지 않음
+          page: typeof pageParam === 'number' ? pageParam : 0
+        },
       });
-      return data;
+      // console.log('[DEBUG] Comments API Response:', data);
+
+      // 백엔드 응답 구조: { code, status, data: { comments: [...], pagination: {...} } }
+      const responseData = data.data || data;
+      const comments = responseData.comments || responseData.data || [];
+
+      return {
+        data: Array.isArray(comments) ? comments : [],
+        hasMore: responseData.pagination?.hasNext || false,
+        nextCursor: responseData.pagination?.nextCursor,
+      };
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
@@ -40,7 +54,8 @@ export const useReplies = (commentId: string, enabled: boolean = false) => {
     queryKey: ["replies", commentId],
     queryFn: async () => {
       const { data } = await api.get(`/comments/${commentId}/replies`);
-      return data;
+      // 백엔드 응답 구조: { code, status, data: [...] }
+      return data.data || data || [];
     },
     enabled: enabled && !!commentId,
   });
@@ -60,13 +75,14 @@ export const useCreateComment = () => {
 
   return useMutation({
     mutationFn: async ({ chapterId, data }: CreateCommentParams) => {
-      console.log('[DEBUG] Creating comment:', { chapterId, data });
+      // console.log('[DEBUG] Creating comment:', { chapterId, data });
       const response = await api.post(`/chapters/${chapterId}/comments`, data);
-      console.log('[DEBUG] Comment created:', response.data);
-      return response.data;
+      // console.log('[DEBUG] Comment created:', response.data);
+      // 백엔드 응답 구조: { code, status, data: {...} }
+      return response.data.data || response.data;
     },
     onError: (error) => {
-      console.error('[DEBUG] Comment creation failed:', error);
+      console.error('Comment creation failed:', error);
     },
     onSuccess: (_data, { chapterId }) => {
       queryClient.invalidateQueries({ queryKey: ["comments", chapterId] });
@@ -89,10 +105,15 @@ export const useCreateReply = () => {
       parentId: string;
       content: string;
     }) => {
+      // console.log('[DEBUG] Creating reply:', { parentId, content });
       const { data } = await api.post(`/comments/${parentId}/replies`, {
         content,
       });
+      // console.log('[DEBUG] Reply created:', data);
       return data;
+    },
+    onError: (error) => {
+      console.error('Reply creation failed:', error);
     },
     onSuccess: (_data, { parentId }) => {
       queryClient.invalidateQueries({ queryKey: ["replies", parentId] });

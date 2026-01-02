@@ -18,22 +18,43 @@ export const useLibrary = () => {
     queryKey: ["library"],
     queryFn: async () => {
       const { data } = await api.get("/library");
-      console.log('[DEBUG] Library API Response:', data);
 
-      // API 응답 구조에 따라 데이터 반환
-      // 예상: ApiResponse { code, status, data: { items: [...] } }
-      if (data.data && Array.isArray(data.data.items)) {
-        return data.data.items;
-      }
-      // 또는 { code, status, data: [...] }
-      if (Array.isArray(data.data)) {
-        return data.data;
+
+      let items: any[] = [];
+      if (Array.isArray(data)) {
+        items = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        items = data.data;
+      } else if (data.data && data.data.items && Array.isArray(data.data.items)) {
+        items = data.data.items;
       }
 
-      return data.data || [];
+      // Backend returns flattened structure (workTitle, workSynopsis, etc.)
+      // Frontend expects nested structure (work: { title, synopsis... })
+      // Mapper logic:
+      return items.map((item: any) => ({
+        id: item.id,
+        workId: item.workId,
+        userId: item.userId || '', // response might not have userId
+        createdAt: item.addedAt || item.createdAt,
+        updatedAt: item.addedAt || item.updatedAt,
+        work: {
+          id: item.workId,
+          title: item.workTitle,
+          synopsis: item.workSynopsis,
+          coverImageUrl: item.workCoverImageUrl,
+          genre: item.workGenre,
+          status: item.workStatus,
+          authorNickname: item.authorNickname,
+          authorId: "", // Not provided in flat response
+          ratingSum: 0, // Not provided
+          ratingCount: 0, // Not provided
+          createdAt: "",
+          updatedAt: "",
+        }
+      })) as Library[];
     },
-    // select 옵션 제거 (queryFn에서 이미 처리)
-    enabled: isAuthenticated, // 로그인된 경우에만 API 호출
+    enabled: isAuthenticated,
   });
 };
 
@@ -46,14 +67,49 @@ export const useAddToLibrary = () => {
 
   return useMutation({
     mutationFn: async (workId: string) => {
+      // console.log('[DEBUG] Adding to library:', workId);
       const { data } = await api.post(`/library/${workId}`);
-      return data;
+      // console.log('[DEBUG] Add to library response:', data);
+      // 백엔드 응답 구조: { code, status, data: {...} }
+      return data.data || data;
     },
-    onSuccess: () => {
+    // 낙관적 업데이트: 서버 응답 전에 즉시 UI 반영
+    onMutate: async (workId) => {
+      await queryClient.cancelQueries({ queryKey: ["library"] });
+      const previousLibrary = queryClient.getQueryData<Library[]>(["library"]);
+
+      // 임시 항목 추가 (서버 응답 후 실제 데이터로 대체됨)
+      queryClient.setQueryData<Library[]>(["library"], (old) => {
+        const tempItem: Library = {
+          id: `temp-${workId}`,
+          workId,
+          userId: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        if (!old || !Array.isArray(old)) return [tempItem];
+        return [...old, tempItem];
+      });
+
+      return { previousLibrary };
+    },
+    onError: (_err, _workId, context) => {
+      console.error('Add to library failed:', _err);
+      // 에러 시 이전 상태로 롤백
+      if (context?.previousLibrary) {
+        queryClient.setQueryData(["library"], context.previousLibrary);
+      }
+    },
+    onSettled: (_data, _error, workId) => {
+      // 서버 응답과 동기화
       queryClient.invalidateQueries({ queryKey: ["library"] });
+      // 작품 상세 정보(isInLibrary 등)도 갱신
+      queryClient.invalidateQueries({ queryKey: ["work", workId] });
+      queryClient.invalidateQueries({ queryKey: ["discovery"] });
     },
   });
 };
+
 
 /**
  * 서재에서 작품 제거
@@ -64,30 +120,32 @@ export const useRemoveFromLibrary = () => {
 
   return useMutation({
     mutationFn: async (workId: string) => {
+      // console.log('[DEBUG] Removing from library:', workId);
       await api.delete(`/library/${workId}`);
     },
     // 낙관적 업데이트
     onMutate: async (workId) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
-      const previousLibrary = queryClient.getQueryData<any>(["library"]);
+      const previousLibrary = queryClient.getQueryData<Library[]>(["library"]);
 
-      queryClient.setQueryData<any>(["library"], (old: any) => {
-        if (!old?.items) return old;
-        return {
-          ...old,
-          items: old.items.filter((item: Library) => item.workId !== workId),
-        };
+      // 배열 형태로 낙관적 업데이트
+      queryClient.setQueryData<Library[]>(["library"], (old) => {
+        if (!old || !Array.isArray(old)) return old;
+        return old.filter((item: Library) => item.workId !== workId);
       });
 
       return { previousLibrary };
     },
     onError: (_err, _workId, context) => {
+      console.error('Remove from library failed:', _err);
       if (context?.previousLibrary) {
         queryClient.setQueryData(["library"], context.previousLibrary);
       }
     },
-    onSettled: () => {
+    onSettled: (_data, _error, workId) => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
+      queryClient.invalidateQueries({ queryKey: ["work", workId] });
+      queryClient.invalidateQueries({ queryKey: ["discovery"] });
     },
   });
 };
@@ -97,5 +155,5 @@ export const useRemoveFromLibrary = () => {
  */
 export const useIsInLibrary = (workId: string) => {
   const { data: library } = useLibrary();
-  return library?.some((item) => item.workId === workId) ?? false;
+  return library?.some((item) => String(item.workId) === String(workId)) ?? false;
 };

@@ -19,6 +19,7 @@ import {
   Network,
   BookOpen,
   ScrollText,
+  Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SecureViewer } from "@/components/viewer/SecureViewer";
@@ -127,6 +128,18 @@ export const ChapterViewerPage = () => {
     return formatContent(stripped);
   }, [chapter?.content]);
 
+  // 마지막 읽은 챕터 저장 (로컬 스토리지) - 이어서 읽기용
+  useEffect(() => {
+    if (id && chapter?.workId && isAuthenticated) {
+      localStorage.setItem(`lastChapter_${chapter.workId}`, id);
+    }
+  }, [id, chapter?.workId, isAuthenticated]);
+
+  // 챕터 변경 시 페이지 초기화 (2-3 해결: 다음화 이동 시 첫 페이지로)
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [id]);
+
   // 현재/이전/다음 챕터 찾기 (기존 로직 유지)
   const sortedChapters = chapters?.sort(
     (a, b) => a.chapterNumber - b.chapterNumber
@@ -151,6 +164,9 @@ export const ChapterViewerPage = () => {
   // 2단 레이아웃: 한 페이지에 2개의 문단 표시
   const totalPages = Math.max(1, Math.ceil(contentPages.length / 2));
 
+  // 페이지 모드 마지막 페이지 여부 (다음화 안내 UI용)
+  const isLastPage = currentPage >= totalPages - 1;
+
   // 페이지 이동 함수 (기존 네이밍 유지)
   const goToPrevPage = useCallback(() => {
     if (currentPage > 0) {
@@ -160,13 +176,13 @@ export const ChapterViewerPage = () => {
     }
   }, [currentPage, prevChapter, navigate]);
 
+  // goToNextPage: 마지막 페이지에서는 바로 이동하지 않음 (하단 배너로 유도)
   const goToNextPage = useCallback(() => {
     if (currentPage < totalPages - 1) {
       setCurrentPage((prev) => prev + 1);
-    } else if (nextChapter) {
-      navigate(`/chapters/${nextChapter.id}`);
     }
-  }, [currentPage, totalPages, nextChapter, navigate]);
+    // 마지막 페이지에서 우측 클릭 시 바로 이동하지 않음 - 하단 배너로 유도
+  }, [currentPage, totalPages]);
 
   // 읽은 위치 저장 (throttle + ref로 중복 호출 방지)
   const lastSavedPosition = useRef<number>(0);
@@ -240,8 +256,21 @@ export const ChapterViewerPage = () => {
         )}
       >
         <div className="flex items-center justify-between px-3 h-12">
-          {/* 좌측: TOC 토글 + 챕터 정보 */}
+          {/* 좌측: 홈(작품 페이지) + TOC 토글 + 챕터 정보 */}
           <div className="flex items-center gap-1">
+            {/* 작품 홈(챕터 목록)으로 이동 */}
+            <button
+              onClick={() => chapter?.workId && navigate(`/works/${chapter.workId}`)}
+              className={cn(
+                "p-2 rounded-full transition-colors",
+                styles.hover,
+                styles.text
+              )}
+              title="작품으로 이동"
+            >
+              <Library className="h-4 w-4" />
+            </button>
+            {/* 목차 사이드바 토글 */}
             <button
               onClick={() => setShowTOC(true)}
               className={cn(
@@ -427,12 +456,34 @@ export const ChapterViewerPage = () => {
                     borderLeft: `1px solid ${styles.columnRule}`,
                     paddingLeft: "1.5rem",
                   }}
-                  dangerouslySetInnerHTML={{
-                    __html: formatContent(
-                      contentPages[currentPage * 2 + 1] || ""
-                    ),
-                  }}
-                />
+                >
+                  {/* 마지막 페이지이고 다음 챕터가 있으면 다음화 카드 표시 */}
+                  {isLastPage && nextChapter && !contentPages[currentPage * 2 + 1] ? (
+                    <button
+                      onClick={() => navigate(`/chapters/${nextChapter.id}`)}
+                      className={cn(
+                        "w-full h-full flex flex-col items-center justify-center gap-4",
+                        "rounded-xl border-2 border-dashed transition-all pointer-events-auto",
+                        "border-purple-300 hover:border-purple-600 hover:bg-purple-50/50",
+                        styles.text
+                      )}
+                    >
+                      <ChevronRight className="w-12 h-12 text-purple-400" />
+                      <div className="text-center">
+                        <p className="text-lg font-semibold mb-1">다음 화로 이동</p>
+                        <p className="text-sm opacity-60">
+                          {nextChapter.chapterNumber}화: {nextChapter.title}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: formatContent(contentPages[currentPage * 2 + 1] || ""),
+                      }}
+                    />
+                  )}
+                </div>
               </div>
             </div>
 
@@ -522,10 +573,10 @@ export const ChapterViewerPage = () => {
                       {t === "light"
                         ? "화이트"
                         : t === "dark"
-                        ? "다크"
-                        : t === "sepia"
-                        ? "세피아"
-                        : "아이보리"}
+                          ? "다크"
+                          : t === "sepia"
+                            ? "세피아"
+                            : "아이보리"}
                     </button>
                   ))}
                 </div>

@@ -42,6 +42,10 @@ export interface Work {
   avgRating?: number;
   author?: User;
   chapters?: Chapter[]; // 작품 상세 조회 시 챕터 목록 포함
+  // 유저별 상태 필드 (Discovery API)
+  isLiked?: boolean;
+  likeCount?: number;
+  isInLibrary?: boolean;
 }
 
 // === Chapters (챕터/회차) ===
@@ -74,6 +78,7 @@ export interface Comment {
   // 프론트엔드 확장 필드
   author?: User;
   replies?: Comment[]; // 자식 댓글 (재귀 구조)
+  replyCount?: number; // 답글 개수 (lazy loading 전 표시용)
   isLiked?: boolean; // 현재 사용자의 좋아요 여부
 }
 

@@ -85,17 +85,17 @@ export const usePublicWork = (id: string) => {
 
 /**
  * 작품의 챕터 목록 조회
- * GET /api/discovery/chapters/{workId} (공개용)
+ * 참고: /api/discovery/works/{id} 응답에 chapters 필드가 포함되므로
+ * usePublicWork를 활용하여 챕터 목록을 가져옴
  */
 export const usePublicChapters = (workId: string) => {
-    return useQuery<Chapter[]>({
-        queryKey: ["chapters", workId],
-        queryFn: async () => {
-            const { data } = await api.get(`/discovery/chapters/${workId}`);
-            return data.data || [];
-        },
-        enabled: !!workId,
-    });
+    const workQuery = usePublicWork(workId);
+
+    return {
+        ...workQuery,
+        // work.chapters를 반환하도록 data 필드 재정의
+        data: workQuery.data?.chapters || [],
+    };
 };
 
 /**

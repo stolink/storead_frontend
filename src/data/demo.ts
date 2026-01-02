@@ -77,6 +77,7 @@ export const DEMO_CHAPTERS: Record<string, Chapter[]> = {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             avgRating: 4.8,
+            status: 'PUBLISHED',
         },
         {
             id: 'chapter-1-2',
@@ -90,6 +91,7 @@ export const DEMO_CHAPTERS: Record<string, Chapter[]> = {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             avgRating: 4.5,
+            status: 'PUBLISHED',
         },
     ],
     'work-2': [
@@ -105,6 +107,7 @@ export const DEMO_CHAPTERS: Record<string, Chapter[]> = {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             avgRating: 5.0,
+            status: 'PUBLISHED',
         }
     ]
 };

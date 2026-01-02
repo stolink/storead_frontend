@@ -142,7 +142,7 @@ export const Header = () => {
               </DropdownMenu>
             ) : (
               <button
-                onClick={openAuthModal}
+                onClick={() => openAuthModal()}
                 className="flex items-center justify-center w-10 h-10 bg-zinc-200 rounded-full hover:bg-zinc-300 transition-colors"
               >
                 <User className="w-5 h-5 text-zinc-700" />

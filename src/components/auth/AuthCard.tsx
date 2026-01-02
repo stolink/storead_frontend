@@ -3,7 +3,8 @@
  * 로그인/회원가입 탭이 있는 인증 카드
  * stolink와 동일한 스타일 적용
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -46,14 +47,30 @@ interface AuthCardProps {
   onSuccess?: () => void;
 }
 
+// OAuth2 에러 메시지 매핑
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  oauth_failed: "소셜 로그인에 실패했습니다. 다시 시도해주세요.",
+  email_exists: "이미 일반 회원가입으로 등록된 이메일입니다.",
+  access_denied: "로그인이 취소되었습니다.",
+};
+
 export function AuthCard({ className, onSuccess }: AuthCardProps) {
   const { setAuth } = useAuthStore();
+  const [searchParams] = useSearchParams();
 
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState<string>("");
   const [activeTab, setActiveTab] = useState("login");
   const [isLoginPending, setIsLoginPending] = useState(false);
   const [isRegisterPending, setIsRegisterPending] = useState(false);
+
+  // URL 파라미터에서 OAuth2 에러 확인
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error && OAUTH_ERROR_MESSAGES[error]) {
+      setApiError(OAUTH_ERROR_MESSAGES[error]);
+    }
+  }, [searchParams]);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),

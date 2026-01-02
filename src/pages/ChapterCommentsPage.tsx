@@ -2,7 +2,7 @@
  * 챕터 댓글 전용 페이지
  * 대댓글, 좋아요, 정렬(좋아요순/최신순) 지원
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,14 +43,18 @@ export const ChapterCommentsPage = () => {
     const toggleLike = useToggleCommentLike();
 
     // 댓글 평탄화 및 정렬
-    const allComments = data?.pages.flatMap((page) => page.data) ?? [];
-    const topLevelComments = allComments.filter((c) => c.parentId === null);
-    const sortedComments = [...topLevelComments].sort((a, b) => {
-        if (sortBy === 'popular') {
-            return b.likeCount - a.likeCount;
-        }
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    // 댓글 평탄화 및 정렬
+    const allComments = useMemo(() => data?.pages.flatMap((page) => page.data) ?? [], [data]);
+
+    const sortedComments = useMemo(() => {
+        const topLevelComments = allComments.filter((c) => c.parentId === null);
+        return [...topLevelComments].sort((a, b) => {
+            if (sortBy === 'popular') {
+                return b.likeCount - a.likeCount;
+            }
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+    }, [allComments, sortBy]);
 
     // 테마 클래스
     const bgClass = backgroundThemeClasses[theme];

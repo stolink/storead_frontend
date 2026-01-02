@@ -18,7 +18,7 @@ export const useLibrary = () => {
     queryKey: ["library"],
     queryFn: async () => {
       const { data } = await api.get("/library");
-      // console.log('[DEBUG] Library API Response:', data);
+
 
       let items: any[] = [];
       if (Array.isArray(data)) {
@@ -67,9 +67,9 @@ export const useAddToLibrary = () => {
 
   return useMutation({
     mutationFn: async (workId: string) => {
-      console.log('[DEBUG] Adding to library:', workId);
+      // console.log('[DEBUG] Adding to library:', workId);
       const { data } = await api.post(`/library/${workId}`);
-      console.log('[DEBUG] Add to library response:', data);
+      // console.log('[DEBUG] Add to library response:', data);
       // 백엔드 응답 구조: { code, status, data: {...} }
       return data.data || data;
     },
@@ -94,13 +94,13 @@ export const useAddToLibrary = () => {
       return { previousLibrary };
     },
     onError: (_err, _workId, context) => {
-      console.error('[DEBUG] Add to library failed:', _err);
+      console.error('Add to library failed:', _err);
       // 에러 시 이전 상태로 롤백
       if (context?.previousLibrary) {
         queryClient.setQueryData(["library"], context.previousLibrary);
       }
     },
-    onSettled: (data, error, workId) => {
+    onSettled: (_data, _error, workId) => {
       // 서버 응답과 동기화
       queryClient.invalidateQueries({ queryKey: ["library"] });
       // 작품 상세 정보(isInLibrary 등)도 갱신
@@ -120,7 +120,7 @@ export const useRemoveFromLibrary = () => {
 
   return useMutation({
     mutationFn: async (workId: string) => {
-      console.log('[DEBUG] Removing from library:', workId);
+      // console.log('[DEBUG] Removing from library:', workId);
       await api.delete(`/library/${workId}`);
     },
     // 낙관적 업데이트
@@ -137,12 +137,12 @@ export const useRemoveFromLibrary = () => {
       return { previousLibrary };
     },
     onError: (_err, _workId, context) => {
-      console.error('[DEBUG] Remove from library failed:', _err);
+      console.error('Remove from library failed:', _err);
       if (context?.previousLibrary) {
         queryClient.setQueryData(["library"], context.previousLibrary);
       }
     },
-    onSettled: (data, error, workId) => {
+    onSettled: (_data, _error, workId) => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
       queryClient.invalidateQueries({ queryKey: ["work", workId] });
       queryClient.invalidateQueries({ queryKey: ["discovery"] });

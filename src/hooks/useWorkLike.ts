@@ -27,14 +27,13 @@ export const useWorkLike = (workId: string) => {
         queryFn: async () => {
             try {
                 const { data } = await api.get(`/works/${workId}/like`);
-                // console.log('[DEBUG] Work like status response:', data);
                 const result = data.data || data;
                 return {
                     isLiked: result.isLiked ?? false,
                     likeCount: result.likeCount ?? 0,
                 };
             } catch (error) {
-                // console.warn('[WARN] Work like API error:', error);
+                // console.warn('Work like API error:', error);
                 return { isLiked: false, likeCount: 0 };
             }
         },
@@ -53,9 +52,7 @@ export const useToggleWorkLike = () => {
 
     return useMutation({
         mutationFn: async (workId: string) => {
-            // console.log('[DEBUG] Toggling work like:', workId);
             const { data } = await api.post(`/works/${workId}/like`);
-            // console.log('[DEBUG] Toggle work like response:', data);
             const responseData = data.data || data;
             return { workId, ...responseData }; // workId를 반환 데이터에 포함
         },

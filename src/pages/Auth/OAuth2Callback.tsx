@@ -29,14 +29,17 @@ export default function OAuth2Callback() {
           localStorage.setItem("accessToken", accessToken);
 
           // 2. 사용자 정보 가져오기
-          const response = await api.get("/users/me");
+          const response = await api.get("/auth/me");
           const user = response.data.data;
 
           // 3. 인증 상태 설정
           setAuth(user, accessToken);
 
-          // 4. 메인으로 이동 (replace: true로 히스토리에서 토큰 URL 제거)
-          navigate("/", { replace: true });
+          // 4. 원래 페이지로 이동 (없으면 홈으로)
+          const redirectPath =
+            localStorage.getItem("oauth_redirect_path") || "/";
+          localStorage.removeItem("oauth_redirect_path");
+          navigate(redirectPath, { replace: true });
         } catch (error) {
           console.error("OAuth2 Login Failed:", error);
           localStorage.removeItem("accessToken");

@@ -6,8 +6,8 @@
  * - 책 모드: CSS columnCount 2단 + columnRule 중앙 구분선
  * - 클릭 영역으로 페이지 전환 (시각적 피드백)
  */
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
   ChevronRight,
@@ -19,17 +19,22 @@ import {
   Network,
   BookOpen,
   ScrollText,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { SecureViewer } from '@/components/viewer/SecureViewer';
-import { TableOfContents } from '@/components/viewer/TableOfContents';
-import { usePublicChapter, usePublicChapters, usePublicWork } from '@/hooks/useDiscovery';
-import { useSaveBookmark } from '@/hooks/useBookmark';
-import { useAuthStore } from '@/stores/useAuthStore';
-import { useThemeStore, type Theme } from '@/stores/useTheme';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SecureViewer } from "@/components/viewer/SecureViewer";
+import { TableOfContents } from "@/components/viewer/TableOfContents";
+import {
+  usePublicChapter,
+  usePublicChapters,
+  usePublicWork,
+} from "@/hooks/useDiscovery";
+import { useSaveBookmark } from "@/hooks/useBookmark";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthModalStore } from "@/stores/useAuthModalStore";
+import { useThemeStore, type Theme } from "@/stores/useTheme";
+import { cn } from "@/lib/utils";
 
-type ViewMode = 'scroll' | 'page';
+type ViewMode = "scroll" | "page";
 type LineHeight = 1.5 | 1.8 | 2;
 
 /**
@@ -38,32 +43,32 @@ type LineHeight = 1.5 | 1.8 | 2;
 const getThemeStyle = (theme: Theme) => {
   const styles = {
     light: {
-      container: 'bg-white text-zinc-900',
-      text: 'text-zinc-900',
-      bg: 'bg-white',
-      columnRule: 'rgba(0, 0, 0, 0.1)',
-      hover: 'hover:bg-zinc-100',
+      container: "bg-white text-zinc-900",
+      text: "text-zinc-900",
+      bg: "bg-white",
+      columnRule: "rgba(0, 0, 0, 0.1)",
+      hover: "hover:bg-zinc-100",
     },
     dark: {
-      container: 'bg-zinc-900 text-zinc-100',
-      text: 'text-zinc-100',
-      bg: 'bg-zinc-900',
-      columnRule: 'rgba(255, 255, 255, 0.1)',
-      hover: 'hover:bg-zinc-800',
+      container: "bg-zinc-900 text-zinc-100",
+      text: "text-zinc-100",
+      bg: "bg-zinc-900",
+      columnRule: "rgba(255, 255, 255, 0.1)",
+      hover: "hover:bg-zinc-800",
     },
     sepia: {
-      container: 'bg-amber-50 text-amber-900',
-      text: 'text-amber-900',
-      bg: 'bg-amber-50',
-      columnRule: 'rgba(180, 83, 9, 0.15)',
-      hover: 'hover:bg-amber-100',
+      container: "bg-amber-50 text-amber-900",
+      text: "text-amber-900",
+      bg: "bg-amber-50",
+      columnRule: "rgba(180, 83, 9, 0.15)",
+      hover: "hover:bg-amber-100",
     },
     ivory: {
-      container: 'bg-[#FFFFF0] text-[#5D4E37]',
-      text: 'text-[#5D4E37]',
-      bg: 'bg-[#FFFFF0]',
-      columnRule: 'rgba(93, 78, 55, 0.15)',
-      hover: 'hover:bg-[#F5F5DC]',
+      container: "bg-[#FFFFF0] text-[#5D4E37]",
+      text: "text-[#5D4E37]",
+      bg: "bg-[#FFFFF0]",
+      columnRule: "rgba(93, 78, 55, 0.15)",
+      hover: "hover:bg-[#F5F5DC]",
     },
   };
   return styles[theme];
@@ -73,16 +78,16 @@ const getThemeStyle = (theme: Theme) => {
  * 본문에서 HTML 제목 태그 제거 (h1~h6)
  */
 const stripHeaderTags = (content: string): string => {
-  if (!content) return '';
-  return content.replace(/<h[1-6][^>]*>.*?<\/h[1-6]>/gi, '');
+  if (!content) return "";
+  return content.replace(/<h[1-6][^>]*>.*?<\/h[1-6]>/gi, "");
 };
 
 /**
  * 줄바꿈 처리 (\n -> <br />)
  */
 const formatContent = (content: string): string => {
-  if (!content) return '';
-  return content.replace(/\n/g, '<br />');
+  if (!content) return "";
+  return content.replace(/\n/g, "<br />");
 };
 
 export const ChapterViewerPage = () => {
@@ -92,7 +97,7 @@ export const ChapterViewerPage = () => {
   const { theme, setTheme } = useThemeStore();
 
   // 뷰어 설정 상태 (기존 네이밍 유지)
-  const [viewMode, setViewMode] = useState<ViewMode>('scroll');
+  const [viewMode, setViewMode] = useState<ViewMode>("scroll");
   const [fontSize, setFontSize] = useState(18);
   const [lineHeight, setLineHeight] = useState<LineHeight>(1.8);
   const [currentPage, setCurrentPage] = useState(0);
@@ -101,22 +106,24 @@ export const ChapterViewerPage = () => {
   const [showTOC, setShowTOC] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  // 로그인 필수 체크
+  const { openAuthModal } = useAuthModalStore();
+
+  // 로그인 필수 체크 - 현재 위치에서 모달만 띄우기
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: `/chapters/${id}` } });
+      openAuthModal(`/chapters/${id}`);
     }
-  }, [isAuthenticated, id, navigate]);
+  }, [isAuthenticated, id, openAuthModal]);
 
   // 데이터 페칭
-  const { data: chapter, isLoading } = usePublicChapter(id || '');
-  const { data: chapters } = usePublicChapters(chapter?.workId || '');
-  const { data: work } = usePublicWork(chapter?.workId || '');
+  const { data: chapter, isLoading } = usePublicChapter(id || "");
+  const { data: chapters } = usePublicChapters(chapter?.workId || "");
+  const { data: work } = usePublicWork(chapter?.workId || "");
   const saveBookmark = useSaveBookmark();
 
   // 본문에서 제목 태그 제거 + 줄바꿈 처리
   const cleanContent = useMemo(() => {
-    const stripped = stripHeaderTags(chapter?.content || '');
+    const stripped = stripHeaderTags(chapter?.content || "");
     return formatContent(stripped);
   }, [chapter?.content]);
 
@@ -133,8 +140,14 @@ export const ChapterViewerPage = () => {
       : null;
 
   // cleanContent에서 페이지 모드용 콘텐츠 분할 (HTML 태그 제거된 콘텐츠 기반)
-  const rawContent = useMemo(() => stripHeaderTags(chapter?.content || ''), [chapter?.content]);
-  const contentPages = useMemo(() => rawContent.split('\n\n').filter(Boolean), [rawContent]);
+  const rawContent = useMemo(
+    () => stripHeaderTags(chapter?.content || ""),
+    [chapter?.content]
+  );
+  const contentPages = useMemo(
+    () => rawContent.split("\n\n").filter(Boolean),
+    [rawContent]
+  );
   // 2단 레이아웃: 한 페이지에 2개의 문단 표시
   const totalPages = Math.max(1, Math.ceil(contentPages.length / 2));
 
@@ -158,7 +171,7 @@ export const ChapterViewerPage = () => {
   // 읽은 위치 저장 (throttle + ref로 중복 호출 방지)
   const lastSavedPosition = useRef<number>(0);
   useEffect(() => {
-    if (!id || !isAuthenticated || viewMode !== 'scroll') return;
+    if (!id || !isAuthenticated || viewMode !== "scroll") return;
 
     let timeoutId: ReturnType<typeof setTimeout>;
     const handleScroll = () => {
@@ -175,9 +188,9 @@ export const ChapterViewerPage = () => {
       timeoutId = setTimeout(handleScroll, 1000);
     };
 
-    window.addEventListener('scroll', debouncedScroll);
+    window.addEventListener("scroll", debouncedScroll);
     return () => {
-      window.removeEventListener('scroll', debouncedScroll);
+      window.removeEventListener("scroll", debouncedScroll);
       clearTimeout(timeoutId);
     };
   }, [id, isAuthenticated, viewMode, saveBookmark]);
@@ -187,7 +200,12 @@ export const ChapterViewerPage = () => {
 
   if (isLoading) {
     return (
-      <div className={cn('min-h-screen flex items-center justify-center', styles.container)}>
+      <div
+        className={cn(
+          "min-h-screen flex items-center justify-center",
+          styles.container
+        )}
+      >
         <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full" />
       </div>
     );
@@ -195,27 +213,52 @@ export const ChapterViewerPage = () => {
 
   if (!chapter) {
     return (
-      <div className={cn('min-h-screen flex items-center justify-center', styles.container)}>
+      <div
+        className={cn(
+          "min-h-screen flex items-center justify-center",
+          styles.container
+        )}
+      >
         <p className={styles.text}>챕터를 찾을 수 없습니다.</p>
       </div>
     );
   }
 
   return (
-    <div className={cn('min-h-screen transition-colors duration-300', styles.container)}>
+    <div
+      className={cn(
+        "min-h-screen transition-colors duration-300",
+        styles.container
+      )}
+    >
       {/* ====== 미니멀 상단 헤더 ====== */}
-      <header className={cn('fixed top-0 left-0 right-0 z-40 backdrop-blur-sm', styles.bg, 'bg-opacity-80')}>
+      <header
+        className={cn(
+          "fixed top-0 left-0 right-0 z-40 backdrop-blur-sm",
+          styles.bg,
+          "bg-opacity-80"
+        )}
+      >
         <div className="flex items-center justify-between px-3 h-12">
           {/* 좌측: TOC 토글 + 챕터 정보 */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowTOC(true)}
-              className={cn('p-2 rounded-full transition-colors', styles.hover, styles.text)}
+              className={cn(
+                "p-2 rounded-full transition-colors",
+                styles.hover,
+                styles.text
+              )}
             >
               <Menu className="h-4 w-4" />
             </button>
             {/* 챕터 정보: {번호}화 : {제목} */}
-            <span className={cn('text-sm truncate max-w-[200px] md:max-w-md', styles.text)}>
+            <span
+              className={cn(
+                "text-sm truncate max-w-[200px] md:max-w-md",
+                styles.text
+              )}
+            >
               <span className="opacity-50">{chapter.chapterNumber}화</span>
               <span className="mx-1.5 opacity-30">:</span>
               <span className="font-semibold">{chapter.title}</span>
@@ -225,11 +268,11 @@ export const ChapterViewerPage = () => {
           {/* 우측: 뷰어 모드, 댓글, 이전/다음 */}
           <div className="flex items-center gap-0.5">
             <button
-              onClick={() => setViewMode('page')}
+              onClick={() => setViewMode("page")}
               className={cn(
-                'p-2 rounded-full transition-colors',
-                viewMode === 'page'
-                  ? 'bg-purple-600 text-white'
+                "p-2 rounded-full transition-colors",
+                viewMode === "page"
+                  ? "bg-purple-600 text-white"
                   : cn(styles.hover, styles.text)
               )}
               title="책 모드"
@@ -237,11 +280,11 @@ export const ChapterViewerPage = () => {
               <BookOpen className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setViewMode('scroll')}
+              onClick={() => setViewMode("scroll")}
               className={cn(
-                'p-2 rounded-full transition-colors',
-                viewMode === 'scroll'
-                  ? 'bg-purple-600 text-white'
+                "p-2 rounded-full transition-colors",
+                viewMode === "scroll"
+                  ? "bg-purple-600 text-white"
                   : cn(styles.hover, styles.text)
               )}
               title="스크롤 모드"
@@ -252,7 +295,11 @@ export const ChapterViewerPage = () => {
             {/* 댓글 아이콘 */}
             <button
               onClick={() => navigate(`/chapters/${id}/comments`)}
-              className={cn('p-2 rounded-full transition-colors relative', styles.hover, styles.text)}
+              className={cn(
+                "p-2 rounded-full transition-colors relative",
+                styles.hover,
+                styles.text
+              )}
             >
               <MessageCircle className="h-4 w-4" />
               <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-purple-600" />
@@ -261,20 +308,28 @@ export const ChapterViewerPage = () => {
             {/* 이전/다음화 */}
             <button
               disabled={!prevChapter}
-              onClick={() => prevChapter && navigate(`/chapters/${prevChapter.id}`)}
+              onClick={() =>
+                prevChapter && navigate(`/chapters/${prevChapter.id}`)
+              }
               className={cn(
-                'p-2 rounded-full transition-colors',
-                prevChapter ? cn(styles.hover, styles.text) : 'opacity-30 cursor-not-allowed'
+                "p-2 rounded-full transition-colors",
+                prevChapter
+                  ? cn(styles.hover, styles.text)
+                  : "opacity-30 cursor-not-allowed"
               )}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               disabled={!nextChapter}
-              onClick={() => nextChapter && navigate(`/chapters/${nextChapter.id}`)}
+              onClick={() =>
+                nextChapter && navigate(`/chapters/${nextChapter.id}`)
+              }
               className={cn(
-                'p-2 rounded-full transition-colors',
-                nextChapter ? cn(styles.hover, styles.text) : 'opacity-30 cursor-not-allowed'
+                "p-2 rounded-full transition-colors",
+                nextChapter
+                  ? cn(styles.hover, styles.text)
+                  : "opacity-30 cursor-not-allowed"
               )}
             >
               <ChevronRight className="h-4 w-4" />
@@ -286,18 +341,21 @@ export const ChapterViewerPage = () => {
       {/* TOC 사이드바 */}
       <TableOfContents
         chapters={sortedChapters || []}
-        currentChapterId={id || ''}
-        workTitle={work?.title || '작품명'}
+        currentChapterId={id || ""}
+        workTitle={work?.title || "작품명"}
         isOpen={showTOC}
         onClose={() => setShowTOC(false)}
       />
 
       {/* ====== 본문 영역 (BookModeContent 구조) ====== */}
       <main className="pt-12 pb-24 min-h-screen">
-        {viewMode === 'scroll' ? (
+        {viewMode === "scroll" ? (
           /* ====== 스크롤 모드: article 구조 ====== */
           <article
-            className={cn('max-w-2xl mx-auto px-8 py-12 font-serif', styles.text)}
+            className={cn(
+              "max-w-2xl mx-auto px-8 py-12 font-serif",
+              styles.text
+            )}
             style={{
               fontSize: `${fontSize}px`,
               lineHeight,
@@ -316,9 +374,11 @@ export const ChapterViewerPage = () => {
                   onClick={goToPrevPage}
                   disabled={currentPage === 0 && !prevChapter}
                   className={cn(
-                    'flex items-center justify-start pl-4 transition-colors',
-                    currentPage > 0 || prevChapter ? styles.hover : 'cursor-default',
-                    'opacity-0 hover:opacity-100'
+                    "flex items-center justify-start pl-4 transition-colors",
+                    currentPage > 0 || prevChapter
+                      ? styles.hover
+                      : "cursor-default",
+                    "opacity-0 hover:opacity-100"
                   )}
                 >
                   <ChevronLeft className="w-8 h-8 opacity-30" />
@@ -329,9 +389,11 @@ export const ChapterViewerPage = () => {
                   onClick={goToNextPage}
                   disabled={currentPage >= totalPages - 1 && !nextChapter}
                   className={cn(
-                    'hidden md:flex items-center justify-end pr-4 transition-colors',
-                    currentPage < totalPages - 1 || nextChapter ? styles.hover : 'cursor-default',
-                    'opacity-0 hover:opacity-100'
+                    "hidden md:flex items-center justify-end pr-4 transition-colors",
+                    currentPage < totalPages - 1 || nextChapter
+                      ? styles.hover
+                      : "cursor-default",
+                    "opacity-0 hover:opacity-100"
                   )}
                 >
                   <ChevronRight className="w-8 h-8 opacity-30" />
@@ -342,7 +404,7 @@ export const ChapterViewerPage = () => {
             {/* 본문 컨테이너 (Grid 2단) - 텍스트가 앞에 */}
             <div
               className={cn(
-                'flex-1 px-8 md:px-16 py-8 font-serif overflow-hidden relative z-10 pointer-events-none',
+                "flex-1 px-8 md:px-16 py-8 font-serif overflow-hidden relative z-10 pointer-events-none",
                 styles.text
               )}
               style={{
@@ -355,7 +417,7 @@ export const ChapterViewerPage = () => {
                 <div
                   className="overflow-hidden"
                   dangerouslySetInnerHTML={{
-                    __html: formatContent(contentPages[currentPage * 2] || ''),
+                    __html: formatContent(contentPages[currentPage * 2] || ""),
                   }}
                 />
                 {/* 오른쪽 페이지 (중앙 구분선) */}
@@ -363,10 +425,12 @@ export const ChapterViewerPage = () => {
                   className="overflow-hidden hidden md:block"
                   style={{
                     borderLeft: `1px solid ${styles.columnRule}`,
-                    paddingLeft: '1.5rem',
+                    paddingLeft: "1.5rem",
                   }}
                   dangerouslySetInnerHTML={{
-                    __html: formatContent(contentPages[currentPage * 2 + 1] || ''),
+                    __html: formatContent(
+                      contentPages[currentPage * 2 + 1] || ""
+                    ),
                   }}
                 />
               </div>
@@ -374,7 +438,7 @@ export const ChapterViewerPage = () => {
 
             {/* 페이지 번호 (하단 중앙, 희미하게) */}
             <div className="text-center py-4">
-              <span className={cn('text-xs opacity-30', styles.text)}>
+              <span className={cn("text-xs opacity-30", styles.text)}>
                 {currentPage + 1} / {totalPages}
               </span>
             </div>
@@ -382,11 +446,14 @@ export const ChapterViewerPage = () => {
         )}
 
         {/* 다음화 안내 (스크롤 모드에서만) */}
-        {nextChapter && viewMode === 'scroll' && (
+        {nextChapter && viewMode === "scroll" && (
           <div className="max-w-2xl mx-auto px-8 mt-16">
             <button
               onClick={() => navigate(`/chapters/${nextChapter.id}`)}
-              className={cn('w-full py-4 text-center opacity-50 hover:opacity-100 transition-opacity', styles.text)}
+              className={cn(
+                "w-full py-4 text-center opacity-50 hover:opacity-100 transition-opacity",
+                styles.text
+              )}
             >
               <span className="text-sm">다음 화에서 계속...</span>
               <ChevronRight className="inline h-4 w-4 ml-1" />
@@ -417,7 +484,9 @@ export const ChapterViewerPage = () => {
 
               {/* 글자 크기 */}
               <div>
-                <label className="text-xs opacity-50 mb-2 block">글자 크기</label>
+                <label className="text-xs opacity-50 mb-2 block">
+                  글자 크기
+                </label>
                 <div className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
                   <button
                     onClick={() => setFontSize(Math.max(12, fontSize - 2))}
@@ -439,18 +508,24 @@ export const ChapterViewerPage = () => {
               <div>
                 <label className="text-xs opacity-50 mb-2 block">테마</label>
                 <div className="grid grid-cols-4 gap-1">
-                  {(['light', 'dark', 'sepia', 'ivory'] as Theme[]).map((t) => (
+                  {(["light", "dark", "sepia", "ivory"] as Theme[]).map((t) => (
                     <button
                       key={t}
                       onClick={() => setTheme(t)}
                       className={cn(
-                        'py-2 text-[10px] rounded-lg transition-all font-medium',
+                        "py-2 text-[10px] rounded-lg transition-all font-medium",
                         theme === t
-                          ? 'bg-purple-600 text-white scale-105'
-                          : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                          ? "bg-purple-600 text-white scale-105"
+                          : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                       )}
                     >
-                      {t === 'light' ? '화이트' : t === 'dark' ? '다크' : t === 'sepia' ? '세피아' : '아이보리'}
+                      {t === "light"
+                        ? "화이트"
+                        : t === "dark"
+                        ? "다크"
+                        : t === "sepia"
+                        ? "세피아"
+                        : "아이보리"}
                     </button>
                   ))}
                 </div>
@@ -465,10 +540,10 @@ export const ChapterViewerPage = () => {
                       key={lh}
                       onClick={() => setLineHeight(lh)}
                       className={cn(
-                        'py-2 text-xs rounded-lg transition-all font-medium',
+                        "py-2 text-xs rounded-lg transition-all font-medium",
                         lineHeight === lh
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                          ? "bg-purple-600 text-white"
+                          : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                       )}
                     >
                       {lh}
@@ -479,26 +554,28 @@ export const ChapterViewerPage = () => {
 
               {/* 뷰어 모드 */}
               <div>
-                <label className="text-xs opacity-50 mb-2 block">뷰어 모드</label>
+                <label className="text-xs opacity-50 mb-2 block">
+                  뷰어 모드
+                </label>
                 <div className="grid grid-cols-2 gap-1">
                   <button
-                    onClick={() => setViewMode('scroll')}
+                    onClick={() => setViewMode("scroll")}
                     className={cn(
-                      'py-2 text-xs rounded-lg transition-all font-medium',
-                      viewMode === 'scroll'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                      "py-2 text-xs rounded-lg transition-all font-medium",
+                      viewMode === "scroll"
+                        ? "bg-purple-600 text-white"
+                        : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                     )}
                   >
                     스크롤
                   </button>
                   <button
-                    onClick={() => setViewMode('page')}
+                    onClick={() => setViewMode("page")}
                     className={cn(
-                      'py-2 text-xs rounded-lg transition-all font-medium',
-                      viewMode === 'page'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                      "py-2 text-xs rounded-lg transition-all font-medium",
+                      viewMode === "page"
+                        ? "bg-purple-600 text-white"
+                        : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                     )}
                   >
                     페이지

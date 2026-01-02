@@ -19,6 +19,7 @@ import LibraryPage from '@/pages/LibraryPage';
 // 인증 페이지
 import LoginPage from '@/pages/Auth/LoginPage';
 import RegisterPage from '@/pages/Auth/RegisterPage';
+import OAuth2Callback from '@/pages/Auth/OAuth2Callback';
 
 // 작가 페이지
 import AuthorDashboardPage from '@/pages/Author/AuthorDashboardPage';
@@ -68,6 +69,7 @@ function App() {
           {/* 인증 페이지 (헤더 없음) */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/oauth2/callback" element={<OAuth2Callback />} />
 
           {/* 작가 페이지 (인증 필요) */}
           <Route path="/author" element={

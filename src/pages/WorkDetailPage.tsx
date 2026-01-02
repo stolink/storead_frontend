@@ -3,7 +3,7 @@
  * 표지, 줄거리, 챕터 리스트, 태그, 정렬
  */
 import { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Star, Bookmark, BookOpen, User, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePublicWork } from "@/hooks/useDiscovery";
@@ -15,6 +15,7 @@ import {
 import { useWorkLike, useToggleWorkLike } from "@/hooks/useWorkLike";
 import { useReadingProgress } from "@/hooks/useBookmark";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useThemeStore, backgroundThemeClasses } from "@/stores/useTheme";
 
 // 장르 레이블 매핑
@@ -34,6 +35,7 @@ export const WorkDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const { openAuthModal } = useAuthModalStore();
   const { theme } = useThemeStore();
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
@@ -75,11 +77,24 @@ export const WorkDetailPage = () => {
   };
 
   const handleContinueReading = () => {
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
     if (readingProgress?.lastChapterId) {
       navigate(`/chapters/${readingProgress.lastChapterId}`);
     } else if (chapters && chapters.length > 0) {
       navigate(`/chapters/${chapters[0].id}`);
     }
+  };
+
+  // 챕터 클릭 핸들러 - 로그인 체크
+  const handleChapterClick = (chapterId: string) => {
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+    navigate(`/chapters/${chapterId}`);
   };
 
   if (workLoading) {
@@ -139,10 +154,11 @@ export const WorkDetailPage = () => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`w-5 h-5 ${star <= Math.round(avgRating)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-zinc-300"
-                        }`}
+                      className={`w-5 h-5 ${
+                        star <= Math.round(avgRating)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-zinc-300"
+                      }`}
                     />
                   ))}
                 </div>
@@ -177,14 +193,16 @@ export const WorkDetailPage = () => {
                       size="lg"
                       variant={isInLibrary ? "secondary" : "outline"}
                       onClick={handleLibraryToggle}
-                      className={`px-6 ${isInLibrary
-                        ? "border-purple-600 bg-purple-50 text-purple-600"
-                        : "border-zinc-300 hover:border-purple-600"
-                        }`}
+                      className={`px-6 ${
+                        isInLibrary
+                          ? "border-purple-600 bg-purple-50 text-purple-600"
+                          : "border-zinc-300 hover:border-purple-600"
+                      }`}
                     >
                       <Bookmark
-                        className={`w-5 h-5 mr-2 ${isInLibrary ? "fill-purple-600" : ""
-                          }`}
+                        className={`w-5 h-5 mr-2 ${
+                          isInLibrary ? "fill-purple-600" : ""
+                        }`}
                       />
                       {isInLibrary ? "서재에 담김" : "내 서재에 담기"}
                     </Button>
@@ -192,14 +210,16 @@ export const WorkDetailPage = () => {
                       size="lg"
                       variant="outline"
                       onClick={handleWorkLikeToggle}
-                      className={`px-6 ${likeStatus?.isLiked
-                        ? "border-red-500 bg-red-50 text-red-500"
-                        : "border-zinc-300 hover:border-red-500"
-                        }`}
+                      className={`px-6 ${
+                        likeStatus?.isLiked
+                          ? "border-red-500 bg-red-50 text-red-500"
+                          : "border-zinc-300 hover:border-red-500"
+                      }`}
                     >
                       <Heart
-                        className={`w-5 h-5 mr-2 ${likeStatus?.isLiked ? "fill-red-500" : ""
-                          }`}
+                        className={`w-5 h-5 mr-2 ${
+                          likeStatus?.isLiked ? "fill-red-500" : ""
+                        }`}
                       />
                       {likeStatus?.likeCount || 0}
                     </Button>
@@ -226,19 +246,21 @@ export const WorkDetailPage = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setSortOrder("asc")}
-                className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === "asc"
-                  ? "bg-purple-600 text-white"
-                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  }`}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  sortOrder === "asc"
+                    ? "bg-purple-600 text-white"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+                }`}
               >
                 1화부터 보기
               </button>
               <button
                 onClick={() => setSortOrder("desc")}
-                className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === "desc"
-                  ? "bg-purple-600 text-white"
-                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  }`}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  sortOrder === "desc"
+                    ? "bg-purple-600 text-white"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+                }`}
               >
                 최신화부터 보기
               </button>
@@ -259,19 +281,21 @@ export const WorkDetailPage = () => {
                 const isRead = false; // TODO: 읽은 챕터 표시
 
                 return (
-                  <Link
+                  <button
                     key={chapter.id}
-                    to={`/chapters/${chapter.id}`}
-                    className={`block p-4 rounded-lg border transition-colors ${isRead
-                      ? "border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
-                      : "border-zinc-200 hover:border-purple-600 hover:bg-purple-50"
-                      }`}
+                    onClick={() => handleChapterClick(chapter.id)}
+                    className={`w-full text-left block p-4 rounded-lg border transition-colors ${
+                      isRead
+                        ? "border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
+                        : "border-zinc-200 hover:border-purple-600 hover:bg-purple-50"
+                    }`}
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-4">
                         <span
-                          className={`text-lg font-semibold ${isRead ? "text-zinc-400" : "text-purple-600"
-                            }`}
+                          className={`text-lg font-semibold ${
+                            isRead ? "text-zinc-400" : "text-purple-600"
+                          }`}
                         >
                           제{chapter.chapterNumber}화
                         </span>
@@ -295,7 +319,7 @@ export const WorkDetailPage = () => {
                         </span>
                       </div>
                     </div>
-                  </Link>
+                  </button>
                 );
               })}
             </div>

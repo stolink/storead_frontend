@@ -83,6 +83,17 @@ export const WorkDetailPage = () => {
     }
     if (readingProgress?.lastChapterId) {
       navigate(`/chapters/${readingProgress.lastChapterId}`);
+    } else if (id) {
+      // API 읽기 진행도가 없으면 로컬 스토리지 확인
+      const localLastChapter = localStorage.getItem(`lastChapter_${id}`);
+      if (localLastChapter) {
+        navigate(`/chapters/${localLastChapter}`);
+        return;
+      }
+      // 로컬 스토리지에도 없으면 첫 화로 이동
+      if (chapters && chapters.length > 0) {
+        navigate(`/chapters/${chapters[0].id}`);
+      }
     } else if (chapters && chapters.length > 0) {
       navigate(`/chapters/${chapters[0].id}`);
     }

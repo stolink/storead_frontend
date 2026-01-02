@@ -46,11 +46,17 @@ export const useAddToLibrary = () => {
 
   return useMutation({
     mutationFn: async (workId: string) => {
+      console.log('[DEBUG] Adding to library:', workId);
       const { data } = await api.post(`/library/${workId}`);
-      return data;
+      console.log('[DEBUG] Add to library response:', data);
+      // 백엔드 응답 구조: { code, status, data: {...} }
+      return data.data || data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
+    },
+    onError: (error) => {
+      console.error('[DEBUG] Add to library failed:', error);
     },
   });
 };
@@ -64,24 +70,24 @@ export const useRemoveFromLibrary = () => {
 
   return useMutation({
     mutationFn: async (workId: string) => {
+      console.log('[DEBUG] Removing from library:', workId);
       await api.delete(`/library/${workId}`);
     },
     // 낙관적 업데이트
     onMutate: async (workId) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
-      const previousLibrary = queryClient.getQueryData<any>(["library"]);
+      const previousLibrary = queryClient.getQueryData<Library[]>(["library"]);
 
-      queryClient.setQueryData<any>(["library"], (old: any) => {
-        if (!old?.items) return old;
-        return {
-          ...old,
-          items: old.items.filter((item: Library) => item.workId !== workId),
-        };
+      // 배열 형태로 낙관적 업데이트
+      queryClient.setQueryData<Library[]>(["library"], (old) => {
+        if (!old || !Array.isArray(old)) return old;
+        return old.filter((item: Library) => item.workId !== workId);
       });
 
       return { previousLibrary };
     },
     onError: (_err, _workId, context) => {
+      console.error('[DEBUG] Remove from library failed:', _err);
       if (context?.previousLibrary) {
         queryClient.setQueryData(["library"], context.previousLibrary);
       }

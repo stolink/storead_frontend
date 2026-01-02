@@ -127,6 +127,13 @@ export const ChapterViewerPage = () => {
     return formatContent(stripped);
   }, [chapter?.content]);
 
+  // 마지막 읽은 챕터 저장 (로컬 스토리지) - 이어서 읽기용
+  useEffect(() => {
+    if (id && chapter?.workId && isAuthenticated) {
+      localStorage.setItem(`lastChapter_${chapter.workId}`, id);
+    }
+  }, [id, chapter?.workId, isAuthenticated]);
+
   // 현재/이전/다음 챕터 찾기 (기존 로직 유지)
   const sortedChapters = chapters?.sort(
     (a, b) => a.chapterNumber - b.chapterNumber
@@ -240,8 +247,9 @@ export const ChapterViewerPage = () => {
         )}
       >
         <div className="flex items-center justify-between px-3 h-12">
-          {/* 좌측: TOC 토글 + 챕터 정보 */}
+          {/* 좌측: 홈(작품 페이지) + TOC 토글 + 챕터 정보 */}
           <div className="flex items-center gap-1">
+            {/* 목차 사이드바 토글 */}
             <button
               onClick={() => setShowTOC(true)}
               className={cn(
@@ -522,10 +530,10 @@ export const ChapterViewerPage = () => {
                       {t === "light"
                         ? "화이트"
                         : t === "dark"
-                        ? "다크"
-                        : t === "sepia"
-                        ? "세피아"
-                        : "아이보리"}
+                          ? "다크"
+                          : t === "sepia"
+                            ? "세피아"
+                            : "아이보리"}
                     </button>
                   ))}
                 </div>

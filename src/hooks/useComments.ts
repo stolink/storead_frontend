@@ -101,10 +101,15 @@ export const useCreateReply = () => {
       parentId: string;
       content: string;
     }) => {
+      console.log('[DEBUG] Creating reply:', { parentId, content });
       const { data } = await api.post(`/comments/${parentId}/replies`, {
         content,
       });
+      console.log('[DEBUG] Reply created:', data);
       return data;
+    },
+    onError: (error) => {
+      console.error('[DEBUG] Reply creation failed:', error);
     },
     onSuccess: (_data, { parentId }) => {
       queryClient.invalidateQueries({ queryKey: ["replies", parentId] });

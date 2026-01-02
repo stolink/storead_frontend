@@ -2,12 +2,13 @@
  * 작품 좋아요 관련 TanStack Query 훅
  * 작품 전체에 대한 단일 좋아요 (유저당 1회)
  * 
- * ⚠️ 주의: 현재 백엔드에 /api/works/{workId}/like API가 구현되어 있지 않음
- * 백엔드에는 /api/comments/{id}/like (댓글 좋아요)만 존재
+ * 백엔드 API:
+ * - POST /api/works/{id}/like: 좋아요 토글
+ * - GET /api/works/{id}/like: 현재 좋아요 상태 및 총 좋아요 수 조회
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/client';
-import { useAuthStore } from '@/stores/useAuthStore';
+// import { useAuthStore } from '@/stores/useAuthStore';
 
 interface WorkLikeStatus {
     isLiked: boolean;
@@ -16,68 +17,60 @@ interface WorkLikeStatus {
 
 /**
  * 작품 좋아요 상태 조회
- * GET /api/works/{workId}/like
- * ⚠️ 백엔드 미구현 - 현재 기본값 반환
+ * GET /api/works/{id}/like
  */
 export const useWorkLike = (workId: string) => {
-    const { isAuthenticated } = useAuthStore();
+    // const { isAuthenticated } = useAuthStore();
 
     return useQuery<WorkLikeStatus>({
         queryKey: ['workLike', workId],
         queryFn: async () => {
             try {
                 const { data } = await api.get(`/works/${workId}/like`);
-                return data.data || { isLiked: false, likeCount: 0 };
+                // console.log('[DEBUG] Work like status response:', data);
+                const result = data.data || data;
+                return {
+                    isLiked: result.isLiked ?? false,
+                    likeCount: result.likeCount ?? 0,
+                };
             } catch (error) {
-                // 404나 500 에러 시 기본값 반환 (백엔드 미구현 대응)
-                console.warn('[WARN] Work like API not available:', error);
+                // console.warn('[WARN] Work like API error:', error);
                 return { isLiked: false, likeCount: 0 };
             }
         },
-        enabled: !!workId && isAuthenticated,
-        retry: false, // 실패 시 재시도 안함
+        enabled: !!workId,
+        staleTime: 0,
+        refetchOnMount: true, // 페이지 재진입 시 항상 최신 상태 확인
     });
 };
 
 /**
  * 작품 좋아요 토글
- * POST /api/works/{workId}/like (toggle)
- * ⚠️ 백엔드 미구현 - 호출 시 에러 발생 가능
+ * POST /api/works/{id}/like
  */
 export const useToggleWorkLike = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (workId: string) => {
-            console.warn('[WARN] Work like toggle API may not be available');
+            // console.log('[DEBUG] Toggling work like:', workId);
             const { data } = await api.post(`/works/${workId}/like`);
-            return data.data || data;
+            // console.log('[DEBUG] Toggle work like response:', data);
+            const responseData = data.data || data;
+            return { workId, ...responseData }; // workId를 반환 데이터에 포함
         },
-        // 낙관적 업데이트
-        onMutate: async (workId) => {
-            await queryClient.cancelQueries({ queryKey: ['workLike', workId] });
-            const previousStatus = queryClient.getQueryData<WorkLikeStatus>(['workLike', workId]);
-
-            if (previousStatus) {
-                queryClient.setQueryData<WorkLikeStatus>(['workLike', workId], {
-                    isLiked: !previousStatus.isLiked,
-                    likeCount: previousStatus.isLiked
-                        ? previousStatus.likeCount - 1
-                        : previousStatus.likeCount + 1,
-                });
-            }
-
-            return { previousStatus };
-        },
-        onError: (err, workId, context) => {
-            console.error('[DEBUG] Work like toggle failed (API may not be implemented):', err);
-            if (context?.previousStatus) {
-                queryClient.setQueryData(['workLike', workId], context.previousStatus);
-            }
-        },
-        onSettled: (_, __, workId) => {
+        onSuccess: (_data, variables) => {
+            // 서버 응답으로 캐시 즉시 업데이트 (낙관적 업데이트 제거)
+            // MutationFn이 반환한 데이터(_data)에 workId가 있다고 보장하기 어려우므로 variables 사용
+            const workId = variables;
             queryClient.invalidateQueries({ queryKey: ['workLike', workId] });
         },
+        onSettled: (_data, _error, variables) => {
+            const workId = variables;
+            // work 쿼리도 무효화하여 discovery 데이터 등과 동기화
+            queryClient.invalidateQueries({ queryKey: ['work', workId] });
+            queryClient.invalidateQueries({ queryKey: ['discovery'] });
+        }
     });
 };
 

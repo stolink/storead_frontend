@@ -42,11 +42,15 @@ export const WorkDetailPage = () => {
   const { data: work, isLoading: workLoading } = usePublicWork(id || "");
   const chapters = work?.chapters;
   const { data: readingProgress } = useReadingProgress(id || "");
+
+  // 수정: work.isInLibrary는 초기 로딩 시 유용하지만, 
+  // mutation(추가/삭제) 후에는 useIsInLibrary(queryKey: ['library'])가 더 정확한 상태를 반영함.
+  // work.isInLibrary가 stale 상태로 남아서 UI 업데이트를 막는 문제를 해결하기 위해 libraryHookResult를 우선 사용.
   const isInLibrary = useIsInLibrary(id || "");
   const addToLibrary = useAddToLibrary();
   const removeFromLibrary = useRemoveFromLibrary();
 
-  // 작품 좋아요
+  // 작품 좋아요 (항상 최신 상태 조회)
   const { data: likeStatus } = useWorkLike(id || "");
   const toggleWorkLike = useToggleWorkLike();
 
@@ -165,11 +169,10 @@ export const WorkDetailPage = () => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`w-5 h-5 ${
-                        star <= Math.round(avgRating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-zinc-300"
-                      }`}
+                      className={`w-5 h-5 ${star <= Math.round(avgRating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-zinc-300"
+                        }`}
                     />
                   ))}
                 </div>
@@ -204,16 +207,14 @@ export const WorkDetailPage = () => {
                       size="lg"
                       variant={isInLibrary ? "secondary" : "outline"}
                       onClick={handleLibraryToggle}
-                      className={`px-6 ${
-                        isInLibrary
-                          ? "border-purple-600 bg-purple-50 text-purple-600"
-                          : "border-zinc-300 hover:border-purple-600"
-                      }`}
+                      className={`px-6 ${isInLibrary
+                        ? "border-purple-600 bg-purple-50 text-purple-600"
+                        : "border-zinc-300 hover:border-purple-600"
+                        }`}
                     >
                       <Bookmark
-                        className={`w-5 h-5 mr-2 ${
-                          isInLibrary ? "fill-purple-600" : ""
-                        }`}
+                        className={`w-5 h-5 mr-2 ${isInLibrary ? "fill-purple-600" : ""
+                          }`}
                       />
                       {isInLibrary ? "서재에 담김" : "내 서재에 담기"}
                     </Button>
@@ -221,16 +222,14 @@ export const WorkDetailPage = () => {
                       size="lg"
                       variant="outline"
                       onClick={handleWorkLikeToggle}
-                      className={`px-6 ${
-                        likeStatus?.isLiked
-                          ? "border-red-500 bg-red-50 text-red-500"
-                          : "border-zinc-300 hover:border-red-500"
-                      }`}
+                      className={`px-6 ${likeStatus?.isLiked
+                        ? "border-red-500 bg-red-50 text-red-500"
+                        : "border-zinc-300 hover:border-red-500"
+                        }`}
                     >
                       <Heart
-                        className={`w-5 h-5 mr-2 ${
-                          likeStatus?.isLiked ? "fill-red-500" : ""
-                        }`}
+                        className={`w-5 h-5 mr-2 ${likeStatus?.isLiked ? "fill-red-500" : ""
+                          }`}
                       />
                       {likeStatus?.likeCount || 0}
                     </Button>
@@ -257,21 +256,19 @@ export const WorkDetailPage = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setSortOrder("asc")}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  sortOrder === "asc"
-                    ? "bg-purple-600 text-white"
-                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                }`}
+                className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === "asc"
+                  ? "bg-purple-600 text-white"
+                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+                  }`}
               >
                 1화부터 보기
               </button>
               <button
                 onClick={() => setSortOrder("desc")}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  sortOrder === "desc"
-                    ? "bg-purple-600 text-white"
-                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                }`}
+                className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === "desc"
+                  ? "bg-purple-600 text-white"
+                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+                  }`}
               >
                 최신화부터 보기
               </button>
@@ -295,18 +292,16 @@ export const WorkDetailPage = () => {
                   <button
                     key={chapter.id}
                     onClick={() => handleChapterClick(chapter.id)}
-                    className={`w-full text-left block p-4 rounded-lg border transition-colors ${
-                      isRead
-                        ? "border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
-                        : "border-zinc-200 hover:border-purple-600 hover:bg-purple-50"
-                    }`}
+                    className={`w-full text-left block p-4 rounded-lg border transition-colors ${isRead
+                      ? "border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
+                      : "border-zinc-200 hover:border-purple-600 hover:bg-purple-50"
+                      }`}
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-4">
                         <span
-                          className={`text-lg font-semibold ${
-                            isRead ? "text-zinc-400" : "text-purple-600"
-                          }`}
+                          className={`text-lg font-semibold ${isRead ? "text-zinc-400" : "text-purple-600"
+                            }`}
                         >
                           제{chapter.chapterNumber}화
                         </span>

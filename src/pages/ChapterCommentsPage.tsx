@@ -2,14 +2,14 @@
  * 챕터 댓글 전용 페이지
  * 대댓글, 좋아요, 정렬(좋아요순/최신순) 지원
  */
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Send, Heart, Loader2 } from 'lucide-react';
+import { ChevronLeft, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { CommentItemView } from '@/components/comments/CommentItemView';
 import { usePublicChapter, usePublicWork } from '@/hooks/useDiscovery';
-import { useComments, useCreateComment, useToggleCommentLike } from '@/hooks/useComments';
+import { useComments, useCreateComment, useCreateReply, useToggleCommentLike } from '@/hooks/useComments';
 import { useAuthStore } from '@/stores/useAuthStore';
 import {
     useThemeStore,
@@ -20,7 +20,6 @@ import {
     dividerThemeClasses,
 } from '@/stores/useTheme';
 import { cn } from '@/lib/utils';
-import type { Comment } from '@/types';
 
 type SortBy = 'latest' | 'popular';
 
@@ -40,6 +39,7 @@ export const ChapterCommentsPage = () => {
     const { data: work } = usePublicWork(chapter?.workId || '');
     const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useComments(id || '');
     const createComment = useCreateComment();
+    const createReply = useCreateReply();
     const toggleLike = useToggleCommentLike();
 
     // 댓글 평탄화 및 정렬
@@ -73,110 +73,42 @@ export const ChapterCommentsPage = () => {
         }
     };
 
-    // 대댓글 작성
-    const handleSubmitReply = async (parentId: string) => {
-        if (!replyContent.trim() || !isAuthenticated || !id) return;
+    // 대댓글 작성 (useCallback으로 안정화)
+    // ✅ useCreateReply 훅을 사용하여 올바른 엔드포인트(POST /comments/{parentId}/replies) 호출
+    const handleSubmitReply = useCallback(async (parentId: string) => {
+        console.log('[DEBUG] handleSubmitReply called:', { parentId, replyContent, isAuthenticated });
+        if (!replyContent.trim() || !isAuthenticated) {
+            console.log('[DEBUG] Reply skipped - validation failed');
+            return;
+        }
         try {
-            await createComment.mutateAsync({
-                chapterId: id,
-                data: { content: replyContent.trim(), parentId },
+            console.log('[DEBUG] Calling createReply.mutateAsync...');
+            await createReply.mutateAsync({
+                parentId,
+                content: replyContent.trim(),
             });
+            console.log('[DEBUG] createReply.mutateAsync completed');
             setReplyContent('');
             setReplyTo(null);
         } catch (error) {
             console.error('대댓글 작성 실패:', error);
         }
-    };
+    }, [replyContent, isAuthenticated, createReply]);
 
-    // 상대 시간 계산
-    const getRelativeTime = (date: string) => {
-        const now = new Date();
-        const commentDate = new Date(date);
-        const diffMs = now.getTime() - commentDate.getTime();
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMins / 60);
-        const diffDays = Math.floor(diffHours / 24);
+    // 좋아요 토글 핸들러 (useCallback으로 안정화)
+    const handleToggleLike = useCallback((commentId: string) => {
+        toggleLike.mutate(commentId);
+    }, [toggleLike]);
 
-        if (diffMins < 1) return '방금 전';
-        if (diffMins < 60) return `${diffMins}분 전`;
-        if (diffHours < 24) return `${diffHours}시간 전`;
-        if (diffDays < 7) return `${diffDays}일 전`;
-        return commentDate.toLocaleDateString('ko-KR');
-    };
+    // 답글 대상 설정 핸들러 (useCallback으로 안정화)
+    const handleSetReplyTo = useCallback((commentId: string | null) => {
+        setReplyTo(commentId);
+    }, []);
 
-    // 댓글 아이템 렌더링
-    const CommentItemView = ({ comment, isReply = false }: { comment: Comment; isReply?: boolean }) => {
-        const replies = allComments.filter((c) => c.parentId === comment.id);
-
-        return (
-            <div className={cn('py-4', isReply && 'ml-8 mt-2')}>
-                <div className="flex items-start gap-3">
-                    <Avatar className="h-8 w-8">
-                        <AvatarImage src={comment.author?.profileImageUrl} />
-                        <AvatarFallback>{comment.author?.nickname?.charAt(0) || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-sm">{comment.author?.nickname || '익명'}</span>
-                            <span className="text-xs opacity-50">{getRelativeTime(comment.createdAt)}</span>
-                        </div>
-                        <p className="text-sm whitespace-pre-wrap break-words">{comment.content}</p>
-
-                        {/* 액션 버튼 */}
-                        <div className="flex items-center gap-4 mt-2">
-                            <button
-                                onClick={() => toggleLike.mutate(comment.id)}
-                                className={cn(
-                                    'flex items-center gap-1 text-xs transition-colors',
-                                    comment.isLiked ? 'text-red-500' : 'opacity-50 hover:opacity-100'
-                                )}
-                            >
-                                <Heart className={cn('h-4 w-4', comment.isLiked && 'fill-current')} />
-                                <span>{comment.likeCount}</span>
-                            </button>
-                            {!isReply && (
-                                <button
-                                    onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-                                    className="text-xs opacity-50 hover:opacity-100"
-                                >
-                                    답글
-                                </button>
-                            )}
-                        </div>
-
-                        {/* 대댓글 입력 */}
-                        {replyTo === comment.id && (
-                            <div className="mt-3 flex gap-2">
-                                <Textarea
-                                    value={replyContent}
-                                    onChange={(e) => setReplyContent(e.target.value)}
-                                    placeholder="답글을 입력하세요..."
-                                    className="min-h-[60px] text-sm"
-                                />
-                                <div className="flex flex-col gap-1">
-                                    <Button size="sm" onClick={() => handleSubmitReply(comment.id)}>
-                                        등록
-                                    </Button>
-                                    <Button size="sm" variant="ghost" onClick={() => setReplyTo(null)}>
-                                        취소
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 대댓글 목록 */}
-                        {replies.length > 0 && (
-                            <div className={cn('border-l-2 mt-2', dividerClass)}>
-                                {replies.map((reply) => (
-                                    <CommentItemView key={reply.id} comment={reply} isReply />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    };
+    // 답글 내용 변경 핸들러 (useCallback으로 안정화)
+    const handleReplyContentChange = useCallback((content: string) => {
+        setReplyContent(content);
+    }, []);
 
     return (
         <div className={cn('min-h-screen transition-colors', bgClass)}>
@@ -229,7 +161,18 @@ export const ChapterCommentsPage = () => {
                         </div>
                     ) : (
                         sortedComments.map((comment) => (
-                            <CommentItemView key={comment.id} comment={comment} />
+                            <CommentItemView
+                                key={comment.id}
+                                comment={comment}
+                                replyToId={replyTo}
+                                replyContent={replyContent}
+                                allComments={allComments}
+                                dividerClass={dividerClass}
+                                onToggleLike={handleToggleLike}
+                                onSetReplyTo={handleSetReplyTo}
+                                onReplyContentChange={handleReplyContentChange}
+                                onSubmitReply={handleSubmitReply}
+                            />
                         ))
                     )}
                 </div>

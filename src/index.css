@@ -741,63 +741,7 @@
   }
 }
 
-/* Animations from Stolink */
-@keyframes softAppear {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes lightShimmer {
-
-  0%,
-  100% {
-    opacity: 0;
-  }
-
-  50% {
-    opacity: 0.08;
-  }
-}
-
-/* Common Utility Classes */
-.interactive-light-hover {
-  position: relative;
-  overflow: hidden;
-}
-
-.interactive-light-hover::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-      rgba(255, 255, 255, 0.06),
-      transparent 40%);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.interactive-light-hover:hover::before {
-  opacity: 1;
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 4px;
-}
 
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground) / 0.3);

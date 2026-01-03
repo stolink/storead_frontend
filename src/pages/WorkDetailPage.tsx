@@ -83,7 +83,7 @@ export const WorkDetailPage = () => {
 
   const handleContinueReading = () => {
     if (!isAuthenticated) {
-      openAuthModal();
+      openAuthModal(window.location.pathname);
       return;
     }
     if (readingProgress?.lastChapterId) {
@@ -107,7 +107,7 @@ export const WorkDetailPage = () => {
   // 챕터 클릭 핸들러 - 로그인 체크
   const handleChapterClick = (chapterId: string) => {
     if (!isAuthenticated) {
-      openAuthModal();
+      openAuthModal(window.location.pathname);
       return;
     }
     navigate(`/chapters/${chapterId}`);
@@ -198,7 +198,7 @@ export const WorkDetailPage = () => {
                   variant={isInLibrary ? "secondary" : "outline"}
                   onClick={() => {
                     if (!isAuthenticated) {
-                      openAuthModal();
+                      openAuthModal(window.location.pathname);
                       return;
                     }
                     handleLibraryToggle();
@@ -219,7 +219,7 @@ export const WorkDetailPage = () => {
                   variant="outline"
                   onClick={() => {
                     if (!isAuthenticated) {
-                      openAuthModal();
+                      openAuthModal(window.location.pathname);
                       return;
                     }
                     handleWorkLikeToggle();

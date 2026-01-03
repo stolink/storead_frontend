@@ -73,15 +73,16 @@ export function AuthCard({
 
   const onGoogleLogin = () => {
     // 현재 경로 저장 (로그인 후 돌아올 위치) - 쿼리 파라미터 포함
-    localStorage.setItem(
-      "oauth_redirect_path",
-      window.location.pathname + window.location.search
-    );
+    const currentPath = window.location.pathname + window.location.search;
+    localStorage.setItem("oauth_redirect_path", currentPath);
 
     const API_URL =
       import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api";
     const BACKEND_URL = API_URL.replace(/\/api\/?$/, "");
-    window.location.href = `${BACKEND_URL}/oauth2/authorization/google`;
+
+    // state 파라미터에 리다이렉트 경로 추가 (URL 인코딩)
+    const state = encodeURIComponent(currentPath);
+    window.location.href = `${BACKEND_URL}/oauth2/authorization/google?state=${state}`;
   };
 
   const handleApiError = (error: unknown, defaultMsg: string) => {

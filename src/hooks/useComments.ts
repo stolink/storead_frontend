@@ -123,6 +123,30 @@ export const useCreateReply = () => {
   });
 };
 
+const updateCommentInCache = (
+  oldData: { pages: PaginatedResponse<Comment>[] } | undefined,
+  commentId: string,
+  newIsLiked: boolean,
+  newLikeCount: number
+) => {
+  if (!oldData?.pages) return oldData;
+  return {
+    ...oldData,
+    pages: oldData.pages.map((page) => ({
+      ...page,
+      data: page.data.map((comment) =>
+        comment.id === commentId
+          ? {
+            ...comment,
+            isLiked: newIsLiked,
+            likeCount: newLikeCount,
+          }
+          : comment
+      ),
+    })),
+  };
+};
+
 /**
  * 댓글 좋아요 토글 (낙관적 업데이트)
  * POST /api/comments/{id}/like
@@ -153,29 +177,29 @@ export const useToggleCommentLike = (chapterId: string) => {
         ["comments", chapterId]
       );
 
-      // 낙관적 업데이트 - 특정 챕터의 댓글만 업데이트
+      // 낙관적 업데이트
       queryClient.setQueryData<{ pages?: PaginatedResponse<Comment>[] }>(
         ["comments", chapterId],
         (oldData) => {
           if (!oldData?.pages) return oldData;
 
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              data: page.data.map((comment) =>
-                comment.id === commentId
-                  ? {
-                    ...comment,
-                    isLiked: !comment.isLiked,
-                    likeCount: comment.isLiked
-                      ? comment.likeCount - 1
-                      : comment.likeCount + 1,
-                  }
-                  : comment
-              ),
-            })),
-          };
+          // 현재 상태 찾기 (단순화를 위해 첫 번째 발견된 상태 기반으로 토글)
+          // 실제로는 commentId로 찾아야 정확하지만, 여기서는 oldData를 순회하며 업데이트하는 helper 사용
+          // 낙관적 업데이트 값을 유추하기 위해 기존 데이터를 찾아야 함
+          let targetComment: Comment | undefined;
+          for (const page of oldData.pages) {
+            targetComment = page.data.find(c => c.id === commentId);
+            if (targetComment) break;
+          }
+
+          if (!targetComment) return oldData;
+
+          return updateCommentInCache(
+            oldData,
+            commentId,
+            !targetComment.isLiked,
+            targetComment.isLiked ? targetComment.likeCount - 1 : targetComment.likeCount + 1
+          );
         }
       );
 
@@ -185,25 +209,7 @@ export const useToggleCommentLike = (chapterId: string) => {
     onSuccess: (data) => {
       queryClient.setQueryData<{ pages?: PaginatedResponse<Comment>[] }>(
         ["comments", chapterId],
-        (oldData) => {
-          if (!oldData?.pages) return oldData;
-
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              data: page.data.map((comment) =>
-                comment.id === data.commentId
-                  ? {
-                    ...comment,
-                    isLiked: data.isLiked,
-                    likeCount: data.likeCount,
-                  }
-                  : comment
-              ),
-            })),
-          };
-        }
+        (oldData) => updateCommentInCache(oldData, data.commentId, data.isLiked, data.likeCount)
       );
     },
     // 에러 시 롤백

@@ -40,6 +40,7 @@ import { useThemeStore, type Theme } from "@/stores/useTheme";
 import { cn } from "@/lib/utils";
 import { RatingModal } from "@/components/rating/RatingModal";
 import { adaptGraphSnapshot } from "@/adapters/graphSnapshotAdapter";
+import DOMPurify from "dompurify";
 
 type ViewMode = "scroll" | "page";
 type LineHeight = 1.5 | 1.8 | 2;
@@ -159,7 +160,7 @@ export const ChapterViewerPage = () => {
   // 본문에서 제목 태그 제거 + 줄바꿈 처리
   const cleanContent = useMemo(() => {
     const stripped = stripHeaderTags(chapter?.content || "");
-    return formatContent(stripped);
+    return DOMPurify.sanitize(formatContent(stripped));
   }, [chapter?.content]);
 
   // 마지막 읽은 챕터 저장 (로컬 스토리지) - 이어서 읽기용
@@ -519,7 +520,9 @@ export const ChapterViewerPage = () => {
                 <div
                   className="overflow-hidden"
                   dangerouslySetInnerHTML={{
-                    __html: formatContent(contentPages[currentPage * 2] || ""),
+                    __html: DOMPurify.sanitize(
+                      formatContent(contentPages[currentPage * 2] || "")
+                    ),
                   }}
                 />
                 {/* 오른쪽 페이지 (중앙 구분선) */}
@@ -556,8 +559,8 @@ export const ChapterViewerPage = () => {
                   ) : (
                     <div
                       dangerouslySetInnerHTML={{
-                        __html: formatContent(
-                          contentPages[currentPage * 2 + 1] || ""
+                        __html: DOMPurify.sanitize(
+                          formatContent(contentPages[currentPage * 2 + 1] || "")
                         ),
                       }}
                     />

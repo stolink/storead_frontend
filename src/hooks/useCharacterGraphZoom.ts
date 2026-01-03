@@ -22,7 +22,7 @@ interface UseZoomReturn {
 export function useZoom(
   svgRef: React.RefObject<SVGSVGElement | null>,
   gRef: React.RefObject<SVGGElement | null>,
-  options: UseZoomOptions = {},
+  options: UseZoomOptions = {}
 ): UseZoomReturn {
   const { onZoomChange } = options;
 
@@ -54,7 +54,7 @@ export function useZoom(
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([ZOOM_CONFIG.min, ZOOM_CONFIG.max])
-      .filter((event) => {
+      .filter((event: any) => {
         // Prevent zoom/pan if interacting with a node
         if (
           event.target instanceof Element &&
@@ -178,7 +178,7 @@ export function useZoom(
           });
       });
     },
-    [svgRef],
+    [svgRef]
   );
 
   return {

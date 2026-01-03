@@ -110,7 +110,7 @@ export const ChapterRatingCard = ({
             )}
         >
             {/* 상단 구분선 (시각적 분리) */}
-            <div className="w-12 h-1 bg-purple-500/30 rounded-full mx-auto mb-4" />
+            <div className="w-12 h-1 bg-mocha-400/30 rounded-full mx-auto mb-4" />
 
             {/* 가이드 문구 */}
             <p

@@ -126,22 +126,36 @@ export const useCreateReply = () => {
 /**
  * 댓글 좋아요 토글 (낙관적 업데이트)
  * POST /api/comments/{id}/like
+ * 
+ * @param chapterId - 현재 챕터 ID (상태 오염 방지를 위해 특정 챕터만 업데이트)
  */
-export const useToggleCommentLike = () => {
+export const useToggleCommentLike = (chapterId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (commentId: string) => {
       const { data } = await api.post(`/comments/${commentId}/like`);
-      return data;
+      // 서버 응답에서 isLiked, likeCount 추출
+      const responseData = data.data || data;
+      return {
+        commentId,
+        isLiked: responseData.isLiked,
+        likeCount: responseData.likeCount,
+      };
     },
-    // 낙관적 업데이트 (setQueriesData로 간소화)
+    // 낙관적 업데이트 - 특정 chapterId의 댓글만 업데이트 (상태 오염 방지)
     onMutate: async (commentId) => {
-      await queryClient.cancelQueries({ queryKey: ["comments"] });
+      // 해당 챕터의 댓글 쿼리만 취소
+      await queryClient.cancelQueries({ queryKey: ["comments", chapterId] });
 
-      // setQueriesData로 'comments' 키를 포함하는 모든 쿼리 일괄 업데이트
-      queryClient.setQueriesData<{ pages?: PaginatedResponse<Comment>[] }>(
-        { queryKey: ["comments"] },
+      // 이전 상태 저장 (롤백용)
+      const previousData = queryClient.getQueryData<{ pages?: PaginatedResponse<Comment>[] }>(
+        ["comments", chapterId]
+      );
+
+      // 낙관적 업데이트 - 특정 챕터의 댓글만 업데이트
+      queryClient.setQueryData<{ pages?: PaginatedResponse<Comment>[] }>(
+        ["comments", chapterId],
         (oldData) => {
           if (!oldData?.pages) return oldData;
 
@@ -165,11 +179,40 @@ export const useToggleCommentLike = () => {
         }
       );
 
-      return {};
+      return { previousData };
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["comments"] });
+    // 서버 응답으로 캐시 최종 업데이트 (Race Condition 방지)
+    onSuccess: (data) => {
+      queryClient.setQueryData<{ pages?: PaginatedResponse<Comment>[] }>(
+        ["comments", chapterId],
+        (oldData) => {
+          if (!oldData?.pages) return oldData;
+
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              data: page.data.map((comment) =>
+                comment.id === data.commentId
+                  ? {
+                    ...comment,
+                    isLiked: data.isLiked,
+                    likeCount: data.likeCount,
+                  }
+                  : comment
+              ),
+            })),
+          };
+        }
+      );
     },
+    // 에러 시 롤백
+    onError: (_error, _commentId, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(["comments", chapterId], context.previousData);
+      }
+    },
+    // invalidation을 onSettled에서 제거하여 서버 응답 유지
   });
 };
 

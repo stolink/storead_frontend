@@ -55,11 +55,11 @@ const getThemeStyle = (theme: Theme) => {
       hover: "hover:bg-zinc-100",
     },
     dark: {
-      container: "bg-zinc-900 text-zinc-100",
-      text: "text-zinc-100",
-      bg: "bg-zinc-900",
+      container: "bg-black text-white",
+      text: "text-white",
+      bg: "bg-black",
       columnRule: "rgba(255, 255, 255, 0.1)",
-      hover: "hover:bg-zinc-800",
+      hover: "hover:bg-zinc-900",
     },
     sepia: {
       container: "bg-amber-50 text-amber-900",
@@ -238,7 +238,7 @@ export const ChapterViewerPage = () => {
           styles.container
         )}
       >
-        <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-mocha-500 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -329,7 +329,7 @@ export const ChapterViewerPage = () => {
               className={cn(
                 "p-2 rounded-full transition-colors",
                 viewMode === "page"
-                  ? "bg-purple-600 text-white"
+                  ? "bg-mocha-500 text-paper"
                   : cn(styles.hover, styles.text)
               )}
               title="책 모드"
@@ -341,7 +341,7 @@ export const ChapterViewerPage = () => {
               className={cn(
                 "p-2 rounded-full transition-colors",
                 viewMode === "scroll"
-                  ? "bg-purple-600 text-white"
+                  ? "bg-mocha-500 text-paper"
                   : cn(styles.hover, styles.text)
               )}
               title="스크롤 모드"
@@ -384,7 +384,7 @@ export const ChapterViewerPage = () => {
               )}
             >
               <MessageCircle className="h-4 w-4" />
-              <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-purple-600" />
+              <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-mocha-500" />
             </button>
 
             {/* 이전/다음화 */}
@@ -517,11 +517,11 @@ export const ChapterViewerPage = () => {
                       className={cn(
                         "w-full h-full flex flex-col items-center justify-center gap-4",
                         "rounded-xl border-2 border-dashed transition-all pointer-events-auto",
-                        "border-purple-300 hover:border-purple-600 hover:bg-purple-50/50",
+                        "border-mocha-400 hover:border-mocha-500 hover:bg-mocha-400/10",
                         styles.text
                       )}
                     >
-                      <ChevronRight className="w-12 h-12 text-purple-400" />
+                      <ChevronRight className="w-12 h-12 text-mocha-500" />
                       <div className="text-center">
                         <p className="text-lg font-semibold mb-1">다음 화로 이동</p>
                         <p className="text-sm opacity-60">
@@ -571,83 +571,86 @@ export const ChapterViewerPage = () => {
         <Button
           size="icon"
           onClick={() => setShowSettings(!showSettings)}
-          className="w-12 h-12 rounded-full shadow-lg bg-purple-600 hover:bg-purple-700 text-white"
+          className="w-12 h-12 rounded-full shadow-lg bg-mocha-500 hover:bg-mocha-700 text-paper"
         >
           <Settings className="w-5 h-5" />
         </Button>
 
-        {/* 설정 팝업 */}
+        {/* 설정 팝업 - 사진 2 스타일 */}
         {showSettings && (
-          <div className="absolute bottom-16 right-0 w-64 rounded-2xl shadow-2xl border p-4 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
-            <div className="space-y-4">
-              {/* 관계도 버튼 */}
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors">
+          <div className="absolute bottom-16 right-0 w-72 rounded-2xl shadow-2xl border p-5 bg-paper border-mocha-400 text-ink">
+            <div className="space-y-5">
+              {/* 관계도 보기 버튼 */}
+              <button className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-mocha-400 text-ink rounded-xl hover:bg-mocha-400/10 transition-colors">
                 <Network className="w-4 h-4" />
-                <span className="text-sm font-medium">관계도</span>
+                <span className="text-sm font-medium">관계도 보기</span>
               </button>
 
               {/* 글자 크기 */}
               <div>
-                <label className="text-xs opacity-50 mb-2 block">
+                <label className="text-xs text-mocha-700 mb-2 block">
                   글자 크기
                 </label>
-                <div className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
+                <div className="flex items-center justify-between border border-mocha-400 rounded-lg">
                   <button
                     onClick={() => setFontSize(Math.max(12, fontSize - 2))}
-                    className="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-md transition-colors"
+                    className="p-3 hover:bg-mocha-400/10 rounded-l-lg transition-colors"
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-4 h-4 text-ink" />
                   </button>
-                  <span className="text-sm font-medium">{fontSize}px</span>
+                  <span className="text-sm font-medium text-ink">{fontSize}px</span>
                   <button
                     onClick={() => setFontSize(Math.min(28, fontSize + 2))}
-                    className="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-md transition-colors"
+                    className="p-3 hover:bg-mocha-400/10 rounded-r-lg transition-colors"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 text-ink" />
                   </button>
                 </div>
               </div>
 
-              {/* 테마 */}
+              {/* 테마 - 사진 1 스타일: 테두리로 선택 표시 */}
               <div>
-                <label className="text-xs opacity-50 mb-2 block">테마</label>
-                <div className="grid grid-cols-4 gap-1">
-                  {(["light", "dark", "sepia", "ivory"] as Theme[]).map((t) => (
+                <label className="text-xs text-ink mb-2 block">테마</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {([
+                    { key: "light", label: "화이트", bg: "bg-white", border: "border-ink" },
+                    { key: "dark", label: "다크", bg: "bg-espresso-900", border: "border-mocha-400" },
+                    { key: "sepia", label: "세피아", bg: "bg-amber-50", border: "border-amber-400" },
+                    { key: "ivory", label: "아이보리", bg: "bg-[#FFFFF0]", border: "border-amber-200" },
+                  ] as const).map((t) => (
                     <button
-                      key={t}
-                      onClick={() => setTheme(t)}
-                      className={cn(
-                        "py-2 text-[10px] rounded-lg transition-all font-medium",
-                        theme === t
-                          ? "bg-purple-600 text-white scale-105"
-                          : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                      )}
+                      key={t.key}
+                      onClick={() => setTheme(t.key)}
+                      className="flex flex-col items-center gap-1"
                     >
-                      {t === "light"
-                        ? "화이트"
-                        : t === "dark"
-                          ? "다크"
-                          : t === "sepia"
-                            ? "세피아"
-                            : "아이보리"}
+                      <div
+                        className={cn(
+                          "w-10 h-10 rounded-lg border-2 transition-all",
+                          t.bg,
+                          theme === t.key
+                            ? `${t.border} ring-2 ring-mocha-400 ring-offset-1`
+                            : "border-mocha-400/30"
+                        )}
+                      />
+                      <span className="text-[10px] text-ink">{t.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* 줄 간격 */}
+              {/* 줄 간격 - 테두리 선택 스타일 */}
               <div>
-                <label className="text-xs opacity-50 mb-2 block">줄 간격</label>
-                <div className="grid grid-cols-3 gap-1">
+                <label className="text-xs text-mocha-700 mb-2 block">줄 간격</label>
+                <div className="grid grid-cols-3 gap-2">
                   {([1.5, 1.8, 2] as LineHeight[]).map((lh) => (
                     <button
                       key={lh}
                       onClick={() => setLineHeight(lh)}
                       className={cn(
-                        "py-2 text-xs rounded-lg transition-all font-medium",
+                        "py-2 text-sm rounded-lg transition-all font-medium border-2",
                         lineHeight === lh
-                          ? "bg-purple-600 text-white"
-                          : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                          ? "border-mocha-500 bg-mocha-500 text-paper"
+                          : "border-mocha-400 text-ink hover:bg-mocha-400/10"
                       )}
                     >
                       {lh}
@@ -656,19 +659,19 @@ export const ChapterViewerPage = () => {
                 </div>
               </div>
 
-              {/* 뷰어 모드 */}
+              {/* 뷰어 모드 - 테두리 선택 스타일 */}
               <div>
-                <label className="text-xs opacity-50 mb-2 block">
+                <label className="text-xs text-mocha-700 mb-2 block">
                   뷰어 모드
                 </label>
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setViewMode("scroll")}
                     className={cn(
-                      "py-2 text-xs rounded-lg transition-all font-medium",
+                      "py-2 text-sm rounded-lg transition-all font-medium border-2",
                       viewMode === "scroll"
-                        ? "bg-purple-600 text-white"
-                        : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                        ? "border-mocha-500 bg-mocha-500 text-paper"
+                        : "border-mocha-400 text-ink hover:bg-mocha-400/10"
                     )}
                   >
                     스크롤
@@ -676,10 +679,10 @@ export const ChapterViewerPage = () => {
                   <button
                     onClick={() => setViewMode("page")}
                     className={cn(
-                      "py-2 text-xs rounded-lg transition-all font-medium",
+                      "py-2 text-sm rounded-lg transition-all font-medium border-2",
                       viewMode === "page"
-                        ? "bg-purple-600 text-white"
-                        : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                        ? "border-mocha-500 bg-mocha-500 text-paper"
+                        : "border-mocha-400 text-ink hover:bg-mocha-400/10"
                     )}
                   >
                     페이지

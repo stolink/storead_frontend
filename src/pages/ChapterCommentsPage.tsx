@@ -40,7 +40,7 @@ export const ChapterCommentsPage = () => {
     const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useComments(id || '');
     const createComment = useCreateComment();
     const createReply = useCreateReply();
-    const toggleLike = useToggleCommentLike();
+    const toggleLike = useToggleCommentLike(id || '');
 
     // 댓글 평탄화 및 정렬
     // 댓글 평탄화 및 정렬
@@ -133,7 +133,7 @@ export const ChapterCommentsPage = () => {
                 {/* 정렬 필터 */}
                 <div className={cn('flex items-center justify-between py-4 border-b', dividerClass)}>
                     <span className={cn('font-serif font-medium', textClass)}>
-                        댓글 <span className="text-purple-600">{allComments.length}</span>
+                        댓글 <span className="text-mocha-700">{allComments.length}</span>
                     </span>
                     <div className="flex items-center gap-2 text-sm">
                         <button
@@ -205,7 +205,7 @@ export const ChapterCommentsPage = () => {
                             placeholder="댓글을 입력하세요..."
                             className={cn(
                                 'flex-1 bg-transparent border rounded-full px-4 py-2 text-sm outline-none',
-                                'focus:ring-2 focus:ring-purple-500',
+                                'focus:ring-2 focus:ring-mocha-400',
                                 dividerClass
                             )}
                             onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
@@ -214,7 +214,7 @@ export const ChapterCommentsPage = () => {
                             size="icon"
                             onClick={handleSubmitComment}
                             disabled={!newComment.trim() || createComment.isPending}
-                            className="rounded-full bg-purple-600 hover:bg-purple-700 shrink-0"
+                            className="rounded-full bg-mocha-500 hover:bg-mocha-700 text-paper shrink-0"
                         >
                             <Send className="w-4 h-4 text-white" />
                         </Button>

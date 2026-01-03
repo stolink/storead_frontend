@@ -30,6 +30,9 @@ api.interceptors.request.use(
   }
 );
 
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthModalStore } from "@/stores/useAuthModalStore";
+
 // 응답 인터셉터: 에러 처리 및 토큰 만료 핸들링
 api.interceptors.response.use(
   (response) => response,
@@ -37,9 +40,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // 토큰 만료 시 Zustand 스토어를 통해 로그아웃 및 모달 오픈
       // React 컴포넌트 외부이므로 getState() 사용
-      const { useAuthStore } = await import("@/stores/useAuthStore");
-      const { useAuthModalStore } = await import("@/stores/useAuthModalStore");
-
       useAuthStore.getState().logout();
       useAuthModalStore.getState().openAuthModal(window.location.pathname);
     }

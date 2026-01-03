@@ -85,7 +85,7 @@ export const useWorkByProjectId = (projectId: string | null) => {
     queryKey: ["work", "byProjectId", projectId],
     queryFn: async () => {
       const { data } = await api.get(`/works?projectId=${projectId}`);
-      return data.data; // { works: [...] }
+      return data; // { works: [...] }
     },
     enabled: !!projectId,
   });

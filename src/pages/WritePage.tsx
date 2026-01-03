@@ -48,18 +48,25 @@ export const WritePage = () => {
     error: draftError,
   } = useDraft(isAuthenticated ? draftId : null);
 
-  // Draft 제목 초기화
+  // Draft 제목 초기화 (한 번만 실행되도록 draft.id를 의존성에 포함)
   useEffect(() => {
     if (draft?.title && !editedTitle) {
       setEditedTitle(draft.title);
     }
-  }, [draft]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft?.id]);
 
   // 기존 Work 조회
   const { data: workData, isLoading: isWorkLoading } = useWorkByProjectId(
     draft?.projectId || null
   );
-  const existingWork = workData?.works?.[0];
+  // useWorkByProjectId 응답이 이제 { works: [...] }이므로 접근 방식 변경
+  const existingWork = (workData as any)?.works?.[0];
+
+  // 본문 미리보기 텍스트 추출 (HTML 태그 제거)
+  const previewText = draft?.content
+    ? draft.content.replace(/<[^>]*>/g, "").slice(0, 500)
+    : "";
 
   // 게시/취소 mutation
   const publishMutation = usePublish();
@@ -267,14 +274,13 @@ export const WritePage = () => {
               <p className="text-xs font-bold text-zinc-400 mb-2">
                 본문 미리보기
               </p>
-              <div
-                className="prose prose-sm dark:prose-invert max-h-32 overflow-y-auto leading-relaxed text-zinc-600 dark:text-zinc-400"
-                dangerouslySetInnerHTML={{
-                  __html:
-                    draft?.content?.slice(0, 500) +
-                    (draft?.content && draft.content.length > 500 ? "..." : ""),
-                }}
-              />
+              <div className="line-clamp-4 leading-relaxed text-zinc-600 dark:text-zinc-400 text-sm">
+                {previewText}
+                {draft?.content &&
+                draft.content.replace(/<[^>]*>/g, "").length > 500
+                  ? "..."
+                  : ""}
+              </div>
             </div>
           </div>
 

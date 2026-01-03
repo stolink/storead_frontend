@@ -4,7 +4,8 @@
  */
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Star, Bookmark, BookOpen, User, Heart } from "lucide-react";
+import { Bookmark, BookOpen, User, Heart } from "lucide-react";
+import { DisplayStarRating } from "@/components/rating/DisplayStarRating";
 import { Button } from "@/components/ui/button";
 import { usePublicWork } from "@/hooks/useDiscovery";
 import {
@@ -165,17 +166,7 @@ export const WorkDetailPage = () => {
 
               {/* 별점 */}
               <div className="flex items-center gap-2 mb-6">
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`w-5 h-5 ${star <= Math.round(avgRating)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-zinc-300"
-                        }`}
-                    />
-                  ))}
-                </div>
+                <DisplayStarRating score={avgRating} size={5} />
                 <span className="text-xl font-semibold">
                   {avgRating.toFixed(1)}
                 </span>
@@ -313,7 +304,7 @@ export const WorkDetailPage = () => {
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                          <DisplayStarRating score={chapterRating} size={4} />
                           <span className="text-sm">
                             {chapterRating.toFixed(1)}
                           </span>

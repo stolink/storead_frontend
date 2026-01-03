@@ -54,7 +54,7 @@ export const useSearchWorks = (
         queryKey: ["search", query, params],
         queryFn: async () => {
             const { data } = await api.get("/discovery/search", {
-                params: { q: query, ...params },
+                params: { keyword: query, ...params },
             });
             const responseData = data.data;
 

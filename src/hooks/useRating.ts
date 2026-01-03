@@ -15,7 +15,13 @@ export const useChapterRating = (chapterId: string) => {
         queryKey: ['chapterRating', chapterId],
         queryFn: async () => {
             const { data } = await api.get(`/chapters/${chapterId}/rating`);
-            return data;
+            // 백엔드 응답 필드명 매핑: myScore → myRating, averageScore → avgRating
+            const responseData = data.data || data;
+            return {
+                myRating: responseData.myScore ?? null,
+                avgRating: responseData.averageScore ?? 0,
+                ratingCount: responseData.ratingCount ?? 0,
+            };
         },
         enabled: !!chapterId,
     });
@@ -30,7 +36,13 @@ export const useWorkRating = (workId: string) => {
         queryKey: ['workRating', workId],
         queryFn: async () => {
             const { data } = await api.get(`/works/${workId}/rating`);
-            return data;
+            // 백엔드 응답 필드명 매핑: myScore → myRating, averageScore → avgRating
+            const responseData = data.data || data;
+            return {
+                myRating: responseData.myScore ?? null,
+                avgRating: responseData.averageScore ?? 0,
+                ratingCount: responseData.ratingCount ?? 0,
+            };
         },
         enabled: !!workId,
     });
@@ -38,6 +50,7 @@ export const useWorkRating = (workId: string) => {
 
 interface SubmitRatingParams {
     chapterId: string;
+    workId?: string; // 작품 상세 페이지 캐시 무효화용
     score: number; // 1~10
 }
 
@@ -97,9 +110,13 @@ export const useSubmitRating = () => {
             }
         },
         // 완료 후 서버 데이터로 갱신
-        onSettled: (_data, _error, { chapterId }) => {
+        onSettled: (_data, _error, { chapterId, workId }) => {
             queryClient.invalidateQueries({ queryKey: ['chapterRating', chapterId] });
             queryClient.invalidateQueries({ queryKey: ['chapter', chapterId] });
+            // 작품 상세 페이지의 챕터 목록 별점도 갱신
+            if (workId) {
+                queryClient.invalidateQueries({ queryKey: ['work', workId] });
+            }
         },
     });
 };

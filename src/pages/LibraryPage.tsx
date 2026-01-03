@@ -2,11 +2,12 @@
  * 내 서재 페이지
  * BookCard 그리드 레이아웃
  */
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { BookOpen, Star, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLibrary, useRemoveFromLibrary } from "@/hooks/useLibrary";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useThemeStore, backgroundThemeClasses } from "@/stores/useTheme";
 import type { Library } from "@/types";
 
@@ -83,10 +84,10 @@ const LibraryCard = ({
  */
 export const LibraryPage = () => {
   const { isAuthenticated } = useAuthStore();
+  const { openAuthModal } = useAuthModalStore();
   const { data: library, isLoading } = useLibrary();
   const removeFromLibrary = useRemoveFromLibrary();
   const navigate = useNavigate();
-  const location = useLocation();
   const { theme } = useThemeStore();
 
   if (!isAuthenticated) {
@@ -98,9 +99,7 @@ export const LibraryPage = () => {
         <h2 className="text-xl font-semibold mb-2">로그인이 필요합니다</h2>
         <p className="text-zinc-500 mb-4">내 서재를 이용하려면 로그인하세요.</p>
         <Button
-          onClick={() =>
-            navigate("/login", { state: { from: location.pathname } })
-          }
+          onClick={() => openAuthModal("/library")}
           className="bg-purple-600 hover:bg-purple-700"
         >
           로그인

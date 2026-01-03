@@ -14,6 +14,8 @@ import { useAuthStore } from '@/stores/useAuthStore';
 interface CommentItemProps {
     /** 댓글 데이터 */
     comment: Comment;
+    /** 현재 챕터 ID (상태 오염 방지용) */
+    chapterId: string;
     /** 현재 깊이 (들여쓰기용) */
     depth?: number;
     /** 최대 깊이 */
@@ -28,6 +30,7 @@ interface CommentItemProps {
  */
 export const CommentItem = ({
     comment,
+    chapterId,
     depth = 0,
     maxDepth = 3,
 }: CommentItemProps) => {
@@ -37,8 +40,8 @@ export const CommentItem = ({
 
     const { user } = useAuthStore();
     const { data: replies, isLoading: repliesLoading } = useReplies(comment.id, showReplies);
-    const createReply = useCreateReply();
-    const toggleLike = useToggleCommentLike();
+    const createReply = useCreateReply(chapterId);
+    const toggleLike = useToggleCommentLike(chapterId);
     const deleteComment = useDeleteComment();
 
     const isAuthor = user?.id === comment.userId;
@@ -124,11 +127,13 @@ export const CommentItem = ({
 
                     {/* 액션 버튼 */}
                     <div className="flex items-center gap-4 mt-2">
-                        {/* 좋아요 */}
+                        {/* 좋아요 - isPending으로 Race Condition 방지 */}
                         <button
                             onClick={handleToggleLike}
+                            disabled={toggleLike.isPending}
                             className={cn(
                                 'flex items-center gap-1 text-xs transition-colors',
+                                toggleLike.isPending && 'opacity-50 cursor-not-allowed',
                                 comment.isLiked
                                     ? 'text-red-500'
                                     : 'text-zinc-400 hover:text-red-500'
@@ -201,6 +206,7 @@ export const CommentItem = ({
                         <CommentItem
                             key={reply.id}
                             comment={reply}
+                            chapterId={chapterId}
                             depth={depth + 1}
                             maxDepth={maxDepth}
                         />

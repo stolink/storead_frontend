@@ -91,9 +91,9 @@ export const AuthorDashboardPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+        <div className="min-h-screen bg-paper">
             {/* 헤더 */}
-            <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
+            <header className="bg-cloud-50 border-b border-mocha-400">
                 <div className="max-w-6xl mx-auto px-4 py-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -107,15 +107,18 @@ export const AuthorDashboardPage = () => {
                                 <ChevronLeft className="h-5 w-5" />
                             </Button>
                             <div>
-                                <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+                                <h1 className="text-2xl font-bold text-ink">
                                     내 작품 관리
                                 </h1>
-                                <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+                                <p className="text-mocha-700 mt-1">
                                     작품을 관리하고 새로운 챕터를 작성하세요
                                 </p>
                             </div>
                         </div>
-                        <Button onClick={() => navigate('/author/works/new')}>
+                        <Button
+                            onClick={() => navigate('/author/works/new')}
+                            className="bg-mocha-500 hover:bg-mocha-700 text-paper"
+                        >
                             + 새 작품 만들기
                         </Button>
                     </div>
@@ -133,7 +136,7 @@ export const AuthorDashboardPage = () => {
                                 onClick={() => navigate(`/author/works/${work.id}/chapters`)}
                             >
                                 {/* 커버 이미지 */}
-                                <div className="aspect-[3/4] bg-gradient-to-br from-indigo-500 to-purple-600 relative">
+                                <div className="aspect-[3/4] bg-gradient-to-br from-mocha-400 to-mocha-700 relative">
                                     {work.coverImageUrl ? (
                                         <img
                                             src={work.coverImageUrl}
@@ -194,16 +197,17 @@ export const AuthorDashboardPage = () => {
                         ))}
                     </div>
                 ) : (
-                    <Card className="text-center py-16">
-                        <CardContent>
-                            <p className="text-zinc-500 dark:text-zinc-400 mb-4">
-                                아직 작성한 작품이 없습니다.
-                            </p>
-                            <Button onClick={() => navigate('/author/works/new')}>
-                                첫 번째 작품 만들기
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <div className="bg-cloud-50 rounded-xl shadow-paper p-12 text-center border border-mocha-400">
+                        <p className="text-mocha-700 mb-4">
+                            아직 작성한 작품이 없습니다.
+                        </p>
+                        <Button
+                            onClick={() => navigate('/author/works/new')}
+                            className="bg-mocha-500 hover:bg-mocha-700 text-paper"
+                        >
+                            첫 번째 작품 만들기
+                        </Button>
+                    </div>
                 )}
             </main>
 

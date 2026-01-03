@@ -53,7 +53,7 @@ export const FloatingCommentButton = ({
         >
             <MessageCircle className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
             {commentCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-mocha-500 text-paper text-xs flex items-center justify-center">
                     {commentCount > 99 ? '99+' : commentCount}
                 </span>
             )}

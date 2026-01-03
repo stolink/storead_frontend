@@ -83,7 +83,7 @@ export const WorkDetailPage = () => {
 
   const handleContinueReading = () => {
     if (!isAuthenticated) {
-      openAuthModal();
+      openAuthModal(window.location.pathname);
       return;
     }
     if (readingProgress?.lastChapterId) {
@@ -107,7 +107,7 @@ export const WorkDetailPage = () => {
   // 챕터 클릭 핸들러 - 로그인 체크
   const handleChapterClick = (chapterId: string) => {
     if (!isAuthenticated) {
-      openAuthModal();
+      openAuthModal(window.location.pathname);
       return;
     }
     navigate(`/chapters/${chapterId}`);
@@ -118,7 +118,7 @@ export const WorkDetailPage = () => {
       <div
         className={`min-h-screen flex items-center justify-center ${backgroundThemeClasses[theme]}`}
       >
-        <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-mocha-500 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -141,7 +141,7 @@ export const WorkDetailPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* 표지 */}
             <div>
-              <div className="aspect-[3/4] bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg shadow-lg overflow-hidden">
+              <div className="aspect-[3/4] bg-gradient-to-br from-mocha-400 to-mocha-700 rounded-lg shadow-lg overflow-hidden">
                 {work.coverImageUrl ? (
                   <img
                     src={work.coverImageUrl}
@@ -187,51 +187,60 @@ export const WorkDetailPage = () => {
               <div className="flex gap-4">
                 <Button
                   size="lg"
-                  className="flex-1 bg-purple-600 hover:bg-purple-700"
+                  className="flex-1 bg-mocha-500 hover:bg-mocha-700 text-paper"
                   onClick={handleContinueReading}
                 >
                   {readingProgress ? "이어 읽기" : "첫 화 보기"}
                 </Button>
-                {isAuthenticated && (
-                  <>
-                    <Button
-                      size="lg"
-                      variant={isInLibrary ? "secondary" : "outline"}
-                      onClick={handleLibraryToggle}
-                      className={`px-6 ${isInLibrary
-                        ? "border-purple-600 bg-purple-50 text-purple-600"
-                        : "border-zinc-300 hover:border-purple-600"
-                        }`}
-                    >
-                      <Bookmark
-                        className={`w-5 h-5 mr-2 ${isInLibrary ? "fill-purple-600" : ""
-                          }`}
-                      />
-                      {isInLibrary ? "서재에 담김" : "내 서재에 담기"}
-                    </Button>
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={handleWorkLikeToggle}
-                      className={`px-6 ${likeStatus?.isLiked
-                        ? "border-red-500 bg-red-50 text-red-500"
-                        : "border-zinc-300 hover:border-red-500"
-                        }`}
-                    >
-                      <Heart
-                        className={`w-5 h-5 mr-2 ${likeStatus?.isLiked ? "fill-red-500" : ""
-                          }`}
-                      />
-                      {likeStatus?.likeCount || 0}
-                    </Button>
-                  </>
-                )}
+                {/* 서재 담기/좋아요 - 비로그인 시에도 표시, 클릭 시 로그인 유도 */}
+                <Button
+                  size="lg"
+                  variant={isInLibrary ? "secondary" : "outline"}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      openAuthModal(window.location.pathname);
+                      return;
+                    }
+                    handleLibraryToggle();
+                  }}
+                  className={`px-6 ${isInLibrary
+                    ? "border-mocha-500 bg-mocha-400/20 text-mocha-700"
+                    : "border-mocha-400 hover:border-mocha-500 text-ink"
+                    }`}
+                >
+                  <Bookmark
+                    className={`w-5 h-5 mr-2 ${isInLibrary ? "fill-mocha-500" : ""
+                      }`}
+                  />
+                  {isInLibrary ? "서재에 담김" : "내 서재에 담기"}
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      openAuthModal(window.location.pathname);
+                      return;
+                    }
+                    handleWorkLikeToggle();
+                  }}
+                  className={`px-6 ${likeStatus?.isLiked
+                    ? "border-red-500 bg-red-50 text-red-500"
+                    : "border-zinc-300 hover:border-red-500"
+                    }`}
+                >
+                  <Heart
+                    className={`w-5 h-5 mr-2 ${likeStatus?.isLiked ? "fill-red-500" : ""
+                      }`}
+                  />
+                  {likeStatus?.likeCount || 0}
+                </Button>
               </div>
 
               {/* 태그/장르 */}
               <div className="mt-6 flex gap-2 flex-wrap">
                 {work.genre && (
-                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                  <span className="px-3 py-1 bg-sage-100 text-sage-700 rounded-full text-sm">
                     {GENRE_LABELS[work.genre] || work.genre}
                   </span>
                 )}
@@ -248,7 +257,7 @@ export const WorkDetailPage = () => {
               <button
                 onClick={() => setSortOrder("asc")}
                 className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === "asc"
-                  ? "bg-purple-600 text-white"
+                  ? "bg-mocha-500 text-paper"
                   : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
                   }`}
               >
@@ -257,7 +266,7 @@ export const WorkDetailPage = () => {
               <button
                 onClick={() => setSortOrder("desc")}
                 className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === "desc"
-                  ? "bg-purple-600 text-white"
+                  ? "bg-mocha-500 text-paper"
                   : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
                   }`}
               >
@@ -285,13 +294,13 @@ export const WorkDetailPage = () => {
                     onClick={() => handleChapterClick(chapter.id)}
                     className={`w-full text-left block p-4 rounded-lg border transition-colors ${isRead
                       ? "border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
-                      : "border-zinc-200 hover:border-purple-600 hover:bg-purple-50"
+                      : "border-mocha-400 hover:border-mocha-500 hover:bg-mocha-400/10"
                       }`}
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-4">
                         <span
-                          className={`text-lg font-semibold ${isRead ? "text-zinc-400" : "text-purple-600"
+                          className={`text-lg font-semibold ${isRead ? "text-mocha-400" : "text-mocha-700"
                             }`}
                         >
                           제{chapter.chapterNumber}화

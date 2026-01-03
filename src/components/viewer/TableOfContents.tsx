@@ -81,7 +81,7 @@ export const TableOfContents = ({
                                     className={cn(
                                         'block px-4 py-3 transition-colors font-serif',
                                         chapter.id === currentChapterId
-                                            ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-medium'
+                                            ? 'bg-mocha-400/20 text-mocha-700 font-medium'
                                             : 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
                                     )}
                                 >

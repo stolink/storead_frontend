@@ -56,9 +56,9 @@ export default function OAuth2Callback() {
   }, [searchParams, navigate, setAuth]);
 
   return (
-    <div className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100 gap-4">
-      <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
-      <p className="text-purple-800 font-medium">로그인 처리 중...</p>
+    <div className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-mocha-400/20 to-sage-100 gap-4">
+      <div className="w-10 h-10 border-4 border-mocha-500 border-t-transparent rounded-full animate-spin" />
+      <p className="text-mocha-700 font-medium">로그인 처리 중...</p>
     </div>
   );
 }

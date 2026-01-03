@@ -1,25 +1,18 @@
-/**
- * 레이아웃 컴포넌트
- * 헤더 + 메인 콘텐츠 영역
- * 전역 테마 시스템 지원
- */
-import { Outlet } from 'react-router-dom';
-import Header from './Header';
-import { useThemeStore, backgroundThemeClasses } from '@/stores/useTheme';
+import { Outlet } from "react-router-dom";
+import { Header } from "./Header";
+import { Footer } from "./Footer";
 
-interface LayoutProps {
-    children?: React.ReactNode;
-}
-
-export const Layout = ({ children }: LayoutProps) => {
-    const { theme } = useThemeStore();
-
+export function Layout() {
     return (
-        <div className={`min-h-screen transition-colors duration-300 ${backgroundThemeClasses[theme]}`}>
+        <div className="flex min-h-screen flex-col bg-paper font-body text-ink antialiased selection:bg-mocha-400/20 selection:text-mocha-700">
             <Header />
-            <main>{children || <Outlet />}</main>
+            <main className="flex-1 w-full">
+                {/* Centralized container for main content */}
+                <div className="container mx-auto max-w-7xl px-4 py-6 md:py-8 lg:py-10">
+                    <Outlet />
+                </div>
+            </main>
+            <Footer />
         </div>
     );
-};
-
-export default Layout;
+}

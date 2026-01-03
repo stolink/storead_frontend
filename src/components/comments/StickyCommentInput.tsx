@@ -66,7 +66,7 @@ export const StickyCommentInput = ({ chapterId }: StickyCommentInputProps) => {
         >
             <div className="max-w-4xl mx-auto flex gap-3 items-center">
                 {/* 프로필 이니셜 */}
-                <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-medium shrink-0">
+                <div className="w-8 h-8 rounded-full bg-mocha-500 text-paper flex items-center justify-center text-sm font-medium shrink-0">
                     {user?.nickname?.charAt(0) || 'U'}
                 </div>
 
@@ -78,7 +78,7 @@ export const StickyCommentInput = ({ chapterId }: StickyCommentInputProps) => {
                     placeholder="작품에 대한 감상을 남겨보세요"
                     className={cn(
                         'flex-1 bg-transparent border rounded-full px-4 py-2',
-                        'focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none',
+                        'focus:ring-2 focus:ring-mocha-400 focus:border-transparent outline-none',
                         'transition-all font-serif text-sm',
                         dividerThemeClasses[theme]
                     )}
@@ -89,7 +89,7 @@ export const StickyCommentInput = ({ chapterId }: StickyCommentInputProps) => {
                     type="submit"
                     size="icon"
                     disabled={!content.trim() || createComment.isPending}
-                    className="rounded-full bg-purple-600 hover:bg-purple-700 shrink-0"
+                    className="rounded-full bg-mocha-500 hover:bg-mocha-700 text-paper shrink-0"
                 >
                     <Send className="w-4 h-4 text-white" />
                 </Button>

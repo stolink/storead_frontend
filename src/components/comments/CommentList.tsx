@@ -84,7 +84,7 @@ export const CommentList = ({
                 )}
             >
                 <h3 className="font-serif font-bold text-lg">
-                    전체 댓글 <span className="text-purple-600">{comments.length}</span>
+                    전체 댓글 <span className="text-mocha-700">{comments.length}</span>
                 </h3>
                 <div className="flex items-center gap-2 text-sm">
                     <button
@@ -122,7 +122,7 @@ export const CommentList = ({
                     </div>
                 ) : (
                     displayedComments.map((comment) => (
-                        <CommentItem key={comment.id} comment={comment} />
+                        <CommentItem key={comment.id} comment={comment} chapterId={chapterId} />
                     ))
                 )}
             </div>

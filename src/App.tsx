@@ -21,6 +21,7 @@ import ChapterViewerPage from "@/pages/ChapterViewerPage";
 import ChapterCommentsPage from "@/pages/ChapterCommentsPage";
 import LibraryPage from "@/pages/LibraryPage";
 import WritePage from "@/pages/WritePage";
+import WritersPage from "@/pages/WritersPage"; // New Import
 
 // 인증 페이지
 import OAuth2Callback from "@/pages/Auth/OAuth2Callback";
@@ -71,6 +72,7 @@ function AppContent() {
         {/* 공개 페이지 (헤더 포함) */}
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/writers" element={<WritersPage />} />
           <Route path="/works/:id" element={<WorkDetailPage />} />
           <Route
             path="/library"

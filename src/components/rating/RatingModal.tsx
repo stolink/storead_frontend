@@ -109,7 +109,7 @@ export const RatingModal = ({
 
                     {/* 제출 완료 메시지 */}
                     {submitted && (
-                        <p className="text-sm text-purple-600 font-medium animate-pulse">
+                        <p className="text-sm text-mocha-500 font-medium animate-pulse">
                             ✨ 평가 감사합니다!
                         </p>
                     )}
@@ -121,7 +121,7 @@ export const RatingModal = ({
                     disabled={score === 0 || isSubmitting || submitted}
                     className={cn(
                         "w-full py-3 rounded-xl font-medium transition-all",
-                        "bg-purple-600 hover:bg-purple-700 text-white",
+                        "bg-mocha-500 hover:bg-mocha-700 text-paper",
                         "disabled:opacity-50 disabled:cursor-not-allowed"
                     )}
                 >

@@ -12,6 +12,8 @@ import { usePublish } from "@/hooks/usePublish";
 import { useWorkByProjectId } from "@/hooks/useWorks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { GraphModal } from "@/components/viewer/GraphModal";
+import { adaptGraphSnapshot } from "@/adapters/graphSnapshotAdapter";
 import {
   Card,
   CardContent,
@@ -39,6 +41,8 @@ export const WritePage = () => {
 
   // 수동 입력 제목 상태
   const [editedTitle, setEditedTitle] = useState("");
+  // 관계도 모달 상태
+  const [showGraphModal, setShowGraphModal] = useState(false);
 
   // Draft 조회
   const {
@@ -261,12 +265,24 @@ export const WritePage = () => {
 
             {/* 인물관계도 포함 여부 */}
             {draft?.graphSnapshot && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/30">
+              <button
+                onClick={() => {
+                  console.log("[DEBUG] 버튼 클릭됨");
+                  console.log("[DEBUG] graphSnapshot:", draft.graphSnapshot);
+                  console.log(
+                    "[DEBUG] adaptedData:",
+                    adaptGraphSnapshot(draft.graphSnapshot as any)
+                  );
+                  setShowGraphModal(true);
+                  console.log("[DEBUG] showGraphModal 상태:", true);
+                }}
+                className="w-full flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors cursor-pointer"
+              >
                 <Network className="w-4 h-4 ml-1" />
                 <span className="text-sm font-bold">
-                  인물관계도가 포함되어 있습니다
+                  📊 인물관계도 보기 (클릭)
                 </span>
-              </div>
+              </button>
             )}
 
             {/* 본문 미리보기 */}
@@ -324,6 +340,22 @@ export const WritePage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* 관계도 모달 - 기존 GraphModal 컴포넌트 사용 */}
+      <GraphModal
+        isOpen={showGraphModal}
+        onClose={() => setShowGraphModal(false)}
+        characters={
+          draft?.graphSnapshot
+            ? adaptGraphSnapshot(draft.graphSnapshot as any)?.characters ?? []
+            : []
+        }
+        links={
+          draft?.graphSnapshot
+            ? adaptGraphSnapshot(draft.graphSnapshot as any)?.links ?? []
+            : []
+        }
+      />
     </div>
   );
 };

@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SecureViewer } from "@/components/viewer/SecureViewer";
 import { TableOfContents } from "@/components/viewer/TableOfContents";
+import { GraphModal } from "@/components/viewer/GraphModal";
 import {
   usePublicChapter,
   usePublicChapters,
@@ -38,6 +39,7 @@ import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useThemeStore, type Theme } from "@/stores/useTheme";
 import { cn } from "@/lib/utils";
 import { RatingModal } from "@/components/rating/RatingModal";
+import { adaptGraphSnapshot } from "@/adapters/graphSnapshotAdapter";
 
 type ViewMode = "scroll" | "page";
 type LineHeight = 1.5 | 1.8 | 2;
@@ -111,6 +113,7 @@ export const ChapterViewerPage = () => {
   const [showTOC, setShowTOC] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showGraphModal, setShowGraphModal] = useState(false);
 
   const { openAuthModal } = useAuthModalStore();
 
@@ -126,6 +129,21 @@ export const ChapterViewerPage = () => {
   const { data: chapters } = usePublicChapters(chapter?.workId || "");
   const { data: work } = usePublicWork(chapter?.workId || "");
   const saveBookmark = useSaveBookmark();
+
+  // 실제 graphSnapshot 데이터 사용
+  const graphData = useMemo(() => {
+    console.log("[DEBUG] chapter 전체 데이터:", chapter);
+    console.log("[DEBUG] graphSnapshot 원본:", chapter?.graphSnapshot);
+
+    if (!chapter?.graphSnapshot) {
+      console.log("[DEBUG] graphSnapshot이 없습니다!");
+      return null;
+    }
+
+    const adapted = adaptGraphSnapshot(chapter.graphSnapshot as any);
+    console.log("[DEBUG] adaptGraphSnapshot 결과:", adapted);
+    return adapted;
+  }, [chapter?.graphSnapshot]);
 
   // 별점 데이터 및 제출 훅
   const { data: ratingData } = useChapterRating(id || "");
@@ -288,7 +306,9 @@ export const ChapterViewerPage = () => {
             </button>
             {/* 작품 상세(챕터 목록)으로 이동 */}
             <button
-              onClick={() => chapter?.workId && navigate(`/works/${chapter.workId}`)}
+              onClick={() =>
+                chapter?.workId && navigate(`/works/${chapter.workId}`)
+              }
               className={cn(
                 "p-2 rounded-full transition-colors",
                 styles.hover,
@@ -511,7 +531,9 @@ export const ChapterViewerPage = () => {
                   }}
                 >
                   {/* 마지막 페이지이고 다음 챕터가 있으면 다음화 카드 표시 */}
-                  {isLastPage && nextChapter && !contentPages[currentPage * 2 + 1] ? (
+                  {isLastPage &&
+                  nextChapter &&
+                  !contentPages[currentPage * 2 + 1] ? (
                     <button
                       onClick={() => navigate(`/chapters/${nextChapter.id}`)}
                       className={cn(
@@ -523,7 +545,9 @@ export const ChapterViewerPage = () => {
                     >
                       <ChevronRight className="w-12 h-12 text-purple-400" />
                       <div className="text-center">
-                        <p className="text-lg font-semibold mb-1">다음 화로 이동</p>
+                        <p className="text-lg font-semibold mb-1">
+                          다음 화로 이동
+                        </p>
                         <p className="text-sm opacity-60">
                           {nextChapter.chapterNumber}화: {nextChapter.title}
                         </p>
@@ -532,7 +556,9 @@ export const ChapterViewerPage = () => {
                   ) : (
                     <div
                       dangerouslySetInnerHTML={{
-                        __html: formatContent(contentPages[currentPage * 2 + 1] || ""),
+                        __html: formatContent(
+                          contentPages[currentPage * 2 + 1] || ""
+                        ),
                       }}
                     />
                   )}
@@ -581,7 +607,19 @@ export const ChapterViewerPage = () => {
           <div className="absolute bottom-16 right-0 w-64 rounded-2xl shadow-2xl border p-4 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
             <div className="space-y-4">
               {/* 관계도 버튼 */}
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors">
+              <button
+                onClick={() => {
+                  console.log("[DEBUG] 관계도 버튼 클릭됨");
+                  console.log(
+                    "[DEBUG] showGraphModal 상태 변경 전:",
+                    showGraphModal
+                  );
+                  console.log("[DEBUG] graphData:", graphData);
+                  setShowGraphModal(true);
+                  console.log("[DEBUG] showGraphModal 상태 변경 후: true");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
+              >
                 <Network className="w-4 h-4" />
                 <span className="text-sm font-medium">관계도</span>
               </button>
@@ -626,10 +664,10 @@ export const ChapterViewerPage = () => {
                       {t === "light"
                         ? "화이트"
                         : t === "dark"
-                          ? "다크"
-                          : t === "sepia"
-                            ? "세피아"
-                            : "아이보리"}
+                        ? "다크"
+                        : t === "sepia"
+                        ? "세피아"
+                        : "아이보리"}
                     </button>
                   ))}
                 </div>
@@ -700,6 +738,15 @@ export const ChapterViewerPage = () => {
         ratingCount={ratingData?.ratingCount ?? 0}
         onSubmit={handleSubmitRating}
         isSubmitting={submitRating.isPending}
+      />
+
+      {/* 관계도 모달 */}
+      <GraphModal
+        isOpen={showGraphModal}
+        onClose={() => setShowGraphModal(false)}
+        characters={graphData?.characters ?? []}
+        links={graphData?.links ?? []}
+        chapterNumber={chapter.chapterNumber}
       />
     </div>
   );

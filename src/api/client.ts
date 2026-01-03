@@ -3,6 +3,8 @@
  * Axios 인스턴스 및 인터셉터
  */
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthModalStore } from "@/stores/useAuthModalStore";
 
 // API 기본 URL - Vite 프록시 사용 시 상대 경로 필요
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
@@ -29,9 +31,6 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
-import { useAuthStore } from "@/stores/useAuthStore";
-import { useAuthModalStore } from "@/stores/useAuthModalStore";
 
 // 응답 인터셉터: 에러 처리 및 토큰 만료 핸들링
 api.interceptors.response.use(

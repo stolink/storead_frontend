@@ -100,7 +100,7 @@ export const LibraryPage = () => {
         <p className="text-zinc-500 mb-4">내 서재를 이용하려면 로그인하세요.</p>
         <Button
           onClick={() => openAuthModal("/library")}
-          className="bg-purple-600 hover:bg-purple-700"
+          className="bg-mocha-500 hover:bg-mocha-700 text-paper"
         >
           로그인
         </Button>
@@ -115,7 +115,7 @@ export const LibraryPage = () => {
 
         {isLoading ? (
           <div className="flex justify-center py-16">
-            <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full" />
+            <div className="animate-spin h-8 w-8 border-4 border-mocha-500 border-t-transparent rounded-full" />
           </div>
         ) : library?.length === 0 ? (
           <div className="text-center py-16">
@@ -126,7 +126,7 @@ export const LibraryPage = () => {
             </p>
             <Button
               onClick={() => navigate("/")}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-mocha-500 hover:bg-mocha-700 text-paper"
             >
               작품 둘러보기
             </Button>

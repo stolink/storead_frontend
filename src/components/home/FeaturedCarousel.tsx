@@ -70,7 +70,7 @@ export function FeaturedCarousel({ works }: FeaturedCarouselProps) {
                                             className="absolute inset-0 w-full h-full object-cover opacity-40"
                                         />
                                     ) : (
-                                        <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-purple-600 opacity-40" />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-mocha-400 to-mocha-700 opacity-40" />
                                     )}
 
                                     {/* 콘텐츠 오버레이 */}

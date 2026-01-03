@@ -46,7 +46,7 @@ export const HomePage = () => {
       {/* 로딩 상태 */}
       {isLoading ? (
         <div className="flex justify-center py-16">
-          <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-4 border-mocha-500 border-t-transparent rounded-full" />
         </div>
       ) : (
         <>

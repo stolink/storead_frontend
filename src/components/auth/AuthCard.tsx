@@ -95,8 +95,8 @@ export function AuthCard({ className, onSuccess }: AuthCardProps) {
     );
 
     const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081/api";
-    // const BACKEND_URL = API_URL.replace(/\/api\/?$/, "");
-    window.location.href = `${API_URL}/oauth2/authorization/google`;
+    const BACKEND_URL = API_URL.replace(/\/api\/?$/, "");
+    window.location.href = `${BACKEND_URL}/oauth2/authorization/google`;
   };
 
   const onLogin = async (data: LoginFormData) => {

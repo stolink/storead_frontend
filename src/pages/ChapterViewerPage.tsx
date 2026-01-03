@@ -745,13 +745,15 @@ export const ChapterViewerPage = () => {
       />
 
       {/* 관계도 모달 */}
-      <GraphModal
-        isOpen={showGraphModal}
-        onClose={() => setShowGraphModal(false)}
-        characters={graphData?.characters ?? []}
-        links={graphData?.links ?? []}
-        chapterNumber={chapter.chapterNumber}
-      />
+      {showGraphModal && (
+        <GraphModal
+          isOpen={showGraphModal}
+          onClose={() => setShowGraphModal(false)}
+          characters={graphData?.characters ?? []}
+          links={graphData?.links ?? []}
+          chapterNumber={chapter.chapterNumber}
+        />
+      )}
     </div>
   );
 };

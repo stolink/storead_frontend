@@ -49,52 +49,44 @@ export const useComments = (chapterId: string) => {
  * 대댓글 조회 (Lazy Loading)
  * GET /api/comments/{id}/replies
  */
-export const useReplies = (commentId: string, enabled: boolean = false) => {
-  return useQuery<Comment[]>({
+export const useReplies = (commentId: string, isOpen: boolean) => {
+  return useQuery({
     queryKey: ["replies", commentId],
     queryFn: async () => {
       const { data } = await api.get(`/comments/${commentId}/replies`);
-      // 백엔드 응답 구조: { code, status, data: [...] }
-      return data.data || data || [];
+      // console.log('[DEBUG] Replies API Response:', data);
+      const responseData = data.data || data;
+      return responseData || [];
     },
-    enabled: enabled && !!commentId,
+    enabled: !!commentId && isOpen,
   });
 };
 
-interface CreateCommentParams {
-  chapterId: string;
-  data: CreateCommentRequest;
-}
-
 /**
- * 댓글 작성
- * POST /api/chapters/{chapterId}/comments
+ * 댓글 생성
+ * POST /api/comments
  */
-export const useCreateComment = () => {
+export const useCreateComment = (chapterId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ chapterId, data }: CreateCommentParams) => {
-      // console.log('[DEBUG] Creating comment:', { chapterId, data });
-      const response = await api.post(`/chapters/${chapterId}/comments`, data);
-      // console.log('[DEBUG] Comment created:', response.data);
-      // 백엔드 응답 구조: { code, status, data: {...} }
-      return response.data.data || response.data;
+    mutationFn: async (newComment: CreateCommentRequest) => {
+      // console.log("[DEBUG] creating comment payload:", newComment);
+      const { data } = await api.post("/comments", newComment);
+      return data;
     },
-    onError: (error) => {
-      console.error('Comment creation failed:', error);
-    },
-    onSuccess: (_data, { chapterId }) => {
+    onSuccess: () => {
+      // 댓글 목록 갱신
       queryClient.invalidateQueries({ queryKey: ["comments", chapterId] });
     },
   });
 };
 
 /**
- * 대댓글 작성
- * POST /api/comments/{id}/replies
+ * 대댓글 생성
+ * POST /api/comments/{parentId}/replies
  */
-export const useCreateReply = () => {
+export const useCreateReply = (chapterId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -105,18 +97,17 @@ export const useCreateReply = () => {
       parentId: string;
       content: string;
     }) => {
-      // console.log('[DEBUG] Creating reply:', { parentId, content });
       const { data } = await api.post(`/comments/${parentId}/replies`, {
         content,
+        chapterId: parseInt(chapterId), // 챕터 ID 포함
       });
-      // console.log('[DEBUG] Reply created:', data);
       return data;
     },
-    onError: (error) => {
-      console.error('Reply creation failed:', error);
-    },
-    onSuccess: (_data, { parentId }) => {
-      queryClient.invalidateQueries({ queryKey: ["replies", parentId] });
+    onSuccess: () => {
+      // 부모 댓글의 답글 목록은 invalidateQueries로 갱신
+      // (지금은 간단히 전체 comments 쿼리를 무효화하거나, 해당 comment의 답글만 refetch 할 수도 있음)
+      queryClient.invalidateQueries({ queryKey: ["comments", chapterId] });
+
       // 부모 댓글이 속한 챕터의 댓글 목록도 갱신
       queryClient.invalidateQueries({ queryKey: ["comments"] });
     },
@@ -124,12 +115,12 @@ export const useCreateReply = () => {
 };
 
 const updateCommentInCache = (
-  oldData: { pages: PaginatedResponse<Comment>[] } | undefined,
+  oldData: { pages: PaginatedResponse<Comment>[]; pageParams: unknown[] } | undefined,
   commentId: string,
   newIsLiked: boolean,
   newLikeCount: number
 ) => {
-  if (!oldData?.pages) return oldData;
+  if (!oldData) return oldData;
   return {
     ...oldData,
     pages: oldData.pages.map((page) => ({
@@ -173,19 +164,17 @@ export const useToggleCommentLike = (chapterId: string) => {
       await queryClient.cancelQueries({ queryKey: ["comments", chapterId] });
 
       // 이전 상태 저장 (롤백용)
-      const previousData = queryClient.getQueryData<{ pages?: PaginatedResponse<Comment>[] }>(
+      const previousData = queryClient.getQueryData<{ pages: PaginatedResponse<Comment>[]; pageParams: unknown[] }>(
         ["comments", chapterId]
       );
 
       // 낙관적 업데이트
-      queryClient.setQueryData<{ pages?: PaginatedResponse<Comment>[] }>(
+      queryClient.setQueryData<{ pages: PaginatedResponse<Comment>[]; pageParams: unknown[] }>(
         ["comments", chapterId],
         (oldData) => {
-          if (!oldData?.pages) return oldData;
+          if (!oldData) return oldData;
 
-          // 현재 상태 찾기 (단순화를 위해 첫 번째 발견된 상태 기반으로 토글)
-          // 실제로는 commentId로 찾아야 정확하지만, 여기서는 oldData를 순회하며 업데이트하는 helper 사용
-          // 낙관적 업데이트 값을 유추하기 위해 기존 데이터를 찾아야 함
+          // 현재 상태 찾기
           let targetComment: Comment | undefined;
           for (const page of oldData.pages) {
             targetComment = page.data.find(c => c.id === commentId);
@@ -207,7 +196,7 @@ export const useToggleCommentLike = (chapterId: string) => {
     },
     // 서버 응답으로 캐시 최종 업데이트 (Race Condition 방지)
     onSuccess: (data) => {
-      queryClient.setQueryData<{ pages?: PaginatedResponse<Comment>[] }>(
+      queryClient.setQueryData<{ pages: PaginatedResponse<Comment>[]; pageParams: unknown[] }>(
         ["comments", chapterId],
         (oldData) => updateCommentInCache(oldData, data.commentId, data.isLiked, data.likeCount)
       );
@@ -219,6 +208,8 @@ export const useToggleCommentLike = (chapterId: string) => {
       }
     },
     // invalidation을 onSettled에서 제거하여 서버 응답 유지
+    onSettled: () => {
+    },
   });
 };
 

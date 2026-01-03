@@ -38,8 +38,8 @@ export const ChapterCommentsPage = () => {
     const { data: chapter } = usePublicChapter(id || '');
     const { data: work } = usePublicWork(chapter?.workId || '');
     const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useComments(id || '');
-    const createComment = useCreateComment();
-    const createReply = useCreateReply();
+    const createComment = useCreateComment(id || '');
+    const createReply = useCreateReply(id || '');
     const toggleLike = useToggleCommentLike(id || '');
 
     // 댓글 평탄화 및 정렬
@@ -68,8 +68,8 @@ export const ChapterCommentsPage = () => {
         if (!newComment.trim() || !isAuthenticated || !id) return;
         try {
             await createComment.mutateAsync({
-                chapterId: id,
-                data: { content: newComment.trim() },
+                chapterId: parseInt(id),
+                content: newComment.trim(),
             });
             setNewComment('');
         } catch (error) {

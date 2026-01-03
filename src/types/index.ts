@@ -153,6 +153,7 @@ export interface CreateChapterRequest {
 }
 
 export interface CreateCommentRequest {
+  chapterId: number; // 챕터 ID 필수
   content: string;
   parentId?: string; // 대댓글인 경우
 }

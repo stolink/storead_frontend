@@ -58,11 +58,11 @@ const getThemeStyle = (theme: Theme) => {
       hover: "hover:bg-zinc-100",
     },
     dark: {
-      container: "bg-black text-white",
+      container: "bg-espresso-900 text-white",
       text: "text-white",
-      bg: "bg-black",
+      bg: "bg-espresso-900",
       columnRule: "rgba(255, 255, 255, 0.1)",
-      hover: "hover:bg-zinc-900",
+      hover: "hover:bg-zinc-800",
     },
     sepia: {
       container: "bg-amber-50 text-amber-900",

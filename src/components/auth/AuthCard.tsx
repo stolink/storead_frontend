@@ -77,7 +77,9 @@ export function AuthCard({
     localStorage.setItem("oauth_redirect_path", currentPath);
 
     const API_URL =
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api";
+      import.meta.env.VITE_API_BASE_URL ||
+      import.meta.env.VITE_API_URL ||
+      "http://localhost:8081/api";
     const BACKEND_URL = API_URL.replace(/\/api\/?$/, "");
 
     // state 파라미터에 리다이렉트 경로 추가 (URL 인코딩)

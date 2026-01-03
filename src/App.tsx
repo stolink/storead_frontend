@@ -20,6 +20,7 @@ import WorkDetailPage from "@/pages/WorkDetailPage";
 import ChapterViewerPage from "@/pages/ChapterViewerPage";
 import ChapterCommentsPage from "@/pages/ChapterCommentsPage";
 import LibraryPage from "@/pages/LibraryPage";
+import WritePage from "@/pages/WritePage";
 
 // 인증 페이지
 import OAuth2Callback from "@/pages/Auth/OAuth2Callback";
@@ -78,6 +79,9 @@ function AppContent() {
 
         {/* OAuth2 콜백 */}
         <Route path="/oauth2/callback" element={<OAuth2Callback />} />
+
+        {/* 커뮤니티 배포 - 게시 확인 페이지 */}
+        <Route path="/write" element={<WritePage />} />
 
         {/* 작가 페이지 (인증 필요) */}
         <Route

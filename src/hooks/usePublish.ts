@@ -42,7 +42,7 @@ export const usePublish = () => {
       const { data } = await api.post("/community/publish", request);
       return data.data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_result, variables) => {
       // Draft 캐시 제거
       queryClient.removeQueries({ queryKey: ["draft", variables.draftId] });
       // 작품 목록 갱신 (새 Work가 생성되었을 수 있음)

@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // 레이아웃 컴포넌트
-import Layout from "@/components/layout/Layout";
+import { Layout } from "@/components/layout/Layout";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 

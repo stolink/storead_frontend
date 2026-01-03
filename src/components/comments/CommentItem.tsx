@@ -40,7 +40,7 @@ export const CommentItem = ({
 
     const { user } = useAuthStore();
     const { data: replies, isLoading: repliesLoading } = useReplies(comment.id, showReplies);
-    const createReply = useCreateReply();
+    const createReply = useCreateReply(chapterId);
     const toggleLike = useToggleCommentLike(chapterId);
     const deleteComment = useDeleteComment();
 

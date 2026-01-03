@@ -50,7 +50,7 @@ export const useComments = (chapterId: string) => {
  * GET /api/comments/{id}/replies
  */
 export const useReplies = (commentId: string, isOpen: boolean) => {
-  return useQuery({
+  return useQuery<Comment[]>({
     queryKey: ["replies", commentId],
     queryFn: async () => {
       const { data } = await api.get(`/comments/${commentId}/replies`);

@@ -20,6 +20,8 @@ import {
   BookOpen,
   ScrollText,
   Library,
+  Star,
+  Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SecureViewer } from "@/components/viewer/SecureViewer";
@@ -30,10 +32,12 @@ import {
   usePublicWork,
 } from "@/hooks/useDiscovery";
 import { useSaveBookmark } from "@/hooks/useBookmark";
+import { useChapterRating, useSubmitRating } from "@/hooks/useRating";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useThemeStore, type Theme } from "@/stores/useTheme";
 import { cn } from "@/lib/utils";
+import { RatingModal } from "@/components/rating/RatingModal";
 
 type ViewMode = "scroll" | "page";
 type LineHeight = 1.5 | 1.8 | 2;
@@ -106,6 +110,7 @@ export const ChapterViewerPage = () => {
   // UI 상태
   const [showTOC, setShowTOC] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   const { openAuthModal } = useAuthModalStore();
 
@@ -121,6 +126,17 @@ export const ChapterViewerPage = () => {
   const { data: chapters } = usePublicChapters(chapter?.workId || "");
   const { data: work } = usePublicWork(chapter?.workId || "");
   const saveBookmark = useSaveBookmark();
+
+  // 별점 데이터 및 제출 훅
+  const { data: ratingData } = useChapterRating(id || "");
+  const submitRating = useSubmitRating();
+
+  // 별점 제출 핸들러
+  const handleSubmitRating = (score: number) => {
+    if (id) {
+      submitRating.mutate({ chapterId: id, workId: chapter?.workId, score });
+    }
+  };
 
   // 본문에서 제목 태그 제거 + 줄바꿈 처리
   const cleanContent = useMemo(() => {
@@ -256,9 +272,21 @@ export const ChapterViewerPage = () => {
         )}
       >
         <div className="flex items-center justify-between px-3 h-12">
-          {/* 좌측: 홈(작품 페이지) + TOC 토글 + 챕터 정보 */}
+          {/* 좌측: 홈 + 라이브러리 + TOC 토글 + 챕터 정보 */}
           <div className="flex items-center gap-1">
-            {/* 작품 홈(챕터 목록)으로 이동 */}
+            {/* 홈(작품 목록)으로 이동 */}
+            <button
+              onClick={() => navigate("/")}
+              className={cn(
+                "p-2 rounded-full transition-colors",
+                styles.hover,
+                styles.text
+              )}
+              title="홈으로 이동"
+            >
+              <Home className="h-4 w-4" />
+            </button>
+            {/* 작품 상세(챕터 목록)으로 이동 */}
             <button
               onClick={() => chapter?.workId && navigate(`/works/${chapter.workId}`)}
               className={cn(
@@ -319,6 +347,31 @@ export const ChapterViewerPage = () => {
               title="스크롤 모드"
             >
               <ScrollText className="w-4 h-4" />
+            </button>
+
+            {/* 별점 아이콘 */}
+            <button
+              onClick={() => setShowRatingModal(true)}
+              className={cn(
+                "p-2 rounded-full transition-colors flex items-center gap-1",
+                styles.hover,
+                styles.text
+              )}
+              title="별점"
+            >
+              <Star
+                className={cn(
+                  "h-4 w-4",
+                  ratingData?.myRating
+                    ? "fill-yellow-400 text-yellow-400"
+                    : "text-current"
+                )}
+              />
+              {ratingData && ratingData.ratingCount > 0 && (
+                <span className="text-xs font-medium opacity-70">
+                  {(ratingData.avgRating / 2).toFixed(1)}
+                </span>
+              )}
             </button>
 
             {/* 댓글 아이콘 */}
@@ -637,6 +690,17 @@ export const ChapterViewerPage = () => {
           </div>
         )}
       </div>
+
+      {/* 별점 모달 (페이지 모드에서 헤더 별점 아이콘 클릭 시) */}
+      <RatingModal
+        open={showRatingModal}
+        onOpenChange={setShowRatingModal}
+        currentRating={ratingData?.myRating ?? null}
+        avgRating={ratingData?.avgRating ?? 0}
+        ratingCount={ratingData?.ratingCount ?? 0}
+        onSubmit={handleSubmitRating}
+        isSubmitting={submitRating.isPending}
+      />
     </div>
   );
 };

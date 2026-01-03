@@ -48,8 +48,22 @@ const queryClient = new QueryClient({
   },
 });
 
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+
 function AppContent() {
-  const { isOpen, closeAuthModal } = useAuthModalStore();
+  const { isOpen, closeAuthModal, openAuthModal } = useAuthModalStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // 401 에러 등으로 인한 auth=required 쿼리 감지 시 모달 자동 표시
+  useEffect(() => {
+    if (searchParams.get("auth") === "required") {
+      openAuthModal();
+      // 쿼리 파라미터 제거
+      searchParams.delete("auth");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, openAuthModal]);
 
   return (
     <>

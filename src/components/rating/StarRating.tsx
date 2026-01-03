@@ -89,8 +89,9 @@ export const StarRating = ({
             <div
                 key={index}
                 className={cn(
-                    'relative cursor-pointer',
+                    'relative cursor-pointer transition-transform duration-150',
                     readOnly && 'cursor-default',
+                    !readOnly && 'hover:scale-110',
                     sizeClasses[size]
                 )}
                 onClick={(e) => {

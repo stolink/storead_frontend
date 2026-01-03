@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMe, useUpdateProfile } from "@/hooks/useAuth";
+import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +48,7 @@ export const ProfilePage = () => {
   const location = useLocation();
   const { data: user, isLoading, error } = useMe();
   const updateProfile = useUpdateProfile();
+  const { openAuthModal } = useAuthModalStore();
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -98,11 +100,7 @@ export const ProfilePage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
         <p className="text-red-500">프로필을 불러오는데 실패했습니다.</p>
-        <Button
-          onClick={() =>
-            navigate("/login", { state: { from: location.pathname } })
-          }
-        >
+        <Button onClick={() => openAuthModal(location.pathname)}>
           로그인하기
         </Button>
       </div>

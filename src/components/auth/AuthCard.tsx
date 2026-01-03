@@ -72,7 +72,14 @@ export function AuthCard({
   });
 
   const onGoogleLogin = () => {
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+    // 현재 경로 저장 (로그인 후 돌아올 위치) - 쿼리 파라미터 포함
+    localStorage.setItem(
+      "oauth_redirect_path",
+      window.location.pathname + window.location.search
+    );
+
+    const API_URL =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api";
     const BACKEND_URL = API_URL.replace(/\/api\/?$/, "");
     window.location.href = `${BACKEND_URL}/oauth2/authorization/google`;
   };

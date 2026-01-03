@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SecureViewer } from "@/components/viewer/SecureViewer";
 import { TableOfContents } from "@/components/viewer/TableOfContents";
+import { GraphModal } from "@/components/viewer/GraphModal";
 import {
   usePublicChapter,
   usePublicChapters,
@@ -38,6 +39,8 @@ import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useThemeStore, type Theme } from "@/stores/useTheme";
 import { cn } from "@/lib/utils";
 import { RatingModal } from "@/components/rating/RatingModal";
+import { adaptGraphSnapshot } from "@/adapters/graphSnapshotAdapter";
+import DOMPurify from "dompurify";
 
 type ViewMode = "scroll" | "page";
 type LineHeight = 1.5 | 1.8 | 2;
@@ -111,6 +114,7 @@ export const ChapterViewerPage = () => {
   const [showTOC, setShowTOC] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showGraphModal, setShowGraphModal] = useState(false);
 
   const { openAuthModal } = useAuthModalStore();
 
@@ -127,6 +131,21 @@ export const ChapterViewerPage = () => {
   const { data: work } = usePublicWork(chapter?.workId || "");
   const saveBookmark = useSaveBookmark();
 
+  // 실제 graphSnapshot 데이터 사용
+  const graphData = useMemo(() => {
+    console.log("[DEBUG] chapter 전체 데이터:", chapter);
+    console.log("[DEBUG] graphSnapshot 원본:", chapter?.graphSnapshot);
+
+    if (!chapter?.graphSnapshot) {
+      console.log("[DEBUG] graphSnapshot이 없습니다!");
+      return null;
+    }
+
+    const adapted = adaptGraphSnapshot(chapter.graphSnapshot as any);
+    console.log("[DEBUG] adaptGraphSnapshot 결과:", adapted);
+    return adapted;
+  }, [chapter?.graphSnapshot]);
+
   // 별점 데이터 및 제출 훅
   const { data: ratingData } = useChapterRating(id || "");
   const submitRating = useSubmitRating();
@@ -141,7 +160,7 @@ export const ChapterViewerPage = () => {
   // 본문에서 제목 태그 제거 + 줄바꿈 처리
   const cleanContent = useMemo(() => {
     const stripped = stripHeaderTags(chapter?.content || "");
-    return formatContent(stripped);
+    return DOMPurify.sanitize(formatContent(stripped));
   }, [chapter?.content]);
 
   // 마지막 읽은 챕터 저장 (로컬 스토리지) - 이어서 읽기용
@@ -288,7 +307,9 @@ export const ChapterViewerPage = () => {
             </button>
             {/* 작품 상세(챕터 목록)으로 이동 */}
             <button
-              onClick={() => chapter?.workId && navigate(`/works/${chapter.workId}`)}
+              onClick={() =>
+                chapter?.workId && navigate(`/works/${chapter.workId}`)
+              }
               className={cn(
                 "p-2 rounded-full transition-colors",
                 styles.hover,
@@ -499,7 +520,9 @@ export const ChapterViewerPage = () => {
                 <div
                   className="overflow-hidden"
                   dangerouslySetInnerHTML={{
-                    __html: formatContent(contentPages[currentPage * 2] || ""),
+                    __html: DOMPurify.sanitize(
+                      formatContent(contentPages[currentPage * 2] || "")
+                    ),
                   }}
                 />
                 {/* 오른쪽 페이지 (중앙 구분선) */}
@@ -523,7 +546,9 @@ export const ChapterViewerPage = () => {
                     >
                       <ChevronRight className="w-12 h-12 text-mocha-500" />
                       <div className="text-center">
-                        <p className="text-lg font-semibold mb-1">다음 화로 이동</p>
+                        <p className="text-lg font-semibold mb-1">
+                          다음 화로 이동
+                        </p>
                         <p className="text-sm opacity-60">
                           {nextChapter.chapterNumber}화: {nextChapter.title}
                         </p>
@@ -532,7 +557,9 @@ export const ChapterViewerPage = () => {
                   ) : (
                     <div
                       dangerouslySetInnerHTML={{
-                        __html: formatContent(contentPages[currentPage * 2 + 1] || ""),
+                        __html: DOMPurify.sanitize(
+                          formatContent(contentPages[currentPage * 2 + 1] || "")
+                        ),
                       }}
                     />
                   )}
@@ -581,7 +608,19 @@ export const ChapterViewerPage = () => {
           <div className="absolute bottom-16 right-0 w-72 rounded-2xl shadow-2xl border p-5 bg-paper border-mocha-400 text-ink">
             <div className="space-y-5">
               {/* 관계도 보기 버튼 */}
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-mocha-400 text-ink rounded-xl hover:bg-mocha-400/10 transition-colors">
+              <button
+                onClick={() => {
+                  console.log("[DEBUG] 관계도 버튼 클릭됨");
+                  console.log(
+                    "[DEBUG] showGraphModal 상태 변경 전:",
+                    showGraphModal
+                  );
+                  console.log("[DEBUG] graphData:", graphData);
+                  setShowGraphModal(true);
+                  console.log("[DEBUG] showGraphModal 상태 변경 후: true");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-mocha-400 text-ink rounded-xl hover:bg-mocha-400/10 transition-colors"
+              >
                 <Network className="w-4 h-4" />
                 <span className="text-sm font-medium">관계도 보기</span>
               </button>
@@ -703,6 +742,15 @@ export const ChapterViewerPage = () => {
         ratingCount={ratingData?.ratingCount ?? 0}
         onSubmit={handleSubmitRating}
         isSubmitting={submitRating.isPending}
+      />
+
+      {/* 관계도 모달 */}
+      <GraphModal
+        isOpen={showGraphModal}
+        onClose={() => setShowGraphModal(false)}
+        characters={graphData?.characters ?? []}
+        links={graphData?.links ?? []}
+        chapterNumber={chapter.chapterNumber}
       />
     </div>
   );

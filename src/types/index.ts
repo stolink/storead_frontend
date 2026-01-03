@@ -3,6 +3,8 @@
  * 백엔드 ERD 기반 TypeScript 인터페이스
  */
 
+import type { GraphSnapshotDTO } from "@/adapters/graphSnapshotAdapter";
+
 // === Enums ===
 export type Genre =
   | "FANTASY"
@@ -55,10 +57,12 @@ export interface Chapter {
   title: string;
   content: string;
   chapterNumber: number;
-  status: 'DRAFT' | 'PUBLISHED' | 'SCHEDULED'; // 상태 추가
+  status: "DRAFT" | "PUBLISHED" | "SCHEDULED"; // 상태 추가
   viewCount: number;
   ratingSum: number; // 역정규화: 별점 합계
   ratingCount: number; // 역정규화: 별점 개수
+
+  graphSnapshot?: GraphSnapshotDTO; // 캐릭터 관계도 스냅샷 (JSONB)
   createdAt: string;
   updatedAt: string;
   // 프론트엔드 계산 필드
@@ -173,3 +177,6 @@ export interface AuthResponse {
   user: User;
   accessToken: string;
 }
+// === Exports ===
+export * from "./character";
+export * from "./characterGraph";

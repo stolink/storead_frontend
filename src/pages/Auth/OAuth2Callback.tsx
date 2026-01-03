@@ -43,12 +43,12 @@ export default function OAuth2Callback() {
         } catch (error) {
           console.error("OAuth2 Login Failed:", error);
           localStorage.removeItem("accessToken");
-          navigate("/login?error=oauth_failed", { replace: true });
+          navigate("/?error=oauth_failed", { replace: true });
         }
       } else {
         // 토큰이 없으면 로그인 실패 처리
         console.error("No access token found in URL");
-        navigate("/login?error=no_token", { replace: true });
+        navigate("/?error=no_token", { replace: true });
       }
     };
 

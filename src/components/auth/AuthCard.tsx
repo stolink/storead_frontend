@@ -94,8 +94,7 @@ export function AuthCard({ className, onSuccess }: AuthCardProps) {
       window.location.pathname + window.location.search
     );
 
-    const API_URL =
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api";
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081/api";
     // const BACKEND_URL = API_URL.replace(/\/api\/?$/, "");
     window.location.href = `${API_URL}/oauth2/authorization/google`;
   };

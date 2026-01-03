@@ -4,14 +4,14 @@ AI 스마트 스토리 플랫폼 - 독자 서비스 및 작가 배포 시스템
 
 ## 🛠 기술 스택
 
-| 영역 | 기술 |
-|------|------|
-| **Core** | React 18, TypeScript, Vite |
-| **Styling** | Tailwind CSS v4, shadcn/ui |
-| **Server State** | TanStack Query v5 |
-| **Client State** | Zustand |
-| **Forms** | React Hook Form, Zod |
-| **Routing** | React Router DOM |
+| 영역             | 기술                       |
+| ---------------- | -------------------------- |
+| **Core**         | React 18, TypeScript, Vite |
+| **Styling**      | Tailwind CSS v4, shadcn/ui |
+| **Server State** | TanStack Query v5          |
+| **Client State** | Zustand                    |
+| **Forms**        | React Hook Form, Zod       |
+| **Routing**      | React Router DOM           |
 
 ## 🚀 시작하기
 
@@ -40,7 +40,7 @@ npm run build
 `.env` 파일 생성:
 
 ```env
-VITE_API_BASE_URL=http://localhost:8080/api
+VITE_API_URL=http://localhost:8081/api
 ```
 
 ## 📁 프로젝트 구조
@@ -87,44 +87,46 @@ src/
 
 ### 독자 서비스
 
-| 기능 | 설명 |
-|------|------|
-| **작품 탐색** | 장르별 필터, 검색 |
-| **작품 상세** | 표지, 줄거리, 챕터 리스트 |
-| **보안 뷰어** | 복사/우클릭/드래그 차단 |
-| **가독성 설정** | 폰트 크기, 테마, 줄 간격 |
-| **소셜 기능** | 별점, 계층형 댓글, 좋아요 |
-| **내 서재** | 관심 작품 담기 및 정렬 |
+| 기능            | 설명                      |
+| --------------- | ------------------------- |
+| **작품 탐색**   | 장르별 필터, 검색         |
+| **작품 상세**   | 표지, 줄거리, 챕터 리스트 |
+| **보안 뷰어**   | 복사/우클릭/드래그 차단   |
+| **가독성 설정** | 폰트 크기, 테마, 줄 간격  |
+| **소셜 기능**   | 별점, 계층형 댓글, 좋아요 |
+| **내 서재**     | 관심 작품 담기 및 정렬    |
 
 ### 작가 서비스
 
-| 기능 | 설명 |
-|------|------|
-| **대시보드** | 내 작품 목록 조회 및 관리, 통합 뷰 |
-| **작품 관리** | 새 작품 생성, 정보(표지/줄거리) 수정, 삭제 |
-| **챕터 관리** | 챕터 목록 조회, 새 챕터 작성, 수정, 삭제, 순서 관리 |
-| **프로필 관리** | 작가 프로필 정보 수정 |
+| 기능            | 설명                                                |
+| --------------- | --------------------------------------------------- |
+| **대시보드**    | 내 작품 목록 조회 및 관리, 통합 뷰                  |
+| **작품 관리**   | 새 작품 생성, 정보(표지/줄거리) 수정, 삭제          |
+| **챕터 관리**   | 챕터 목록 조회, 새 챕터 작성, 수정, 삭제, 순서 관리 |
+| **프로필 관리** | 작가 프로필 정보 수정                               |
 
 ## 🔗 API 엔드포인트
 
-| 영역 | 엔드포인트 | Method |
-|------|-----------|:------:|
-| **인증** | `/api/auth/login` | POST |
-| | `/api/auth/register` | POST |
-| **탐색** | `/api/discovery` | GET |
-| **작품** | `/api/works` | GET/POST |
-| | `/api/works/:id` | PUT/DELETE |
-| **챕터** | `/api/works/:workId/chapters` | GET/POST |
-| | `/api/chapters/:id` | PUT/DELETE |
-| **서재** | `/api/library` | GET/POST |
+| 영역     | 엔드포인트                    |   Method   |
+| -------- | ----------------------------- | :--------: |
+| **인증** | `/api/auth/login`             |    POST    |
+|          | `/api/auth/register`          |    POST    |
+| **탐색** | `/api/discovery`              |    GET     |
+| **작품** | `/api/works`                  |  GET/POST  |
+|          | `/api/works/:id`              | PUT/DELETE |
+| **챕터** | `/api/works/:workId/chapters` |  GET/POST  |
+|          | `/api/chapters/:id`           | PUT/DELETE |
+| **서재** | `/api/library`                |  GET/POST  |
 
 ## 📝 코드 컨벤션
 
 ### 파일 네이밍
+
 - 컴포넌트: `PascalCase.tsx`
 - 훅: `useCamelCase.ts`
 
 ### 커밋 메시지
+
 - `feat`: 새로운 기능
 - `fix`: 버그 수정
 - `docs`: 문서

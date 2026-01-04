@@ -1,49 +1,45 @@
 /**
  * Zustand 인증 상태 관리 스토어
+ * 쿠키 기반 인증 - 토큰 관리 불필요
  */
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { User } from '@/types';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { User } from "@/types";
 
 interface AuthState {
-    user: User | null;
-    accessToken: string | null;
-    isAuthenticated: boolean;
-    // Actions
-    setAuth: (user: User, token: string) => void;
-    logout: () => void;
-    updateUser: (user: Partial<User>) => void;
+  user: User | null;
+  isAuthenticated: boolean;
+  // Actions
+  setAuth: (user: User) => void;
+  logout: () => void;
+  updateUser: (user: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
-    persist(
-        (set) => ({
-            user: null,
-            accessToken: null,
-            isAuthenticated: false,
+  persist(
+    (set) => ({
+      user: null,
+      isAuthenticated: false,
 
-            setAuth: (user, token) => {
-                localStorage.setItem('accessToken', token);
-                set({ user, accessToken: token, isAuthenticated: true });
-            },
+      setAuth: (user) => {
+        set({ user, isAuthenticated: true });
+      },
 
-            logout: () => {
-                localStorage.removeItem('accessToken');
-                set({ user: null, accessToken: null, isAuthenticated: false });
-            },
+      logout: () => {
+        set({ user: null, isAuthenticated: false });
+      },
 
-            updateUser: (updates) =>
-                set((state) => ({
-                    user: state.user ? { ...state.user, ...updates } : null,
-                })),
-        }),
-        {
-            name: 'auth-storage',
-            partialize: (state) => ({
-                user: state.user,
-                accessToken: state.accessToken,
-                isAuthenticated: state.isAuthenticated,
-            }),
-        }
-    )
+      updateUser: (updates) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updates } : null,
+        })),
+    }),
+    {
+      name: "auth-storage",
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
 );

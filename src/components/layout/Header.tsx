@@ -1,4 +1,4 @@
-import { Book, Library, PenTool, LogOut } from "lucide-react";
+import { Book, Library, PenTool, LogOut, Sparkles } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 
 /**
  * 글로벌 헤더 컴포넌트
@@ -41,7 +40,10 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center px-4 max-w-7xl">
         {/* Logo Area - 클릭 시 홈으로 이동 */}
-        <Link to="/" className="flex items-center gap-2 mr-8 transition-opacity hover:opacity-80">
+        <Link
+          to="/"
+          className="flex items-center gap-2 mr-8 transition-opacity hover:opacity-80"
+        >
           <Book className="h-6 w-6 text-primary" />
           <span className="text-xl font-bold font-heading text-foreground tracking-tight">
             Storead
@@ -101,7 +103,18 @@ export function Header() {
                   내 작품 관리
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                <DropdownMenuItem
+                  onClick={() => navigate("/credits/charge")}
+                  className="text-mocha-600 font-medium"
+                >
+                  <Sparkles className="h-4 w-4 mr-2 text-mocha-500" />
+                  크레딧 충전
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-600"
+                >
                   <LogOut className="h-4 w-4 mr-2" />
                   로그아웃
                 </DropdownMenuItem>
@@ -109,10 +122,17 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <>
-              <Button variant="ghost" size="sm" onClick={() => openAuthModal(undefined, "login")}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => openAuthModal(undefined, "login")}
+              >
                 로그인
               </Button>
-              <Button size="sm" onClick={() => openAuthModal(undefined, "register")}>
+              <Button
+                size="sm"
+                onClick={() => openAuthModal(undefined, "register")}
+              >
                 회원가입
               </Button>
             </>

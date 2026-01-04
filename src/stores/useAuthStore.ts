@@ -1,5 +1,6 @@
 /**
  * Zustand 인증 상태 관리 스토어
+ * 쿠키 기반 인증 - 토큰 관리 불필요
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -7,10 +8,9 @@ import type { User } from "@/types";
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
   isAuthenticated: boolean;
   // Actions
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
 }
@@ -19,15 +19,14 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
 
-      setAuth: (user, token) => {
-        set({ user, accessToken: token, isAuthenticated: true });
+      setAuth: (user) => {
+        set({ user, isAuthenticated: true });
       },
 
       logout: () => {
-        set({ user: null, accessToken: null, isAuthenticated: false });
+        set({ user: null, isAuthenticated: false });
       },
 
       updateUser: (updates) =>
@@ -39,7 +38,6 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }

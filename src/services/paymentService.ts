@@ -10,8 +10,13 @@ import type {
 
 export const paymentService = {
   getPackages: async (): Promise<ApiResponse<CreditPackage[]>> => {
-    const response =
-      await api.get<ApiResponse<CreditPackage[]>>("/payments/packages");
+    const response = await api.get<ApiResponse<CreditPackage[]>>(
+      "/payments/packages",
+      {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        skipAuthHandler: true,
+      } as any
+    );
     return response.data;
   },
 

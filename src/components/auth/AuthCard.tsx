@@ -76,15 +76,10 @@ export function AuthCard({
     const currentPath = window.location.pathname + window.location.search;
     localStorage.setItem("oauth_redirect_path", currentPath);
 
-    const API_URL =
-      import.meta.env.VITE_API_BASE_URL ||
-      import.meta.env.VITE_API_URL ||
-      "http://localhost:8081/api";
-    const BACKEND_URL = API_URL.replace(/\/api\/?$/, "");
-
-    // state 파라미터에 리다이렉트 경로 추가 (URL 인코딩)
+    // Use relative path to go through Vite proxy (localhost:5174)
+    // This ensures cookies are set on the same domain/port as the frontend
     const state = encodeURIComponent(currentPath);
-    window.location.href = `${BACKEND_URL}/oauth2/authorization/google?state=${state}`;
+    window.location.href = `/api/oauth2/authorization/google?state=${state}`;
   };
 
   const handleApiError = (error: unknown, defaultMsg: string) => {
@@ -99,9 +94,9 @@ export function AuthCard({
     setIsLoginPending(true);
     try {
       const response = await api.post("/auth/login", data);
-      // ApiResponse 래퍼 구조: { code, status, message, data: { accessToken, user, ... } }
-      const { accessToken, user } = response.data.data;
-      setAuth(user, accessToken);
+      // 쿠키 기반 인증: 백엔드가 쿠키 설정, 응답에서 user 정보만 사용
+      const user = response.data.data.user || response.data.data;
+      setAuth(user);
       onSuccess?.();
     } catch (error) {
       handleApiError(error, "로그인에 실패했습니다");
@@ -200,7 +195,10 @@ export function AuthCard({
               }}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-2 mb-6 h-12 p-1.5 rounded-xl" style={{ backgroundColor: 'rgba(241, 240, 236, 0.8)' }}>
+              <TabsList
+                className="grid w-full grid-cols-2 mb-6 h-12 p-1.5 rounded-xl"
+                style={{ backgroundColor: "rgba(241, 240, 236, 0.8)" }}
+              >
                 <TabsTrigger
                   value="login"
                   className="text-sm font-bold rounded-lg data-[state=active]:bg-white data-[state=active]:text-mocha-900 data-[state=active]:shadow-sm transition-all duration-300"
@@ -232,7 +230,10 @@ export function AuthCard({
                       type="email"
                       placeholder="name@example.com"
                       className="h-10 text-sm transition-all font-medium"
-                      style={{ border: '1px solid #F1F0EC', backgroundColor: 'rgba(241, 240, 236, 0.2)' }}
+                      style={{
+                        border: "1px solid #F1F0EC",
+                        backgroundColor: "rgba(241, 240, 236, 0.2)",
+                      }}
                       {...loginForm.register("email")}
                     />
                     {loginForm.formState.errors.email && (
@@ -261,7 +262,10 @@ export function AuthCard({
                         id="password"
                         type={showPassword ? "text" : "password"}
                         className="h-10 text-sm transition-all"
-                        style={{ border: '1px solid #F1F0EC', backgroundColor: 'rgba(241, 240, 236, 0.2)' }}
+                        style={{
+                          border: "1px solid #F1F0EC",
+                          backgroundColor: "rgba(241, 240, 236, 0.2)",
+                        }}
                         {...loginForm.register("password")}
                       />
                       <button
@@ -285,7 +289,7 @@ export function AuthCard({
                   <Button
                     type="submit"
                     className="w-full h-11 text-sm font-bold text-white transition-all shadow-md hover:shadow-lg mt-4 border-none"
-                    style={{ backgroundColor: '#A47764' }}
+                    style={{ backgroundColor: "#A47764" }}
                     disabled={isLoginPending}
                   >
                     {isLoginPending ? "처리 중..." : "로그인"}
@@ -309,7 +313,10 @@ export function AuthCard({
                       id="reg-email"
                       type="email"
                       className="h-10 text-sm transition-all font-medium"
-                      style={{ border: '1px solid #F1F0EC', backgroundColor: 'rgba(241, 240, 236, 0.2)' }}
+                      style={{
+                        border: "1px solid #F1F0EC",
+                        backgroundColor: "rgba(241, 240, 236, 0.2)",
+                      }}
                       {...registerForm.register("email")}
                     />
                     {registerForm.formState.errors.email && (
@@ -328,7 +335,10 @@ export function AuthCard({
                     <Input
                       id="reg-nickname"
                       className="h-10 text-sm transition-all font-medium"
-                      style={{ border: '1px solid #F1F0EC', backgroundColor: 'rgba(241, 240, 236, 0.2)' }}
+                      style={{
+                        border: "1px solid #F1F0EC",
+                        backgroundColor: "rgba(241, 240, 236, 0.2)",
+                      }}
                       {...registerForm.register("nickname")}
                     />
                     {registerForm.formState.errors.nickname && (
@@ -349,7 +359,10 @@ export function AuthCard({
                       type="password"
                       placeholder="8자 이상"
                       className="h-10 text-sm transition-all"
-                      style={{ border: '1px solid #F1F0EC', backgroundColor: 'rgba(241, 240, 236, 0.2)' }}
+                      style={{
+                        border: "1px solid #F1F0EC",
+                        backgroundColor: "rgba(241, 240, 236, 0.2)",
+                      }}
                       {...registerForm.register("password")}
                     />
                     {registerForm.formState.errors.password && (
@@ -369,7 +382,10 @@ export function AuthCard({
                       id="reg-confirm"
                       type="password"
                       className="h-10 text-sm transition-all"
-                      style={{ border: '1px solid #F1F0EC', backgroundColor: 'rgba(241, 240, 236, 0.2)' }}
+                      style={{
+                        border: "1px solid #F1F0EC",
+                        backgroundColor: "rgba(241, 240, 236, 0.2)",
+                      }}
                       {...registerForm.register("confirmPassword")}
                     />
                     {registerForm.formState.errors.confirmPassword && (
@@ -381,7 +397,7 @@ export function AuthCard({
                   <Button
                     type="submit"
                     className="w-full h-11 text-sm font-bold text-white transition-all shadow-md mt-4 border-none"
-                    style={{ backgroundColor: '#A47764' }}
+                    style={{ backgroundColor: "#A47764" }}
                     disabled={isRegisterPending}
                   >
                     {isRegisterPending ? "처리 중..." : "회원가입 완료"}
@@ -402,8 +418,8 @@ export function AuthCard({
         <div
           className="hidden md:flex flex-1 self-stretch p-10 flex-col justify-between relative overflow-hidden rounded-r-[2rem]"
           style={{
-            background: 'linear-gradient(to bottom right, #A47764, #7D5A4B)',
-            color: '#F1F0EC' // paper 색상 직접 지정
+            background: "linear-gradient(to bottom right, #A47764, #7D5A4B)",
+            color: "#F1F0EC", // paper 색상 직접 지정
           }}
         >
           {/* Abstract visual elements */}

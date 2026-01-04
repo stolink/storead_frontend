@@ -191,7 +191,7 @@ export function useForceSimulation(
 
             return groupCenter.x + Math.cos(angle) * offset;
           })
-          .strength((d) => {
+          .strength((d: CharacterNode) => {
             // 중요 인물일수록 강한 위치 고정
             const importance = getImportanceScore(d.role);
             return FORCE_CONFIG.positionStrength * (0.8 + importance * 0.7);
@@ -201,7 +201,7 @@ export function useForceSimulation(
       newSimulation.force(
         "y",
         d3
-          .forceY<CharacterNode>((d) => {
+          .forceY<CharacterNode>((d: CharacterNode) => {
             if (!d.group || !groupCenters[d.group]) return height / 2;
 
             const groupCenter = groupCenters[d.group];
@@ -215,7 +215,7 @@ export function useForceSimulation(
 
             return groupCenter.y + Math.sin(angle) * offset;
           })
-          .strength((d) => {
+          .strength((d: CharacterNode) => {
             const importance = getImportanceScore(d.role);
             return FORCE_CONFIG.positionStrength * (0.8 + importance * 0.7);
           })

@@ -21,7 +21,7 @@ export const api = axios.create({
 // 요청 인터셉터: 인증 토큰 자동 첨부
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem("accessToken");
+    const token = useAuthStore.getState().accessToken;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }

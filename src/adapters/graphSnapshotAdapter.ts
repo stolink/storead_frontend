@@ -35,9 +35,61 @@ export interface GraphSnapshotDTO {
       name: string;
       age?: number;
       gender?: string;
-      personality?: string[];
-      backstory?: string;
+      role?: string;
       imageUrl?: string;
+      // Extended profile
+      occupation?: string;
+      birthplace?: string;
+      family?: string;
+      backstory?: string;
+      faction?: string;
+      aliases?: string[];
+      firstAppearance?: string;
+      // Personality (full object)
+      personality?: {
+        coreTraits?: string[];
+        strengths?: string[];
+        flaws?: string[];
+        values?: string[];
+      };
+      // Appearance (full object)
+      appearance?: {
+        physique?: string;
+        skinTone?: string;
+        eyes?: string;
+        nose?: string;
+        mouth?: string;
+        hairStyle?: string;
+        hairColor?: string;
+        attire?: string | string[];
+        expression?: string;
+        scarsTattoos?: string | string[];
+        styleContext?: {
+          artStyle?: string;
+        };
+      };
+      // Motivation & Mood
+      motivation?: string;
+      currentMood?: {
+        emotion?: string;
+        trigger?: string | null;
+        intensity?: number;
+      };
+      // Relations
+      relations?: {
+        graph?: Array<{
+          target: string;
+          type: string;
+          description?: string;
+          history?: string | null;
+          strength?: number;
+        }>;
+      };
+      // Meta
+      meta?: {
+        createdAt?: string | null;
+        updatedAt?: string | null;
+      };
     }
   >;
 }
@@ -75,54 +127,100 @@ export function adaptGraphSnapshot(
     const characters: Character[] = data.nodes.map((node) => {
       const profile = data.profiles?.[node.id];
 
+      // Helper to normalize attire/scarsTattoos to arrays
+      const normalizeToArray = (
+        val: string | string[] | undefined
+      ): string[] => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        return [val];
+      };
+
       return {
         _id: node.id,
         projectId: "unknown",
-        role: node.role as any,
+        role: (profile?.role || node.role) as any,
         profile: {
           characterId: node.id,
-          name: node.name,
+          name: profile?.name || node.name,
           age: profile?.age ?? null,
           gender: profile?.gender ?? "unknown",
           race: "unknown",
           mbti: null,
-          personality: profile?.personality ?? [],
+          personality: profile?.personality?.coreTraits ?? [],
           backstory: profile?.backstory ?? "",
+          occupation: profile?.occupation,
+          birthplace: profile?.birthplace,
+          family: profile?.family,
           faction: {
-            name: node.group ?? null,
+            name: profile?.faction ?? node.group ?? null,
             social: { rank: "", influence: 0, factionReputation: {} },
           },
         },
-        aliases: [],
+        aliases: profile?.aliases ?? [],
+        firstAppearance: profile?.firstAppearance,
         status: "alive",
-        appearance: {
-          physique: "",
-          skinTone: "",
-          eyes: "",
-          nose: "",
-          mouth: "",
-          hairStyle: "",
-          hairColor: "",
-          attire: [],
-          expression: "",
-          scarsTattoos: [],
-          styleContext: { artStyle: "" },
-        },
+        appearance: profile?.appearance
+          ? {
+              physique: profile.appearance.physique ?? "",
+              skinTone: profile.appearance.skinTone ?? "",
+              eyes: profile.appearance.eyes ?? "",
+              nose: profile.appearance.nose ?? "",
+              mouth: profile.appearance.mouth ?? "",
+              hairStyle: profile.appearance.hairStyle ?? "",
+              hairColor: profile.appearance.hairColor ?? "",
+              attire: normalizeToArray(profile.appearance.attire),
+              expression: profile.appearance.expression ?? "",
+              scarsTattoos: normalizeToArray(profile.appearance.scarsTattoos),
+              styleContext: {
+                artStyle: profile.appearance.styleContext?.artStyle ?? "",
+              },
+            }
+          : {
+              physique: "",
+              skinTone: "",
+              eyes: "",
+              nose: "",
+              mouth: "",
+              hairStyle: "",
+              hairColor: "",
+              attire: [],
+              expression: "",
+              scarsTattoos: [],
+              styleContext: { artStyle: "" },
+            },
         personality: {
-          coreTraits: profile?.personality ?? [],
-          flaws: [],
-          values: [],
+          coreTraits: profile?.personality?.coreTraits ?? [],
+          strengths: profile?.personality?.strengths ?? [],
+          flaws: profile?.personality?.flaws ?? [],
+          values: profile?.personality?.values ?? [],
         },
-        relations: { graph: [], eventRefs: [], locationContext: "" },
-        currentMood: { emotion: "", intensity: 0, trigger: null },
+        motivation: profile?.motivation,
+        relations: profile?.relations ?? {
+          graph: [],
+          eventRefs: [],
+          locationContext: "",
+        },
+        currentMood: profile?.currentMood ?? {
+          emotion: "",
+          intensity: 0,
+          trigger: null,
+        },
         inventory: [],
-        meta: {
-          createdAt: null,
-          updatedAt: null,
-          dataVersion: "",
-          lockVersion: 0,
-        },
-        imageUrl: node.imageUrl,
+        meta: profile?.meta
+          ? {
+              createdAt: profile.meta.createdAt ?? null,
+              updatedAt: profile.meta.updatedAt ?? null,
+              dataVersion: "",
+              lockVersion: 0,
+            }
+          : {
+              createdAt: null,
+              updatedAt: null,
+              dataVersion: "",
+              lockVersion: 0,
+            },
+        imageUrl: profile?.imageUrl || node.imageUrl,
         // Layout coordinates
         x: node.x,
         y: node.y,

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { CharacterGraph } from "@/components/CharacterGraph";
 import { NetworkDetailPanel } from "@/components/viewer/NetworkDetailPanel";
+import { CharacterDetailModal } from "@/components/common/CharacterDetailModal";
 import type { Character } from "@/types/character";
 import type { RelationshipLink } from "@/types/characterGraph";
 
@@ -27,6 +28,8 @@ export function GraphModal({
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(
     null
   );
+
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -85,10 +88,7 @@ export function GraphModal({
                     if (nextChar) setSelectedCharacter(nextChar);
                   }}
                   onViewProfile={() => {
-                    console.log(
-                      "View profile clicked for:",
-                      selectedCharacter.profile.name
-                    );
+                    setIsProfileModalOpen(true);
                   }}
                 />
               )}
@@ -109,6 +109,14 @@ export function GraphModal({
           </p>
         </footer>
       </div>
+
+      {/* Character Profile Modal */}
+      <CharacterDetailModal
+        character={selectedCharacter}
+        allCharacters={characters}
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </div>
   );
 }

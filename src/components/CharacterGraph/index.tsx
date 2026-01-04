@@ -75,6 +75,7 @@ export const CharacterGraph = forwardRef<
     const gRef = useRef<SVGGElement>(null);
 
     const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+    const [lockedNodeId, setLockedNodeId] = useState<string | null>(null); // 클릭 시 하이라이트 고정
     const [enableGrouping, setEnableGrouping] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
@@ -109,6 +110,7 @@ export const CharacterGraph = forwardRef<
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
+          setLockedNodeId(null); // 고정 해제
           onNodeClick?.(null);
           onLinkClick?.(null);
           // Optional: Clear search if active?
@@ -651,7 +653,8 @@ export const CharacterGraph = forwardRef<
     );
 
     const connectedNodeIds = useMemo(() => {
-      const focusId = hoveredNodeId || draggedNodeId || selectedNodeId;
+      const focusId =
+        lockedNodeId || hoveredNodeId || draggedNodeId || selectedNodeId;
       if (!focusId) return null;
       const connected = new Set<string>([focusId]);
       links.forEach((link) => {
@@ -666,6 +669,7 @@ export const CharacterGraph = forwardRef<
       });
       return connected;
     }, [
+      lockedNodeId,
       hoveredNodeId,
       draggedNodeId,
       selectedNodeId,
@@ -703,6 +707,9 @@ export const CharacterGraph = forwardRef<
 
     const handleNodeClick = useCallback(
       (node: CharacterNode) => {
+        // 클릭 시 하이라이트 고정 토글 (같은 노드 클릭 시 해제)
+        setLockedNodeId((prev) => (prev === node.id ? null : node.id));
+
         // Use the reliable Map lookup instead of array indexing
         const char = nodeCharacterMapRef.current.get(node.id);
 
@@ -840,6 +847,7 @@ export const CharacterGraph = forwardRef<
               e.target === e.currentTarget ||
               (e.target as Element).tagName === "svg"
             ) {
+              setLockedNodeId(null); // 고정 해제
               onNodeClick?.(null);
               onLinkClick?.(null);
               onSearchChange?.(null); // Clear search too if desired? Maybe not.
@@ -953,7 +961,11 @@ export const CharacterGraph = forwardRef<
             )}
 
             {links.map((link) => {
-              const focusId = hoveredNodeId || draggedNodeId || selectedNodeId;
+              const focusId =
+                lockedNodeId ||
+                hoveredNodeId ||
+                draggedNodeId ||
+                selectedNodeId;
               const sId =
                 typeof link.source === "object"
                   ? (link.source as CharacterNode).id

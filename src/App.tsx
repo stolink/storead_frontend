@@ -37,6 +37,11 @@ import ChapterEditPage from "@/pages/Author/ChapterEditPage";
 // 프로필 페이지
 import ProfilePage from "@/pages/Profile/ProfilePage";
 
+// 결제 페이지
+import { CreditChargePage } from "@/pages/payment/CreditChargePage";
+import { PaymentSuccessPage } from "@/pages/payment/PaymentSuccessPage";
+import { PaymentFailPage } from "@/pages/payment/PaymentFailPage";
+
 // TanStack Query 클라이언트
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -158,6 +163,18 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+
+        {/* 결제 관련 페이지 */}
+        <Route
+          path="/credits/charge"
+          element={
+            <ProtectedRoute>
+              <CreditChargePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/payments/success" element={<PaymentSuccessPage />} />
+        <Route path="/payments/fail" element={<PaymentFailPage />} />
       </Routes>
 
       {/* 전역 로그인/회원가입 모달 */}

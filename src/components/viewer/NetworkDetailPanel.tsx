@@ -235,7 +235,7 @@ export function NetworkDetailPanel({
       <div className="p-4 bg-gradient-to-t from-white/90 to-transparent border-t border-stone-100/50">
         <Button
           variant="default"
-          className="w-full bg-primary hover:bg-primary/90 text-white font-semibold shadow-lg hover:shadow-xl transition-all h-11 rounded-xl"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all h-11 rounded-xl"
           onClick={onViewProfile}
         >
           <BookOpen className="h-4 w-4 mr-2" />

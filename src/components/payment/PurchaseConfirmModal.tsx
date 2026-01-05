@@ -4,7 +4,7 @@
  * 크레딧 잔액 확인 -> 구매 확인 -> 구매 완료 프로세스
  * 잔액 부족 시 충전 페이지 안내
  */
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Coins, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import {
@@ -56,6 +56,17 @@ export function PurchaseConfirmModal({
     const afterBalance = currentBalance - chapterPrice;
     const canAfford = currentBalance >= chapterPrice;
 
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+            }
+        };
+    }, []);
+
     // 구매 실행
     const handlePurchase = async () => {
         if (!canAfford) {
@@ -73,7 +84,7 @@ export function PurchaseConfirmModal({
             setStep('success');
 
             // 2초 후 자동으로 닫고 콜백 실행
-            setTimeout(() => {
+            timerRef.current = setTimeout(() => {
                 onClose();
                 onPurchaseSuccess?.();
             }, 1500);

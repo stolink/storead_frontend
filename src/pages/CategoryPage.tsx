@@ -90,6 +90,12 @@ export const CategoryPage = () => {
         }
     }, [isVisible, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+    // 카테고리(genreId) 변경 시 탭 상태 초기화
+    useEffect(() => {
+        const defaultTab = GENRE_GROUPS[genreId!]?.tabs[0].value || genreId;
+        setSelectedGenreValue(searchParams.get('sub') || defaultTab);
+    }, [genreId, searchParams]);
+
     // 필터 변경 시 URL 업데이트
     useEffect(() => {
         const params = new URLSearchParams();

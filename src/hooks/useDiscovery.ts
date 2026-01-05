@@ -236,7 +236,7 @@ export const useCategoryWorks = (
             // genreId가 있을 때만 호출됨
             if (!genreId) return { data: [], hasMore: false, nextPage: undefined };
 
-            const queryParams: any = {
+            const queryParams: Record<string, unknown> = {
                 page: pageParam,
                 size: params?.limit || 20,
                 sort: params?.sort || 'createdAt',

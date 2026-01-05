@@ -38,6 +38,7 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
     const animationFrameIds = useRef<number[]>([]);
+    const timerIds = useRef<number[]>([]);
 
     // 2. FLIP Animation using useLayoutEffect
     // DOM 업데이트 후 브라우저 페인팅 전에 실행되어 깜빡임 방지
@@ -82,9 +83,10 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
                         // duration(600ms)보다 약간 여유있게 설정
                         // Cleanup will-change after animation
                         // duration(600ms)보다 약간 여유있게 설정
-                        window.setTimeout(() => {
+                        const timerId = window.setTimeout(() => {
                             if (el) el.style.willChange = 'auto';
                         }, 700);
+                        timerIds.current.push(timerId);
                         // 타이머 정리 로직은 생략(스타일 리셋 목적이므로 언마운트 시 큰 문제 없음) 혹은 리팩토링 가능
                         // 여기서는 간단하게 처리
                     }
@@ -99,6 +101,8 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
         return () => {
             animationFrameIds.current.forEach(cancelAnimationFrame);
             animationFrameIds.current = [];
+            timerIds.current.forEach(clearTimeout);
+            timerIds.current = [];
         };
 
     }, [sortedWorks]);

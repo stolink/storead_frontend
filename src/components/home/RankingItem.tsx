@@ -5,7 +5,7 @@ interface RankingItemProps {
     work: Work;
     index: number;
     rankChange: React.ReactNode;
-    onClick: () => void;
+    onClick: (id: string) => void;
 }
 
 export const RankingItem = memo(forwardRef<HTMLDivElement, RankingItemProps>(({ work, index, rankChange, onClick }, ref) => {
@@ -14,12 +14,11 @@ export const RankingItem = memo(forwardRef<HTMLDivElement, RankingItemProps>(({ 
     return (
         <div
             ref={ref}
-            onClick={onClick}
+            onClick={() => onClick(work.id)}
             className={`
                 flex items-center gap-3 p-3 rounded-lg cursor-pointer
                 hover:bg-mocha-50 dark:hover:bg-zinc-700 
                 transition-all duration-600 ease-organic
-                will-change-transform
             `}
         >
             <span className={`

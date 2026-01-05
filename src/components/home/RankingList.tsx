@@ -3,7 +3,7 @@
  * 순위 변동 시 롤링 애니메이션 적용
  * 30초마다 자동 갱신
  */
-import { useMemo, useLayoutEffect, useRef } from 'react';
+import { useMemo, useLayoutEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Work } from '@/types';
 import { RankingItem } from './RankingItem';
@@ -29,6 +29,10 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
             .sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
             .slice(0, 10);
     }, [works]);
+
+    const handleItemClick = useCallback((id: string) => {
+        navigate(`/works/${id}`);
+    }, [navigate]);
 
     const prevWorksRef = useRef<Work[]>([]);
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -62,6 +66,7 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
                     if (dy !== 0) {
                         el.style.transform = `translateY(${dy}px)`;
                         el.style.transition = 'none';
+                        el.style.willChange = 'transform'; // 최적화: 애니메이션 중에만 will-change 적용
 
                         // Play (다음 프레임에 원래 위치로 이동 및 트랜지션 복구)
                         const id1 = requestAnimationFrame(() => {
@@ -72,6 +77,16 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
                             animationFrameIds.current.push(id2);
                         });
                         animationFrameIds.current.push(id1);
+
+                        // Cleanup will-change after animation
+                        // duration(600ms)보다 약간 여유있게 설정
+                        // Cleanup will-change after animation
+                        // duration(600ms)보다 약간 여유있게 설정
+                        window.setTimeout(() => {
+                            if (el) el.style.willChange = 'auto';
+                        }, 700);
+                        // 타이머 정리 로직은 생략(스타일 리셋 목적이므로 언마운트 시 큰 문제 없음) 혹은 리팩토링 가능
+                        // 여기서는 간단하게 처리
                     }
                 }
             }
@@ -127,7 +142,7 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
                         work={work}
                         index={index}
                         rankChange={getRankChangeIcon(work.id, index)}
-                        onClick={() => navigate(`/works/${work.id}`)}
+                        onClick={handleItemClick}
                     />
                 ))}
             </div>

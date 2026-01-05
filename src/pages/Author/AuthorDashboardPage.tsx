@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { navigateToExternalEditor } from '@/utils/navigation';
 import { useMyWorks } from '@/hooks/useExportChapter';
 import { useDeleteWork } from '@/hooks/useWorks';
 import { ChevronLeft } from 'lucide-react';
@@ -116,10 +117,10 @@ export const AuthorDashboardPage = () => {
                             </div>
                         </div>
                         <Button
-                            onClick={() => navigate('/author/works/new')}
+                            onClick={() => navigateToExternalEditor()}
                             className="bg-mocha-500 hover:bg-mocha-700 text-paper"
                         >
-                            + 새 작품 만들기
+                            + 새 작품 만들기 (에디터로 이동)
                         </Button>
                     </div>
                 </div>
@@ -166,6 +167,9 @@ export const AuthorDashboardPage = () => {
                                         <Badge variant="outline">
                                             {GENRE_LABELS[work.genre] || work.genre}
                                         </Badge>
+                                        <span className="text-xs text-mocha-500">
+                                            📖 {work.chapterCount || 0}화
+                                        </span>
                                         <span className="text-xs">
                                             ⭐ {work.ratingCount > 0
                                                 ? (work.ratingSum / work.ratingCount).toFixed(1)
@@ -202,10 +206,10 @@ export const AuthorDashboardPage = () => {
                             아직 작성한 작품이 없습니다.
                         </p>
                         <Button
-                            onClick={() => navigate('/author/works/new')}
+                            onClick={() => navigateToExternalEditor()}
                             className="bg-mocha-500 hover:bg-mocha-700 text-paper"
                         >
-                            첫 번째 작품 만들기
+                            첫 번째 작품 만들기 (에디터로 이동)
                         </Button>
                     </div>
                 )}

@@ -15,7 +15,10 @@ export const useWork = (workId: string) => {
     queryKey: ["work", workId],
     queryFn: async () => {
       const { data } = await api.get(`/works/${workId}`);
-      return data;
+      // 백엔드 응답: { code, status, data: {...} } 또는 직접 객체
+      const work = data.data || data;
+
+      return work;
     },
     enabled: !!workId,
   });

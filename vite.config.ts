@@ -18,7 +18,7 @@ export default defineConfig({
     proxy: {
       "/api": {
         target: "http://localhost:8081", // storead 백엔드
-        changeOrigin: false, // 호스트 헤더를 원래 요청(localhost:5174) 그대로 유지 -> 백엔드가 리다이렉트 URI를 5174로 생성하도록 유도
+        changeOrigin: false, // 호스트 헤더를 target에 맞게 변경하지 않음 (OAuth 리다이렉트 문제 방지)
         secure: false,
       },
     },

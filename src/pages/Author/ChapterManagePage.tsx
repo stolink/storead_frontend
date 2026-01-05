@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { EXTERNAL_EDITOR_URL } from '@/constants';
+import { navigateToExternalEditor } from '@/utils/navigation';
 import { useWork } from '@/hooks/useWorks';
 import { useWorkChapters, useDeleteChapter } from '@/hooks/useChapters';
 import { Button } from '@/components/ui/button';
@@ -105,7 +105,9 @@ export const ChapterManagePage = () => {
                             </p>
                         </div>
                         <Button
-                            onClick={() => window.location.href = `${EXTERNAL_EDITOR_URL}/editor/works/${workId}/chapters/new`}
+                            onClick={() => {
+                                navigateToExternalEditor(work.projectId);
+                            }}
                             className="bg-zinc-900 text-white hover:bg-zinc-800"
                         >
                             + 새 챕터 작성
@@ -166,9 +168,12 @@ export const ChapterManagePage = () => {
                                                             variant="ghost"
                                                             size="sm"
                                                             className="text-zinc-500 hover:text-zinc-900"
-                                                            onClick={() =>
-                                                                window.location.href = `${EXTERNAL_EDITOR_URL}/editor/chapters/${chapter.id}/edit`
-                                                            }
+                                                            onClick={() => {
+                                                                navigateToExternalEditor(
+                                                                    work.projectId,
+                                                                    chapter.documentId
+                                                                );
+                                                            }}
                                                         >
                                                             수정
                                                         </Button>
@@ -188,15 +193,9 @@ export const ChapterManagePage = () => {
                             </Table>
                         ) : (
                             <div className="text-center py-20">
-                                <p className="text-zinc-400 dark:text-zinc-500 mb-6 font-serif">
-                                    아직 작성된 회차가 없습니다.
+                                <p className="text-zinc-400 dark:text-zinc-500 font-serif">
+                                    아직 작성된 회차가 없습니다. 상단의 "새 챕터 작성" 버튼을 눌러 회차를 추가하세요.
                                 </p>
-                                <Button
-                                    onClick={() => window.location.href = `${EXTERNAL_EDITOR_URL}/editor/works/${workId}/chapters/new`}
-                                    className="bg-zinc-900 text-white hover:bg-zinc-800"
-                                >
-                                    첫 번째 회차 작성하기
-                                </Button>
                             </div>
                         )}
                     </CardContent>

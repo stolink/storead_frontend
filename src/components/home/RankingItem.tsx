@@ -1,20 +1,20 @@
 import { memo, forwardRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { Work } from '@/types';
 
 interface RankingItemProps {
     work: Work;
     index: number;
     rankChange: React.ReactNode;
+    onClick: () => void;
 }
 
-export const RankingItem = memo(forwardRef<HTMLDivElement, RankingItemProps>(({ work, index, rankChange }, ref) => {
-    const navigate = useNavigate();
+export const RankingItem = memo(forwardRef<HTMLDivElement, RankingItemProps>(({ work, index, rankChange, onClick }, ref) => {
+
 
     return (
         <div
             ref={ref}
-            onClick={() => navigate(`/works/${work.id}`)}
+            onClick={onClick}
             className={`
                 flex items-center gap-3 p-3 rounded-lg cursor-pointer
                 hover:bg-mocha-50 dark:hover:bg-zinc-700 

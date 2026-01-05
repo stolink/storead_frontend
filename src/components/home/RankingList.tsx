@@ -4,6 +4,7 @@
  * 30초마다 자동 갱신
  */
 import { useMemo, useLayoutEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Work } from '@/types';
 import { RankingItem } from './RankingItem';
 
@@ -18,8 +19,8 @@ interface RankingListProps {
  * - 순위 변동 시 하이라이트 애니메이션
  * - 상위 3위 골드 배경
  */
-// navigate removed
 export const RankingList = ({ works, title = '실시간 인기 순위' }: RankingListProps) => {
+    const navigate = useNavigate();
 
     // 1. Memoize sorted works (works passed are assumed to be valid/filtered)
     // 데이터 변경 시에만 재정렬 수행
@@ -32,6 +33,7 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
     const prevWorksRef = useRef<Work[]>([]);
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
+    const animationFrameIds = useRef<number[]>([]);
 
     // 2. FLIP Animation using useLayoutEffect
     // DOM 업데이트 후 브라우저 페인팅 전에 실행되어 깜빡임 방지
@@ -62,12 +64,14 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
                         el.style.transition = 'none';
 
                         // Play (다음 프레임에 원래 위치로 이동 및 트랜지션 복구)
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
+                        const id1 = requestAnimationFrame(() => {
+                            const id2 = requestAnimationFrame(() => {
                                 el.style.transform = '';
                                 el.style.transition = ''; // CSS 클래스(duration-600 ease-organic) 적용
                             });
+                            animationFrameIds.current.push(id2);
                         });
+                        animationFrameIds.current.push(id1);
                     }
                 }
             }
@@ -76,6 +80,11 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
         // Save current rects and works for next comparison
         prevRectsRef.current = currentRects;
         prevWorksRef.current = sortedWorks;
+
+        return () => {
+            animationFrameIds.current.forEach(cancelAnimationFrame);
+            animationFrameIds.current = [];
+        };
 
     }, [sortedWorks]);
 
@@ -118,6 +127,7 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
                         work={work}
                         index={index}
                         rankChange={getRankChangeIcon(work.id, index)}
+                        onClick={() => navigate(`/works/${work.id}`)}
                     />
                 ))}
             </div>

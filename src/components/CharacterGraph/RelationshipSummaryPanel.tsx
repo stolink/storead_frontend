@@ -27,9 +27,9 @@ export function RelationshipSummaryPanel({
   const relatedLinks = links.filter(
     (link) =>
       (typeof link.source === "string" ? link.source : link.source.id) ===
-        character._id ||
+      character._id ||
       (typeof link.target === "string" ? link.target : link.target.id) ===
-        character._id,
+      character._id,
   );
 
   // 관계 타입별 분류

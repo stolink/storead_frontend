@@ -113,7 +113,7 @@ export function NetworkControls({
                         className={cn(
                           "w-full justify-between gap-1 h-8 text-xs bg-white/80 hover:bg-white border-stone-200",
                           relationTypeFilter !== "all" &&
-                            "border-mocha-300 bg-mocha-50",
+                          "border-mocha-300 bg-mocha-50",
                         )}
                       >
                         <span className="flex items-center gap-1.5">

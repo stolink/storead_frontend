@@ -35,8 +35,11 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
             const responseData = data.data;
             const works = responseData?.works || [];
 
+            // 회차(Episode)가 0개인 작품은 리스트에 노출되지 않도록 필터링
+            const filteredWorks = works.filter((work: Work) => (work.chapterCount || 0) > 0);
+
             return {
-                data: works,
+                data: filteredWorks,
                 hasMore: responseData?.pagination?.hasNext || false,
             };
         },

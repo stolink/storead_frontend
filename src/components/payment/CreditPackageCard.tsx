@@ -139,7 +139,7 @@ export function CreditPackageCard({
               "mt-6 p-4 rounded-xl flex justify-between items-center transition-colors",
               selected
                 ? "bg-mocha-50 text-mocha-900"
-                : "bg-gray-50 text-gray-500"
+                : "bg-mocha-50/50 text-mocha-500"
             )}
           >
             <span className="text-xs font-semibold uppercase tracking-wider">

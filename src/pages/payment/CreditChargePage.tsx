@@ -101,7 +101,7 @@ export function CreditChargePage() {
 
   if (initializing) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F0F4EF]">
+      <div className="flex h-screen items-center justify-center bg-sage-50">
         <Loader2 className="h-10 w-10 animate-spin text-mocha-500" />
       </div>
     );
@@ -214,14 +214,14 @@ export function CreditChargePage() {
 
                     <div className="space-y-4 border-t border-mocha-100 pt-6">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Service Fee</span>
-                        <span className="text-gray-900 font-medium">
+                        <span className="text-mocha-500">Service Fee</span>
+                        <span className="text-ink font-medium">
                           Included
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Tax</span>
-                        <span className="text-gray-900 font-medium">
+                        <span className="text-mocha-500">Tax</span>
+                        <span className="text-ink font-medium">
                           Included
                         </span>
                       </div>

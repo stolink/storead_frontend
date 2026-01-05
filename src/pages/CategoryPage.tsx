@@ -14,7 +14,7 @@ import { useCategoryWorks } from '@/hooks/useDiscovery';
 import { BookCard } from '@/components/home/BookCard';
 import { Button } from '@/components/ui/button';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
-import { LayoutGrid, List as ListIcon, Loader2, ChevronDown } from 'lucide-react';
+import { LayoutGrid, List as ListIcon, Loader2, ChevronDown, Star, MessageSquare } from 'lucide-react';
 import type { Work } from '@/types';
 
 // 장르 매핑 및 서브장르 정의
@@ -252,7 +252,6 @@ function FilterBadge({ label, isActive, onClick }: { label: string, isActive: bo
 }
 
 // 리스트 뷰 아이템 컴포넌트
-import { Star, MessageSquare } from 'lucide-react';
 function ListViewItem({ work }: { work: Work }) {
     const navigate = useNavigate();
     return (

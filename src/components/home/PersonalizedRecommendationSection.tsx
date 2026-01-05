@@ -8,16 +8,7 @@ import { Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTagBasedRecommendations } from '@/hooks/useDiscovery';
 import { BookCard } from '@/components/home/BookCard';
-
-// 장르 레이블 매핑
-const GENRE_LABELS: Record<string, string> = {
-    FANTASY: '판타지',
-    ROMANCE: '로맨스',
-    MARTIAL_ARTS: '무협',
-    THRILLER: '스릴러',
-    SF: 'SF',
-    DRAMA: '드라마',
-};
+import { GENRE_LABELS } from '@/constants/genres';
 
 export function PersonalizedRecommendationSection() {
     const { data: recommendations, isLoading } = useTagBasedRecommendations();

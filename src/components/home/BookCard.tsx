@@ -15,16 +15,7 @@ import { useAuthModalStore } from '@/stores/useAuthModalStore';
 import { useToggleWorkLike, useWorkLike } from '@/hooks/useWorkLike';
 // import { useAddToLibrary, useIsInLibrary } from '@/hooks/useLibrary';
 import { Button } from '@/components/ui/button';
-
-// 장르 레이블 매핑
-const GENRE_LABELS: Record<string, string> = {
-    FANTASY: '판타지',
-    ROMANCE: '로맨스',
-    MARTIAL_ARTS: '무협',
-    THRILLER: '스릴러',
-    SF: 'SF',
-    DRAMA: '드라마',
-};
+import { GENRE_LABELS } from '@/constants/genres';
 
 interface BookCardProps {
     work: Work;

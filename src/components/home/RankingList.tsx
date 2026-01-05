@@ -11,6 +11,8 @@ import { RankingItem } from './RankingItem';
 interface RankingListProps {
     works: Work[];
     title?: string;
+    moreLink?: string;
+    limit?: number; // Added limit prop
 }
 
 /**
@@ -19,7 +21,7 @@ interface RankingListProps {
  * - 순위 변동 시 하이라이트 애니메이션
  * - 상위 3위 골드 배경
  */
-export const RankingList = ({ works, title = '실시간 인기 순위' }: RankingListProps) => {
+export const RankingList = ({ works, title = '실시간 인기 순위', moreLink, limit = 10 }: RankingListProps) => {
     const navigate = useNavigate();
 
     // 1. Memoize sorted works (works passed are assumed to be valid/filtered)
@@ -27,8 +29,8 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
     const sortedWorks = useMemo(() => {
         return [...works]
             .sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
-            .slice(0, 10);
-    }, [works]);
+            .slice(0, limit);
+    }, [works, limit]);
 
     const handleItemClick = useCallback((id: string) => {
         navigate(`/works/${id}`);
@@ -81,14 +83,10 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
 
                         // Cleanup will-change after animation
                         // duration(600ms)보다 약간 여유있게 설정
-                        // Cleanup will-change after animation
-                        // duration(600ms)보다 약간 여유있게 설정
                         const timerId = window.setTimeout(() => {
                             if (el) el.style.willChange = 'auto';
                         }, 700);
                         timerIds.current.push(timerId);
-                        // 타이머 정리 로직은 생략(스타일 리셋 목적이므로 언마운트 시 큰 문제 없음) 혹은 리팩토링 가능
-                        // 여기서는 간단하게 처리
                     }
                 }
             }
@@ -123,8 +121,9 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
     if (sortedWorks.length === 0) return null;
 
     return (
-        <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6 sticky top-24 transition-colors duration-300 border border-border">
-            <div className="flex items-center justify-between mb-4">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg overflow-hidden sticky top-24 transition-colors duration-300 border border-border flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 pb-4">
                 <h3 className="text-lg font-heading font-bold text-ink dark:text-white">{title}</h3>
                 <span className="text-xs text-mocha-400 dark:text-zinc-500 flex items-center gap-1">
                     <span className="relative flex h-2 w-2">
@@ -135,7 +134,8 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
                 </span>
             </div>
 
-            <div className="space-y-2 relative">
+            {/* Ranking Items */}
+            <div className="space-y-2 relative px-6">
                 {sortedWorks.map((work, index) => (
                     <RankingItem
                         key={work.id}
@@ -150,6 +150,19 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
                     />
                 ))}
             </div>
+
+            {/* View Full Ranking Button */}
+            {moreLink && (
+                <div
+                    onClick={() => navigate(moreLink)}
+                    className="mt-4 mx-4 mb-4 py-3 px-4 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg flex items-center justify-center gap-2 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors group"
+                >
+                    <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
+                        View Full Ranking
+                    </span>
+                    <span className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">→</span>
+                </div>
+            )}
         </div>
     );
 };

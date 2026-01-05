@@ -17,6 +17,21 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // Spring Boot는 배열 파라미터를 genres=A&genres=B 형식으로 받아야 함
+  // 기본 axios는 genres[]=A&genres[]=B 형식으로 보내서 500 에러 발생
+  paramsSerializer: {
+    serialize: (params) => {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((v) => searchParams.append(key, v));
+        } else if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+      return searchParams.toString();
+    },
+  },
 });
 
 // 요청 인터셉터: 필요시 요청 로깅 등
@@ -50,4 +65,5 @@ api.interceptors.response.use(
   }
 );
 
+// 모든 훅에서 default import를 사용하므로 호환성을 위해 추가
 export default api;

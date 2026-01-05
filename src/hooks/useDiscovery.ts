@@ -4,15 +4,19 @@
  *
  * 참고: 백엔드에 실제 데이터가 존재하므로 데모 폴백 제거됨
  */
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import api from "@/api/client";
 import type { Work, Chapter, Genre, PaginatedResponse } from "@/types";
 
 interface DiscoveryParams {
-    genre?: Genre;
-    sort?: "latest" | "popular" | "rating";
+    genre?: Genre | string; // 단일 장르
+    genres?: string[]; // 다중 장르
+    status?: string; // 연재중/완결 등
+    sort?: "latest" | "popular" | "rating" | "createdAt" | "likeCount";
+    order?: "asc" | "desc";
     page?: number;
     limit?: number;
+    size?: number; // limit과 동일
 }
 
 interface SearchParams {
@@ -30,19 +34,32 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
     return useQuery<PaginatedResponse<Work>>({
         queryKey: ["discovery", params],
         queryFn: async () => {
-            const { data } = await api.get("/discovery/works", { params });
+            // 백엔드 API는 'genres' (배열)를 기대하므로 'genre' 단일 값을 변환
+            // 또한 백엔드는 'size'를 기대하지만 프론트엔드에서 'limit'을 사용할 수 있으므로 변환
+            const apiParams: Record<string, unknown> = { ...params };
+
+            // genre -> genres 변환 (단일 값을 배열로)
+            if (params?.genre && !params?.genres) {
+                apiParams.genres = [params.genre];
+                delete apiParams.genre;
+            }
+
+            // limit -> size 변환 (백엔드 파라미터명에 맞춤)
+            if (params?.limit && !params?.size) {
+                apiParams.size = params.limit;
+                delete apiParams.limit;
+            }
+
+            const { data } = await api.get("/discovery/works", { params: apiParams });
             // 백엔드 응답: { code, status, message, data: { works: [], pagination: ... } }
             const responseData = data.data;
             const works = responseData?.works || [];
 
-            // 회차(Episode)가 0개인 작품은 리스트에 노출되지 않도록 필터링
-            // RankingList 등 UI 컴포넌트에서 중복 필터링하지 않도록 여기서 확실하게 처리
-            // 주의: 클라이언트 사이드 필터링으로 인해 페이지 당 노출되는 아이템 개수가 줄어들 수 있음 (페이지네이션 불균형)
-            // 추후 API 레벨에서 필터링된 데이터를 받도록 개선 필요
-            const filteredWorks = works.filter((work: Work) => (work.chapterCount || 0) > 0);
+            // 필터링 제거: 모든 작품 표시 (chapterCount 필터는 프로덕션에서 필요 시 재활성화)
+            // 기존: const filteredWorks = works.filter((work: Work) => (work.chapterCount || 0) > 0);
 
             return {
-                data: filteredWorks,
+                data: works,
                 hasMore: responseData?.pagination?.hasNext || false,
             };
         },
@@ -129,5 +146,146 @@ export const usePublicChapter = (id: string) => {
             return data.data;
         },
         enabled: !!id,
+    });
+};
+
+// === 개인화 추천 관련 훅 ===
+
+interface ContinueReadingItem {
+    id: string;
+    workId: string;
+    lastChapterId: string;
+    lastChapterNumber: number;
+    progress: number;
+    lastReadAt: string;
+    work: Work;
+}
+
+/**
+ * 읽던 작품 목록 조회 (로그인 사용자 전용)
+ * GET /api/discovery/continue-reading
+ * 
+ * 사용자가 읽다가 중단한 작품 목록을 반환합니다.
+ */
+export const useContinueReading = () => {
+    return useQuery<ContinueReadingItem[]>({
+        queryKey: ["continueReading"],
+        queryFn: async () => {
+            try {
+                const { data } = await api.get("/discovery/continue-reading");
+                return data.data || [];
+            } catch {
+                // API가 아직 없는 경우 빈 배열 반환
+                return [];
+            }
+        },
+        staleTime: 60000, // 1분간 캐시 유지
+    });
+};
+
+/**
+ * 태그 기반 개인화 추천 작품 조회 (로그인 사용자 전용)
+ * GET /api/discovery/recommendations
+ * 
+ * 사용자가 읽은 작품들의 장르/태그를 분석하여
+ * 비슷한 취향의 작품을 추천합니다.
+ */
+export const useTagBasedRecommendations = () => {
+    return useQuery<Work[]>({
+        queryKey: ["tagBasedRecommendations"],
+        queryFn: async () => {
+            try {
+                const { data } = await api.get("/discovery/recommendations");
+                return data.data || [];
+            } catch {
+                // API가 아직 없는 경우 빈 배열 반환
+                return [];
+            }
+        },
+        staleTime: 300000, // 5분간 캐시 유지
+    });
+};
+
+/**
+ * 전체 개인화 추천 데이터 조회
+ * 읽던 작품 + 태그 기반 추천을 한 번에 조회
+ */
+export const usePersonalizedRecommendations = () => {
+    const continueReadingQuery = useContinueReading();
+    const recommendationsQuery = useTagBasedRecommendations();
+
+    return {
+        continueReading: continueReadingQuery.data || [],
+        recommendations: recommendationsQuery.data || [],
+        isLoading: continueReadingQuery.isLoading || recommendationsQuery.isLoading,
+        isError: continueReadingQuery.isError || recommendationsQuery.isError,
+    };
+};
+
+/**
+ * 카테고리별 작품 목록 조회 (무한 스크롤)
+ * - 장르, 상태, 정렬 필터 지원
+ */
+export const useCategoryWorks = (
+    genreId: string | undefined,
+    params?: Omit<DiscoveryParams, 'genre'>
+) => {
+    return useInfiniteQuery({
+        queryKey: ['category', genreId, params],
+        queryFn: async ({ pageParam = 0 }) => {
+            // genreId가 있을 때만 호출됨
+            if (!genreId) return { data: [], hasMore: false, nextPage: undefined };
+
+            const queryParams: Record<string, unknown> = {
+                page: pageParam,
+                size: params?.limit || 20,
+                sort: params?.sort || 'createdAt',
+                order: params?.order || 'desc'
+            };
+
+            // 다중 장르 처리 (comma separated)
+            if (genreId.includes(',')) {
+                queryParams.genres = genreId;
+            } else {
+                queryParams.genres = genreId;
+            }
+
+            if (params?.status) queryParams.status = params.status;
+
+            const { data } = await api.get('/discovery/works', { params: queryParams });
+            const responseData = data.data; // { works, pagination }
+
+            return {
+                data: responseData?.works || [],
+                hasMore: responseData?.pagination?.hasNext || false,
+                nextPage: responseData?.pagination?.hasNext ? pageParam + 1 : undefined
+            };
+        },
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => lastPage.nextPage,
+        enabled: !!genreId,
+    });
+};
+
+/**
+ * 랭킹 조회
+ * 탭 비활성 시 백그라운드 폴링 중단
+ */
+export const useRankings = (period: string, genre?: string) => {
+    return useQuery<PaginatedResponse<Work>>({
+        queryKey: ['rankings', period, genre],
+        queryFn: async () => {
+            const { data } = await api.get('/discovery/rankings', {
+                params: { period, genre, size: 100 }
+            });
+            const responseData = data.data;
+            return {
+                data: responseData?.works || [],
+                hasMore: false
+            };
+        },
+        refetchInterval: 30000,
+        refetchIntervalInBackground: false, // 탭 비활성 시 백그라운드 폴링 중단
+        refetchOnWindowFocus: true, // 탭 포커스 시 자동 갱신
     });
 };

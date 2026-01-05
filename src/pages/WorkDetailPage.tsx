@@ -7,6 +7,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Bookmark, BookOpen, User, Heart } from "lucide-react";
 import { DisplayStarRating } from "@/components/rating/DisplayStarRating";
 import { Button } from "@/components/ui/button";
+import { ChapterAccessBadge } from "@/components/common/ChapterAccessBadge";
+import { PurchaseConfirmModal } from "@/components/payment/PurchaseConfirmModal";
 import { usePublicWork } from "@/hooks/useDiscovery";
 import {
   useAddToLibrary,
@@ -18,6 +20,7 @@ import { useReadingProgress } from "@/hooks/useBookmark";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useThemeStore, backgroundThemeClasses } from "@/stores/useTheme";
+import type { Chapter } from "@/types";
 
 // 장르 레이블 매핑
 const GENRE_LABELS: Record<string, string> = {
@@ -39,6 +42,10 @@ export const WorkDetailPage = () => {
   const { openAuthModal } = useAuthModalStore();
   const { theme } = useThemeStore();
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  // 구매 모달 상태
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
+  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
 
   const { data: work, isLoading: workLoading } = usePublicWork(id || "");
   const chapters = work?.chapters;
@@ -104,13 +111,31 @@ export const WorkDetailPage = () => {
     }
   };
 
-  // 챕터 클릭 핸들러 - 로그인 체크
-  const handleChapterClick = (chapterId: string) => {
+  // 챕터 클릭 핸들러 - 로그인 체크 및 유료 챕터 구매 처리
+  const handleChapterClick = (chapter: Chapter) => {
     if (!isAuthenticated) {
       openAuthModal(window.location.pathname);
       return;
     }
-    navigate(`/chapters/${chapterId}`);
+
+    // 유료 챕터이고 아직 구매하지 않은 경우 구매 모달 표시
+    const isPaidChapter = chapter.accessType === 'PAID' || chapter.accessType === 'EXCLUSIVE';
+    const needsPurchase = isPaidChapter && !chapter.isPurchased && !chapter.isFree;
+
+    if (needsPurchase) {
+      setSelectedChapter(chapter);
+      setPurchaseModalOpen(true);
+      return;
+    }
+
+    navigate(`/chapters/${chapter.id}`);
+  };
+
+  // 구매 성공 후 챕터로 이동
+  const handlePurchaseSuccess = () => {
+    if (selectedChapter) {
+      navigate(`/chapters/${selectedChapter.id}`);
+    }
   };
 
   if (workLoading) {
@@ -288,17 +313,20 @@ export const WorkDetailPage = () => {
                     : 0;
                 const isRead = false; // TODO: 읽은 챕터 표시
 
+                // 챕터 접근 유형 결정 (기본값: FREE)
+                const accessType = chapter.accessType || (chapter.isFree === false ? 'PAID' : 'FREE');
+
                 return (
                   <button
                     key={chapter.id}
-                    onClick={() => handleChapterClick(chapter.id)}
+                    onClick={() => handleChapterClick(chapter)}
                     className={`w-full text-left block p-4 rounded-lg border transition-colors ${isRead
                       ? "border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
                       : "border-mocha-400 hover:border-mocha-500 hover:bg-mocha-400/10"
                       }`}
                   >
                     <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <span
                           className={`text-lg font-semibold ${isRead ? "text-mocha-400" : "text-mocha-700"
                             }`}
@@ -310,6 +338,13 @@ export const WorkDetailPage = () => {
                         >
                           {chapter.title}
                         </span>
+                        {/* 유료/무료 배지 */}
+                        <ChapterAccessBadge
+                          accessType={accessType}
+                          price={chapter.price}
+                          isPurchased={chapter.isPurchased}
+                          size="sm"
+                        />
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
@@ -332,6 +367,20 @@ export const WorkDetailPage = () => {
           )}
         </div>
       </main>
+
+      {/* 챕터 구매 확인 모달 */}
+      {selectedChapter && id && (
+        <PurchaseConfirmModal
+          isOpen={purchaseModalOpen}
+          onClose={() => {
+            setPurchaseModalOpen(false);
+            setSelectedChapter(null);
+          }}
+          chapter={selectedChapter}
+          workId={id}
+          onPurchaseSuccess={handlePurchaseSuccess}
+        />
+      )}
     </div>
   );
 };

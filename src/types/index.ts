@@ -12,9 +12,23 @@ export type Genre =
   | "MARTIAL_ARTS"
   | "THRILLER"
   | "SF"
-  | "DRAMA";
+  | "DRAMA"
+  | "HEROIC_FANTASY"
+  | "DARK_FANTASY"
+  | "URBAN_FANTASY"
+  | "HIGH_FANTASY"
+  | "ISEKAI"
+  | "MODERN_FANTASY"
+  | "TRADITIONAL_FANTASY"
+  | "ROMANCE_FANTASY"
+  | "COMEDY"
+  | "HORROR"
+  | "OTHER";
 
 export type WorkStatus = "ONGOING" | "HIATUS" | "COMPLETED";
+
+// 챕터 접근 유형 (무료/유료/독점)
+export type ChapterAccessType = "FREE" | "PAID" | "EXCLUSIVE";
 
 // === Users (사용자) ===
 export interface User {
@@ -64,6 +78,12 @@ export interface Chapter {
   viewCount: number;
   ratingSum: number; // 역정규화: 별점 합계
   ratingCount: number; // 역정규화: 별점 개수
+
+  // 유료/무료 관련 필드
+  isFree?: boolean; // 무료 여부 (기본값: true)
+  price?: number; // 크레딧 가격
+  accessType?: ChapterAccessType; // 접근 유형 (FREE/PAID/EXCLUSIVE)
+  isPurchased?: boolean; // 현재 사용자가 구매했는지 여부
 
   graphSnapshot?: GraphSnapshotDTO; // 캐릭터 관계도 스냅샷 (JSONB)
   createdAt: string;
@@ -181,6 +201,25 @@ export interface AuthResponse {
   user: User;
   accessToken: string;
 }
+
+// === Reading History (읽기 기록) ===
+export interface ReadingHistory {
+  id: string;
+  userId: string;
+  workId: string;
+  lastChapterId: string;
+  lastChapterNumber: number;
+  progress: number; // 0-100%
+  lastReadAt: string;
+  work?: Work; // 조인된 작품 정보
+}
+
+// === Personalized Recommendation (개인화 추천) ===
+export interface PersonalizedRecommendation {
+  continueReading: ReadingHistory[]; // 읽던 작품 목록
+  tagBasedRecommendations: Work[]; // 태그 기반 추천 작품
+}
+
 // === Exports ===
 export * from "./character";
 export * from "./characterGraph";

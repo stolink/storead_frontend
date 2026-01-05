@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { BookCard } from './BookCard';
@@ -28,19 +28,40 @@ export const WorkListRow = ({ title, genre, limit = 10, moreLink, works: provide
 
     const works = providedWorks || fetchedData?.data || [];
 
-    // Mouse wheel horizontal scroll handler
-    const handleWheel = (e: React.WheelEvent) => {
-        if (scrollContainerRef.current) {
-            // Hijack vertical scroll for horizontal movement
-            // Only if scrolling vertically
-            if (e.deltaY !== 0) {
-                // Prevent page scroll if we are scrolling this container
-                // Note: e.preventDefault() might not work due to passive event listeners in React
-                // But we can try setting scrollLeft. 
-                scrollContainerRef.current.scrollLeft += e.deltaY;
-            }
+    // 수평 스크롤 휠 핸들러 (passive: false로 등록하여 preventDefault 가능)
+    const handleWheel = useCallback((e: WheelEvent) => {
+        const container = scrollContainerRef.current;
+        if (!container || e.deltaY === 0) return;
+
+        // 스크롤 끝에 도달했는지 확인
+        const isAtStart = container.scrollLeft === 0;
+        const isAtEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth;
+
+        // 스크롤 방향에 따라 끝에 도달하지 않았을 때만 preventDefault
+        const isScrollingRight = e.deltaY > 0;
+        const isScrollingLeft = e.deltaY < 0;
+
+        const shouldPrevent =
+            (isScrollingRight && !isAtEnd) ||
+            (isScrollingLeft && !isAtStart);
+
+        if (shouldPrevent) {
+            e.preventDefault();
+            container.scrollLeft += e.deltaY;
         }
-    };
+    }, []);
+
+    // addEventListener로 passive: false 옵션 적용
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        container.addEventListener('wheel', handleWheel, { passive: false });
+
+        return () => {
+            container.removeEventListener('wheel', handleWheel);
+        };
+    }, [handleWheel]);
 
     if (!works || works.length === 0) {
         if (isLoading) return <div className="py-8 animate-pulse bg-zinc-100 dark:bg-zinc-800 h-[300px] rounded-lg mb-8" />;
@@ -66,7 +87,6 @@ export const WorkListRow = ({ title, genre, limit = 10, moreLink, works: provide
 
                 <div
                     ref={scrollContainerRef}
-                    onWheel={handleWheel}
                     className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"
                     style={{
                         scrollbarWidth: 'none',

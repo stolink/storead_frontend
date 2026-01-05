@@ -30,6 +30,7 @@ export interface User {
 export interface Work {
   id: string; // UUID
   authorId: string;
+  projectId?: string; // stolink 프로젝트 ID (에디터 연결용)
   title: string;
   synopsis: string;
   authorNickname?: string; // 백엔드 응답 필드
@@ -38,6 +39,7 @@ export interface Work {
   status: WorkStatus;
   ratingSum: number; // 역정규화: 별점 합계
   ratingCount: number; // 역정규화: 별점 개수
+  chapterCount?: number; // 역정규화: 챕터 개수
   createdAt: string;
   updatedAt: string;
   // 프론트엔드 계산/확장 필드
@@ -54,6 +56,7 @@ export interface Work {
 export interface Chapter {
   id: string; // UUID
   workId: string;
+  documentId?: string; // stolink 문서 ID (에디터 연결용)
   title: string;
   content: string;
   chapterNumber: number;

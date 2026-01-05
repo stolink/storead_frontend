@@ -28,11 +28,7 @@ import OAuth2Callback from "@/pages/Auth/OAuth2Callback";
 
 // 작가 페이지
 import AuthorDashboardPage from "@/pages/Author/AuthorDashboardPage";
-import NewWorkPage from "@/pages/Author/NewWorkPage";
-import WorkEditPage from "@/pages/Author/WorkEditPage";
 import ChapterManagePage from "@/pages/Author/ChapterManagePage";
-import NewChapterPage from "@/pages/Author/NewChapterPage";
-import ChapterEditPage from "@/pages/Author/ChapterEditPage";
 
 // 프로필 페이지
 import ProfilePage from "@/pages/Profile/ProfilePage";
@@ -114,42 +110,10 @@ function AppContent() {
           }
         />
         <Route
-          path="/author/works/new"
-          element={
-            <ProtectedRoute>
-              <NewWorkPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/author/works/:id"
-          element={
-            <ProtectedRoute>
-              <WorkEditPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/author/works/:workId/chapters"
           element={
             <ProtectedRoute>
               <ChapterManagePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/author/works/:workId/chapters/new"
-          element={
-            <ProtectedRoute>
-              <NewChapterPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/author/chapters/:id/edit"
-          element={
-            <ProtectedRoute>
-              <ChapterEditPage />
             </ProtectedRoute>
           }
         />

@@ -15,7 +15,10 @@ export const useWorkChapters = (workId: string) => {
         queryKey: ['workChapters', workId],
         queryFn: async () => {
             const { data } = await api.get(`/works/${workId}/chapters`);
-            return data;
+            // 백엔드 응답: { code, status, data: [...] } 또는 직접 배열
+            const chapters = data.data || data;
+            console.log('[useWorkChapters] 응답:', chapters);
+            return Array.isArray(chapters) ? chapters : [];
         },
         enabled: !!workId,
     });

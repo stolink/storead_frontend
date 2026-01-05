@@ -105,7 +105,13 @@ export const ChapterManagePage = () => {
                             </p>
                         </div>
                         <Button
-                            onClick={() => window.location.href = `${EXTERNAL_EDITOR_URL}/editor/works/${workId}/chapters/new`}
+                            onClick={() => {
+                                // projectId가 있으면 해당 프로젝트 에디터로, 없으면 라이브러리로
+                                const targetUrl = work.projectId
+                                    ? `${EXTERNAL_EDITOR_URL}/projects/${work.projectId}/editor`
+                                    : `${EXTERNAL_EDITOR_URL}/library`;
+                                window.location.href = targetUrl;
+                            }}
                             className="bg-zinc-900 text-white hover:bg-zinc-800"
                         >
                             + 새 챕터 작성
@@ -166,9 +172,22 @@ export const ChapterManagePage = () => {
                                                             variant="ghost"
                                                             size="sm"
                                                             className="text-zinc-500 hover:text-zinc-900"
-                                                            onClick={() =>
-                                                                window.location.href = `${EXTERNAL_EDITOR_URL}/editor/chapters/${chapter.id}/edit`
-                                                            }
+                                                            onClick={() => {
+                                                                // projectId가 있으면 해당 프로젝트 에디터로 (documentId 포함)
+                                                                console.log('[ChapterManagePage] 수정 클릭:', {
+                                                                    projectId: work.projectId,
+                                                                    documentId: chapter.documentId
+                                                                });
+                                                                if (work.projectId) {
+                                                                    const baseUrl = `${EXTERNAL_EDITOR_URL}/projects/${work.projectId}/editor`;
+                                                                    const targetUrl = chapter.documentId
+                                                                        ? `${baseUrl}?documentId=${chapter.documentId}`
+                                                                        : baseUrl;
+                                                                    window.location.href = targetUrl;
+                                                                } else {
+                                                                    window.location.href = `${EXTERNAL_EDITOR_URL}/library`;
+                                                                }
+                                                            }}
                                                         >
                                                             수정
                                                         </Button>
@@ -188,15 +207,9 @@ export const ChapterManagePage = () => {
                             </Table>
                         ) : (
                             <div className="text-center py-20">
-                                <p className="text-zinc-400 dark:text-zinc-500 mb-6 font-serif">
-                                    아직 작성된 회차가 없습니다.
+                                <p className="text-zinc-400 dark:text-zinc-500 font-serif">
+                                    아직 작성된 회차가 없습니다. 상단의 "새 챕터 작성" 버튼을 눌러 회차를 추가하세요.
                                 </p>
-                                <Button
-                                    onClick={() => window.location.href = `${EXTERNAL_EDITOR_URL}/editor/works/${workId}/chapters/new`}
-                                    className="bg-zinc-900 text-white hover:bg-zinc-800"
-                                >
-                                    첫 번째 회차 작성하기
-                                </Button>
                             </div>
                         )}
                     </CardContent>

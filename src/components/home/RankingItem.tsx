@@ -1,0 +1,57 @@
+import { memo, forwardRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { Work } from '@/types';
+
+interface RankingItemProps {
+    work: Work;
+    index: number;
+    rankChange: React.ReactNode;
+}
+
+export const RankingItem = memo(forwardRef<HTMLDivElement, RankingItemProps>(({ work, index, rankChange }, ref) => {
+    const navigate = useNavigate();
+
+    return (
+        <div
+            ref={ref}
+            onClick={() => navigate(`/works/${work.id}`)}
+            className={`
+                flex items-center gap-3 p-3 rounded-lg cursor-pointer
+                hover:bg-mocha-50 dark:hover:bg-zinc-700 
+                transition-all duration-600 ease-organic
+                will-change-transform
+            `}
+        >
+            <span className={`
+                w-7 h-7 flex items-center justify-center rounded-full font-bold text-sm flex-shrink-0
+                font-heading transition-colors duration-300
+                ${index < 3
+                    ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm'
+                    : 'bg-mocha-100 dark:bg-zinc-600 text-mocha-600 dark:text-zinc-300'}
+            `}>
+                {index + 1}
+            </span>
+
+            <span className="w-8 text-center text-xs flex-shrink-0 font-medium h-5 flex items-center justify-center">
+                {rankChange}
+            </span>
+
+            <div className="flex-1 min-w-0">
+                <p className="font-medium text-ink dark:text-white truncate text-sm font-body">
+                    {work.title}
+                </p>
+                <p className="text-xs text-mocha-500 dark:text-zinc-400 truncate">
+                    {work.authorNickname || work.author?.nickname || '작가'}
+                </p>
+            </div>
+
+            <div className="text-right text-xs text-mocha-500 dark:text-zinc-400 flex-shrink-0 flex flex-col items-end">
+                <span className="flex items-center gap-1 font-medium">
+                    ❤️ {work.likeCount || 0}
+                </span>
+            </div>
+        </div>
+    );
+}));
+
+RankingItem.displayName = 'RankingItem';

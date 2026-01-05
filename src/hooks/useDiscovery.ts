@@ -36,6 +36,7 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
             const works = responseData?.works || [];
 
             // 회차(Episode)가 0개인 작품은 리스트에 노출되지 않도록 필터링
+            // RankingList 등 UI 컴포넌트에서 중복 필터링하지 않도록 여기서 확실하게 처리
             const filteredWorks = works.filter((work: Work) => (work.chapterCount || 0) > 0);
 
             return {

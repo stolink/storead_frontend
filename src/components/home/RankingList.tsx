@@ -20,7 +20,6 @@ interface RankingListProps {
  */
 export const RankingList = ({ works, title = '실시간 인기 순위' }: RankingListProps) => {
     const navigate = useNavigate();
-    const [displayedWorks, setDisplayedWorks] = useState<Work[]>([]);
     const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(new Set());
     const prevWorksRef = useRef<Work[]>([]);
 
@@ -50,7 +49,6 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
             }
         }
 
-        setDisplayedWorks(sortedWorks);
         prevWorksRef.current = sortedWorks;
     }, [sortedWorks]);
 
@@ -80,7 +78,7 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
         return <span className="text-gray-400">-</span>;
     };
 
-    if (displayedWorks.length === 0) {
+    if (sortedWorks.length === 0) {
         return null;
     }
 
@@ -96,7 +94,7 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
 
             {/* 순위 리스트 */}
             <div className="space-y-2">
-                {displayedWorks.map((work, index) => (
+                {sortedWorks.map((work, index) => (
                     <div
                         key={work.id}
                         onClick={() => navigate(`/works/${work.id}`)}
@@ -130,7 +128,7 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
                                 {work.title}
                             </p>
                             <p className="text-xs text-mocha-500 dark:text-zinc-400 truncate">
-                                {work.authorNickname || work.author?.nickname || '작가'}
+                                {work.authorNickname || '작가'}
                             </p>
                         </div>
 

@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getExternalEditorUrl } from '@/utils/navigation';
+import { navigateToExternalEditor } from '@/utils/navigation';
 import { useWork } from '@/hooks/useWorks';
 import { useWorkChapters, useDeleteChapter } from '@/hooks/useChapters';
 import { Button } from '@/components/ui/button';
@@ -106,7 +106,7 @@ export const ChapterManagePage = () => {
                         </div>
                         <Button
                             onClick={() => {
-                                window.location.href = getExternalEditorUrl(work.projectId);
+                                navigateToExternalEditor(work.projectId);
                             }}
                             className="bg-zinc-900 text-white hover:bg-zinc-800"
                         >
@@ -169,7 +169,7 @@ export const ChapterManagePage = () => {
                                                             size="sm"
                                                             className="text-zinc-500 hover:text-zinc-900"
                                                             onClick={() => {
-                                                                window.location.href = getExternalEditorUrl(
+                                                                navigateToExternalEditor(
                                                                     work.projectId,
                                                                     chapter.documentId
                                                                 );

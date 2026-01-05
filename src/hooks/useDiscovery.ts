@@ -40,8 +40,14 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
                 hasMore: responseData?.pagination?.hasNext || false,
             };
         },
-        // 30초마다 자동 갱신 (실시간 순위 표시용)
-        refetchInterval: 30000,
+        // 검색어 등이 없을 때만 30초마다 자동 갱신 (실시간 순위 표시용)
+        refetchInterval: (_query) => {
+            // params가 있고 정렬/필터링 조건이 있으면 자동 갱신 중단
+            if (params && (Object.keys(params).length > 0)) {
+                return false;
+            }
+            return 30000;
+        },
     });
 };
 

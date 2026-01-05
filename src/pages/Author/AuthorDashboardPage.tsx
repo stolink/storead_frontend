@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getExternalEditorUrl } from '@/utils/navigation';
+import { navigateToExternalEditor } from '@/utils/navigation';
 import { useMyWorks } from '@/hooks/useExportChapter';
 import { useDeleteWork } from '@/hooks/useWorks';
 import { ChevronLeft } from 'lucide-react';

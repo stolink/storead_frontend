@@ -3,9 +3,10 @@
  * 순위 변동 시 롤링 애니메이션 적용
  * 30초마다 자동 갱신
  */
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useMemo, useLayoutEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Work } from '@/types';
+import { RankingItem } from './RankingItem';
 
 interface RankingListProps {
     works: Work[];
@@ -20,125 +21,133 @@ interface RankingListProps {
  */
 export const RankingList = ({ works, title = '실시간 인기 순위' }: RankingListProps) => {
     const navigate = useNavigate();
-    const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(new Set());
-    const prevWorksRef = useRef<Work[]>([]);
 
-    // 좋아요 기준으로 정렬 후 상위 10개 선택
+    // 1. Memoize sorted works (works passed are assumed to be valid/filtered)
+    // 데이터 변경 시에만 재정렬 수행
     const sortedWorks = useMemo(() => {
-        return [...works].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0)).slice(0, 10);
+        return [...works]
+            .sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
+            .slice(0, 10);
     }, [works]);
 
-    useEffect(() => {
-        // 순위 변동 감지 및 애니메이션
-        if (prevWorksRef.current.length > 0) {
-            const newAnimating = new Set<number>();
+    const handleItemClick = useCallback((id: string) => {
+        navigate(`/works/${id}`);
+    }, [navigate]);
 
-            sortedWorks.forEach((work, index) => {
-                const prevIndex = prevWorksRef.current.findIndex(w => w.id === work.id);
-                // 순위가 변경되었거나 새로 진입한 경우 애니메이션
-                if (prevIndex !== index) {
-                    newAnimating.add(index);
-                }
-            });
+    const prevWorksRef = useRef<Work[]>([]);
+    const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+    const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
+    const animationFrameIds = useRef<number[]>([]);
+    const timerIds = useRef<number[]>([]);
 
-            if (newAnimating.size > 0) {
-                setAnimatingIndices(newAnimating);
-                // 500ms 후 애니메이션 해제
-                const timer = setTimeout(() => setAnimatingIndices(new Set()), 500);
-                return () => clearTimeout(timer);
+    // 2. FLIP Animation using useLayoutEffect
+    // DOM 업데이트 후 브라우저 페인팅 전에 실행되어 깜빡임 방지
+    useLayoutEffect(() => {
+        const currentRects = new Map<string, DOMRect>();
+
+        // Measure new positions
+        sortedWorks.forEach(work => {
+            const el = itemRefs.current.get(work.id);
+            if (el) {
+                currentRects.set(work.id, el.getBoundingClientRect());
             }
-        }
+        });
 
+        // Calculate and apply transforms
+        sortedWorks.forEach(work => {
+            const el = itemRefs.current.get(work.id);
+            const prevRect = prevRectsRef.current.get(work.id);
+
+            if (el && prevRect) {
+                const newRect = currentRects.get(work.id);
+                if (newRect) {
+                    const dy = prevRect.top - newRect.top;
+
+                    // 위치가 변했다면 Invert (이전 위치로 강제 이동 및 트랜지션 제거)
+                    if (dy !== 0) {
+                        el.style.transform = `translateY(${dy}px)`;
+                        el.style.transition = 'none';
+                        el.style.willChange = 'transform'; // 최적화: 애니메이션 중에만 will-change 적용
+
+                        // Play (다음 프레임에 원래 위치로 이동 및 트랜지션 복구)
+                        const id1 = requestAnimationFrame(() => {
+                            const id2 = requestAnimationFrame(() => {
+                                el.style.transform = '';
+                                el.style.transition = ''; // CSS 클래스(duration-600 ease-organic) 적용
+                            });
+                            animationFrameIds.current.push(id2);
+                        });
+                        animationFrameIds.current.push(id1);
+
+                        // Cleanup will-change after animation
+                        // duration(600ms)보다 약간 여유있게 설정
+                        // Cleanup will-change after animation
+                        // duration(600ms)보다 약간 여유있게 설정
+                        const timerId = window.setTimeout(() => {
+                            if (el) el.style.willChange = 'auto';
+                        }, 700);
+                        timerIds.current.push(timerId);
+                        // 타이머 정리 로직은 생략(스타일 리셋 목적이므로 언마운트 시 큰 문제 없음) 혹은 리팩토링 가능
+                        // 여기서는 간단하게 처리
+                    }
+                }
+            }
+        });
+
+        // Save current rects and works for next comparison
+        prevRectsRef.current = currentRects;
         prevWorksRef.current = sortedWorks;
+
+        return () => {
+            animationFrameIds.current.forEach(cancelAnimationFrame);
+            animationFrameIds.current = [];
+            timerIds.current.forEach(clearTimeout);
+            timerIds.current = [];
+        };
+
     }, [sortedWorks]);
 
-    /**
-     * 순위 변동 아이콘 렌더링
-     * - NEW: 새로 진입
-     * - ▲: 순위 상승
-     * - ▼: 순위 하락
-     * - -: 변동 없음
-     */
-    const getRankChangeIcon = (work: Work, currentIndex: number) => {
-        if (prevWorksRef.current.length === 0) {
-            return <span className="text-gray-400">-</span>;
-        }
+    // Rank change icon logic
+    const getRankChangeIcon = (workId: string, currentIndex: number) => {
+        if (prevWorksRef.current.length === 0) return <span className="text-mocha-300">-</span>;
 
-        const prevIndex = prevWorksRef.current.findIndex(w => w.id === work.id);
+        const prevIndex = prevWorksRef.current.findIndex(w => w.id === workId);
+        if (prevIndex === -1) return <span className="text-emerald-500 text-xs font-bold animate-pulse">NEW</span>;
 
-        if (prevIndex === -1) {
-            return <span className="text-emerald-500 text-xs font-bold">NEW</span>;
-        }
-        if (prevIndex > currentIndex) {
-            return <span className="text-red-500">▲</span>;
-        }
-        if (prevIndex < currentIndex) {
-            return <span className="text-blue-500">▼</span>;
-        }
-        return <span className="text-gray-400">-</span>;
+        if (prevIndex > currentIndex) return <span className="text-red-500 font-bold">▲ {prevIndex - currentIndex}</span>;
+        if (prevIndex < currentIndex) return <span className="text-blue-500 font-bold">▼ {currentIndex - prevIndex}</span>;
+
+        return <span className="text-mocha-300">-</span>;
     };
 
-    if (sortedWorks.length === 0) {
-        return null;
-    }
+    if (sortedWorks.length === 0) return null;
 
     return (
-        <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6 sticky top-24">
-            {/* 헤더 */}
+        <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6 sticky top-24 transition-colors duration-300 border border-border">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-ink dark:text-white">{title}</h3>
-                <span className="text-xs text-mocha-400 dark:text-zinc-500">
-                    30초마다 갱신
+                <h3 className="text-lg font-heading font-bold text-ink dark:text-white">{title}</h3>
+                <span className="text-xs text-mocha-400 dark:text-zinc-500 flex items-center gap-1">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    실시간
                 </span>
             </div>
 
-            {/* 순위 리스트 */}
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
                 {sortedWorks.map((work, index) => (
-                    <div
+                    <RankingItem
                         key={work.id}
-                        onClick={() => navigate(`/works/${work.id}`)}
-                        className={`
-              flex items-center gap-3 p-3 rounded-lg cursor-pointer
-              hover:bg-mocha-100 dark:hover:bg-zinc-700 
-              transition-all duration-300 ease-in-out
-              ${animatingIndices.has(index)
-                                ? 'bg-yellow-50 dark:bg-yellow-900/20 scale-[1.02] shadow-md'
-                                : ''}
-            `}
-                    >
-                        {/* 순위 번호 - 상위 3위 골드 배경 */}
-                        <span className={`
-              w-7 h-7 flex items-center justify-center rounded-full font-bold text-sm flex-shrink-0
-              ${index < 3
-                                ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm'
-                                : 'bg-mocha-100 dark:bg-zinc-600 text-mocha-600 dark:text-zinc-300'}
-            `}>
-                            {index + 1}
-                        </span>
-
-                        {/* 순위 변동 표시 */}
-                        <span className="w-8 text-center text-sm flex-shrink-0">
-                            {getRankChangeIcon(work, index)}
-                        </span>
-
-                        {/* 작품 정보 */}
-                        <div className="flex-1 min-w-0">
-                            <p className="font-medium text-ink dark:text-white truncate text-sm">
-                                {work.title}
-                            </p>
-                            <p className="text-xs text-mocha-500 dark:text-zinc-400 truncate">
-                                {work.authorNickname || '작가'}
-                            </p>
-                        </div>
-
-                        {/* 좋아요 수 */}
-                        <div className="text-right text-xs text-mocha-500 dark:text-zinc-400 flex-shrink-0">
-                            <span className="flex items-center gap-1">
-                                ❤️ {work.likeCount || 0}
-                            </span>
-                        </div>
-                    </div>
+                        ref={el => {
+                            if (el) itemRefs.current.set(work.id, el);
+                            else itemRefs.current.delete(work.id);
+                        }}
+                        work={work}
+                        index={index}
+                        rankChange={getRankChangeIcon(work.id, index)}
+                        onClick={handleItemClick}
+                    />
                 ))}
             </div>
         </div>

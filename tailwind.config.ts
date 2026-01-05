@@ -94,8 +94,10 @@ export default {
         },
       },
       fontFamily: {
-        heading: ["Pretendard", "sans-serif"],
-        body: ["Pretendard", "sans-serif"],
+        heading: ["DM Serif Display", "Pretendard", "sans-serif"],
+        body: ["Spectral", "Pretendard", "serif"],
+        serif: ["Spectral", "serif"],
+        display: ["DM Serif Display", "serif"],
         sans: [
           "Pretendard",
           "-apple-system",
@@ -119,6 +121,7 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "rank-slide": "rank-slide 600ms cubic-bezier(0.19, 1, 0.22, 1) forwards", // ease-organic
       },
       transitionTimingFunction: {
         organic: "cubic-bezier(0.19, 1, 0.22, 1)",
@@ -146,6 +149,10 @@ export default {
           to: {
             height: "0",
           },
+        },
+        "rank-slide": {
+          "0%": { transform: "translateY(0)" },
+          "100%": { transform: "translateY(var(--slide-distance))" },
         },
       },
     },

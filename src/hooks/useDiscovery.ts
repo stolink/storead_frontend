@@ -35,8 +35,14 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
             const responseData = data.data;
             const works = responseData?.works || [];
 
+            // 회차(Episode)가 0개인 작품은 리스트에 노출되지 않도록 필터링
+            // RankingList 등 UI 컴포넌트에서 중복 필터링하지 않도록 여기서 확실하게 처리
+            // 주의: 클라이언트 사이드 필터링으로 인해 페이지 당 노출되는 아이템 개수가 줄어들 수 있음 (페이지네이션 불균형)
+            // 추후 API 레벨에서 필터링된 데이터를 받도록 개선 필요
+            const filteredWorks = works.filter((work: Work) => (work.chapterCount || 0) > 0);
+
             return {
-                data: works,
+                data: filteredWorks,
                 hasMore: responseData?.pagination?.hasNext || false,
             };
         },

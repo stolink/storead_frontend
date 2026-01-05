@@ -42,8 +42,12 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
         },
         // 검색어 등이 없을 때만 30초마다 자동 갱신 (실시간 순위 표시용)
         refetchInterval: (_query) => {
-            // params가 있고 정렬/필터링 조건이 있으면 자동 갱신 중단
-            if (params && (Object.keys(params).length > 0)) {
+            // 정렬/필터링 조건이 있거나 검색 모드인 경우(query가 유효한 경우) 자동 갱신 중단
+            // 참고: useQuery의 queryKey에 params가 포함되어 있으므로 params 변경 시 쿼리가 다시 실행됨
+            const hasSearchParams = params && Object.keys(params).length > 0;
+            const hasKeyword = params && 'keyword' in params && !!params.keyword;
+
+            if (hasSearchParams || hasKeyword) {
                 return false;
             }
             return 30000;

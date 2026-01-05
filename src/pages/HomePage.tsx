@@ -1,15 +1,19 @@
 /**
  * 공개 홈 페이지
- * 추천 캐러셀 + 작품 그리드
+ * 추천 캐러셀 + 작품 그리드 + 실시간 순위
  */
 import { useSearchParams } from 'react-router-dom';
 import { FeaturedCarousel } from '@/components/home/FeaturedCarousel';
 import { ContentGrid } from '@/components/home/ContentGrid';
+import { RankingList } from '@/components/home/RankingList';
 import { useDiscoveryWorks, useSearchWorks } from '@/hooks/useDiscovery';
 import { useThemeStore, backgroundThemeClasses } from '@/stores/useTheme';
 
 /**
  * 홈 페이지 컴포넌트
+ * - 캐러셀: 상위 5개 작품
+ * - 콘텐츠 그리드: 전체 작품 목록
+ * - 실시간 순위: 좋아요 기준 상위 10개 (30초마다 갱신)
  */
 export const HomePage = () => {
   const [searchParams] = useSearchParams();
@@ -17,6 +21,7 @@ export const HomePage = () => {
   const { theme } = useThemeStore();
 
   // 검색어가 있으면 검색 결과, 없으면 전체 작품
+  // 30초마다 자동 갱신 (refetchInterval: 30000ms)
   const { data: discoveryData, isLoading: discoveryLoading } = useDiscoveryWorks();
   const { data: searchData, isLoading: searchLoading } = useSearchWorks(searchQuery);
 
@@ -55,11 +60,25 @@ export const HomePage = () => {
             <FeaturedCarousel works={works.slice(0, 5)} />
           )}
 
-          {/* 작품 그리드 */}
-          <ContentGrid
-            works={works || []}
-            title={isSearching ? '검색 결과' : '인기 콘텐츠'}
-          />
+          {/* 메인 콘텐츠 + 실시간 순위 레이아웃 */}
+          <div className="container mx-auto px-6 py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              {/* 메인 콘텐츠 그리드 */}
+              <div className="lg:col-span-3">
+                <ContentGrid
+                  works={works || []}
+                  title={isSearching ? '검색 결과' : '인기 콘텐츠'}
+                />
+              </div>
+
+              {/* 사이드바: 실시간 순위 (검색 중이 아닐 때만) */}
+              {!isSearching && works && works.length > 0 && (
+                <div className="lg:col-span-1">
+                  <RankingList works={works} title="실시간 인기 순위" />
+                </div>
+              )}
+            </div>
+          </div>
         </>
       )}
     </div>

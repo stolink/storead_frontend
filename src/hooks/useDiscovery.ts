@@ -24,6 +24,7 @@ interface SearchParams {
 /**
  * 공개 작품 목록 조회
  * GET /api/discovery/works
+ * 30초마다 자동 갱신 (실시간 순위용)
  */
 export const useDiscoveryWorks = (params?: DiscoveryParams) => {
     return useQuery<PaginatedResponse<Work>>({
@@ -39,6 +40,8 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
                 hasMore: responseData?.pagination?.hasNext || false,
             };
         },
+        // 30초마다 자동 갱신 (실시간 순위 표시용)
+        refetchInterval: 30000,
     });
 };
 

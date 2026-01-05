@@ -269,6 +269,7 @@ export const useCategoryWorks = (
 
 /**
  * 랭킹 조회
+ * 탭 비활성 시 백그라운드 폴링 중단
  */
 export const useRankings = (period: string, genre?: string) => {
     return useQuery<PaginatedResponse<Work>>({
@@ -284,5 +285,7 @@ export const useRankings = (period: string, genre?: string) => {
             };
         },
         refetchInterval: 30000,
+        refetchIntervalInBackground: false, // 탭 비활성 시 백그라운드 폴링 중단
+        refetchOnWindowFocus: true, // 탭 포커스 시 자동 갱신
     });
 };

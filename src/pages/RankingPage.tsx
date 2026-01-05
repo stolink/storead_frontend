@@ -11,6 +11,8 @@ import { useState } from 'react';
 import { useRankings } from '@/hooks/useDiscovery';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import type { Work } from '@/types';
 
 const PERIOD_TABS = [
     { label: '실시간', value: 'REALTIME' },
@@ -148,8 +150,6 @@ export const RankingPage = () => {
 };
 
 // Helper Components
-import { useNavigate } from 'react-router-dom';
-import type { Work } from '@/types';
 
 function TopRankCard({ work, rank, isMain = false }: { work: Work, rank: number, isMain?: boolean }) {
     const navigate = useNavigate();

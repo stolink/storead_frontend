@@ -102,8 +102,15 @@ export const CategoryPage = () => {
         if (selectedGenreValue && selectedGenreValue !== genreId) params.set('sub', selectedGenreValue);
         if (statusFilter) params.set('status', statusFilter);
         if (sortBy !== 'latest') params.set('sort', sortBy);
-        setSearchParams(params, { replace: true });
-    }, [selectedGenreValue, statusFilter, sortBy, genreId, setSearchParams]);
+
+        // 현재 파라미터와 다른 경우에만 업데이트하여 무한 루프 방지
+        const currentString = searchParams.toString();
+        const newString = params.toString();
+
+        if (currentString !== newString) {
+            setSearchParams(params, { replace: true });
+        }
+    }, [selectedGenreValue, statusFilter, sortBy, genreId, setSearchParams, searchParams]);
 
     // UI 헬퍼
     const currentGroup = genreId ? GENRE_GROUPS[genreId] : undefined;

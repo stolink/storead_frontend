@@ -65,4 +65,5 @@ api.interceptors.response.use(
   }
 );
 
+// 모든 훅에서 default import를 사용하므로 호환성을 위해 추가
 export default api;

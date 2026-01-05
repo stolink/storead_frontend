@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { EXTERNAL_EDITOR_URL } from '@/constants';
+import { getExternalEditorUrl } from '@/utils/navigation';
 import { useWork } from '@/hooks/useWorks';
 import { useWorkChapters, useDeleteChapter } from '@/hooks/useChapters';
 import { Button } from '@/components/ui/button';
@@ -106,11 +106,7 @@ export const ChapterManagePage = () => {
                         </div>
                         <Button
                             onClick={() => {
-                                // projectId가 있으면 해당 프로젝트 에디터로, 없으면 라이브러리로
-                                const targetUrl = work.projectId
-                                    ? `${EXTERNAL_EDITOR_URL}/projects/${work.projectId}/editor`
-                                    : `${EXTERNAL_EDITOR_URL}/library`;
-                                window.location.href = targetUrl;
+                                window.location.href = getExternalEditorUrl(work.projectId);
                             }}
                             className="bg-zinc-900 text-white hover:bg-zinc-800"
                         >
@@ -173,20 +169,10 @@ export const ChapterManagePage = () => {
                                                             size="sm"
                                                             className="text-zinc-500 hover:text-zinc-900"
                                                             onClick={() => {
-                                                                // projectId가 있으면 해당 프로젝트 에디터로 (documentId 포함)
-                                                                console.log('[ChapterManagePage] 수정 클릭:', {
-                                                                    projectId: work.projectId,
-                                                                    documentId: chapter.documentId
-                                                                });
-                                                                if (work.projectId) {
-                                                                    const baseUrl = `${EXTERNAL_EDITOR_URL}/projects/${work.projectId}/editor`;
-                                                                    const targetUrl = chapter.documentId
-                                                                        ? `${baseUrl}?documentId=${chapter.documentId}`
-                                                                        : baseUrl;
-                                                                    window.location.href = targetUrl;
-                                                                } else {
-                                                                    window.location.href = `${EXTERNAL_EDITOR_URL}/library`;
-                                                                }
+                                                                window.location.href = getExternalEditorUrl(
+                                                                    work.projectId,
+                                                                    chapter.documentId
+                                                                );
                                                             }}
                                                         >
                                                             수정

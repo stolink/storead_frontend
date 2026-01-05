@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { EXTERNAL_EDITOR_URL } from '@/constants';
+import { getExternalEditorUrl } from '@/utils/navigation';
 import { useMyWorks } from '@/hooks/useExportChapter';
 import { useDeleteWork } from '@/hooks/useWorks';
 import { ChevronLeft } from 'lucide-react';
@@ -117,7 +117,7 @@ export const AuthorDashboardPage = () => {
                             </div>
                         </div>
                         <Button
-                            onClick={() => window.location.href = `${EXTERNAL_EDITOR_URL}/library`}
+                            onClick={() => window.location.href = getExternalEditorUrl()}
                             className="bg-mocha-500 hover:bg-mocha-700 text-paper"
                         >
                             + 새 작품 만들기 (에디터로 이동)
@@ -206,7 +206,7 @@ export const AuthorDashboardPage = () => {
                             아직 작성한 작품이 없습니다.
                         </p>
                         <Button
-                            onClick={() => window.location.href = `${EXTERNAL_EDITOR_URL}/library`}
+                            onClick={() => window.location.href = getExternalEditorUrl()}
                             className="bg-mocha-500 hover:bg-mocha-700 text-paper"
                         >
                             첫 번째 작품 만들기 (에디터로 이동)

@@ -17,7 +17,7 @@ export const useWork = (workId: string) => {
       const { data } = await api.get(`/works/${workId}`);
       // 백엔드 응답: { code, status, data: {...} } 또는 직접 객체
       const work = data.data || data;
-      console.log('[useWork] 응답:', work, 'projectId:', work.projectId);
+
       return work;
     },
     enabled: !!workId,

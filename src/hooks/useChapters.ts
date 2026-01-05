@@ -17,7 +17,7 @@ export const useWorkChapters = (workId: string) => {
             const { data } = await api.get(`/works/${workId}/chapters`);
             // 백엔드 응답: { code, status, data: [...] } 또는 직접 배열
             const chapters = data.data || data;
-            console.log('[useWorkChapters] 응답:', chapters);
+
             return Array.isArray(chapters) ? chapters : [];
         },
         enabled: !!workId,

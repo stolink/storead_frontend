@@ -3,7 +3,7 @@
  * 순위 변동 시 롤링 애니메이션 적용
  * 30초마다 자동 갱신
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Work } from '@/types';
 
@@ -25,15 +25,16 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
     const prevWorksRef = useRef<Work[]>([]);
 
     // 좋아요 기준으로 정렬 후 상위 10개 선택
-    useEffect(() => {
-        const sortedWorks = [...works].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-        const top10 = sortedWorks.slice(0, 10);
+    const sortedWorks = useMemo(() => {
+        return [...works].sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0)).slice(0, 10);
+    }, [works]);
 
+    useEffect(() => {
         // 순위 변동 감지 및 애니메이션
         if (prevWorksRef.current.length > 0) {
             const newAnimating = new Set<number>();
 
-            top10.forEach((work, index) => {
+            sortedWorks.forEach((work, index) => {
                 const prevIndex = prevWorksRef.current.findIndex(w => w.id === work.id);
                 // 순위가 변경되었거나 새로 진입한 경우 애니메이션
                 if (prevIndex !== index) {
@@ -44,13 +45,14 @@ export const RankingList = ({ works, title = '실시간 인기 순위' }: Rankin
             if (newAnimating.size > 0) {
                 setAnimatingIndices(newAnimating);
                 // 500ms 후 애니메이션 해제
-                setTimeout(() => setAnimatingIndices(new Set()), 500);
+                const timer = setTimeout(() => setAnimatingIndices(new Set()), 500);
+                return () => clearTimeout(timer);
             }
         }
 
-        setDisplayedWorks(top10);
-        prevWorksRef.current = top10;
-    }, [works]);
+        setDisplayedWorks(sortedWorks);
+        prevWorksRef.current = sortedWorks;
+    }, [sortedWorks]);
 
     /**
      * 순위 변동 아이콘 렌더링

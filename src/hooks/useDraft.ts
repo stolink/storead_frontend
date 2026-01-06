@@ -71,14 +71,18 @@ export const useDrafts = (draftIds: string[]) => {
   return useQuery<Draft[]>({
     queryKey: ["drafts", draftIds],
     queryFn: async () => {
-      // 각 draftId에 대해 병렬 조회
-      const results = await Promise.all(
+      // Promise.allSettled를 사용하여 일부 요청 실패 시에도 성공한 데이터만 반환
+      // 특정 Draft ID가 만료/삭제되어도 나머지는 정상 표시
+      const results = await Promise.allSettled(
         draftIds.map(async (id) => {
           const { data } = await api.get(`/drafts/${id}`);
           return data.data as Draft;
         })
       );
-      return results;
+      // 성공한 결과만 필터링하여 반환
+      return results
+        .filter((result): result is PromiseFulfilledResult<Draft> => result.status === "fulfilled")
+        .map((result) => result.value);
     },
     enabled: draftIds.length > 0,
     retry: false,

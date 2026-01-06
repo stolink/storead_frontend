@@ -6,7 +6,7 @@
  * 1. 단일 Draft (draftId 파라미터): 기존 2단 컬럼 레이아웃
  * 2. 다중 Draft (draftIds 파라미터): 일괄 목록에서 순차 게시
  */
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
@@ -795,10 +795,10 @@ export const WritePage = () => {
     }
   }, [isAuthenticated, openAuthModal, draftId, draftIds, isBatchMode]);
 
-  // 완료 핸들러
-  const handleBatchComplete = () => {
+  // 완료 핸들러 (useCallback으로 래핑하여 BatchPublishView의 useEffect 의존성 안정화)
+  const handleBatchComplete = useCallback(() => {
     navigate("/");
-  };
+  }, [navigate]);
 
   // === 에러/로딩 상태 처리 ===
 

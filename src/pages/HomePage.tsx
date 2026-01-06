@@ -3,6 +3,7 @@
  * 추천 캐러셀 + 개인화 추천 섹션 + 작품 그리드 + 실시간 순위
  */
 import { useSearchParams } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import { FeaturedCarousel } from '@/components/home/FeaturedCarousel';
 import { ContentGrid } from '@/components/home/ContentGrid';
 import { BookCard } from '@/components/home/BookCard';
@@ -10,7 +11,7 @@ import { RankingList } from '@/components/home/RankingList';
 import { ContinueReadingSection } from '@/components/home/ContinueReadingSection';
 import { WorkListRow } from '@/components/home/WorkListRow';
 import { PersonalizedRecommendationSection } from '@/components/home/PersonalizedRecommendationSection';
-import { useDiscoveryWorks, useSearchWorks } from '@/hooks/useDiscovery';
+import { useDiscoveryWorks, useSearchWorks, useRankings } from '@/hooks/useDiscovery';
 import { useThemeStore, backgroundThemeClasses } from '@/stores/useTheme';
 import { useAuthStore } from '@/stores/useAuthStore';
 
@@ -31,6 +32,10 @@ export const HomePage = () => {
   // 30초마다 자동 갱신 (refetchInterval: 30000ms)
   const { data: discoveryData, isLoading: discoveryLoading } = useDiscoveryWorks();
   const { data: searchData, isLoading: searchLoading } = useSearchWorks(searchQuery);
+
+  // 실시간 인기 순위용 데이터 (likeCount DESC 정렬, 30초마다 자동 갱신)
+  const { data: rankingData } = useRankings('REALTIME');
+  const rankingWorks = rankingData?.data || [];
 
   const isSearching = searchQuery.length > 0;
   // 데모 데이터 구조: { data: Work[], hasMore: boolean }
@@ -86,8 +91,8 @@ export const HomePage = () => {
 
                 {/* 실시간 순위 (1칸) */}
                 <div className="lg:col-span-1 h-full overflow-hidden flex flex-col">
-                  {/* limit=5로 제한 및 더보기 링크 */}
-                  <RankingList works={works} title="실시간 인기 순위" limit={5} moreLink="/ranking" />
+                  {/* limit=5로 제한 및 더보기 링크 - 백엔드 랭킹 API 사용 */}
+                  <RankingList works={rankingWorks} title="실시간 인기 순위" limit={5} moreLink="/ranking" />
                 </div>
               </div>
             </div>
@@ -107,12 +112,16 @@ export const HomePage = () => {
           {/* 인기 콘텐츠 (고정 그리드 6개) */}
           {!isSearching && (
             <div className="container mx-auto px-6 py-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold font-heading text-zinc-900 dark:text-zinc-100">
-                  Most Popular
-                </h2>
-                <Link to="/category/ALL?sort=popular" className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors">
-                  More &gt;
+              {/* 인기 작품 헤더 - 타이틀 옆 > 스타일 */}
+              <div className="flex items-center gap-2 mb-6">
+                <Link
+                  to="/category/ALL?sort=popular"
+                  className="group flex items-center gap-1 cursor-pointer"
+                >
+                  <h2 className="text-2xl font-bold font-heading text-zinc-900 dark:text-zinc-100 group-hover:text-mocha-600 transition-colors">
+                    인기 작품
+                  </h2>
+                  <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-mocha-600 transition-colors" />
                 </Link>
               </div>
 
@@ -134,9 +143,9 @@ export const HomePage = () => {
           {/* 장르별 섹션 (가로 스크롤) */}
           {!isSearching && (
             <div className="pb-12 space-y-8">
-              <WorkListRow title="Fantasy Novels" genre="FANTASY" limit={10} moreLink="/category/FANTASY" />
-              <WorkListRow title="Romance Novels" genre="ROMANCE" limit={10} moreLink="/category/ROMANCE" />
-              <WorkListRow title="Martial Arts" genre="MARTIAL_ARTS" limit={10} moreLink="/category/MARTIAL_ARTS" />
+              <WorkListRow title="판타지 소설" genre="FANTASY" limit={6} moreLink="/category/FANTASY" />
+              <WorkListRow title="로맨스 소설" genre="ROMANCE" limit={6} moreLink="/category/ROMANCE" />
+              <WorkListRow title="무협 소설" genre="MARTIAL_ARTS" limit={6} moreLink="/category/MARTIAL_ARTS" />
             </div>
           )}
 
@@ -145,7 +154,7 @@ export const HomePage = () => {
             <div className="container mx-auto px-6 py-8">
               <ContentGrid
                 works={works || []}
-                title="Search Results"
+                title="검색 결과"
               />
             </div>
           )}

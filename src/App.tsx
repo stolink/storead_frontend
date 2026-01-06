@@ -87,6 +87,8 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          {/* 커뮤니티 배포 - 게시 확인 페이지 (헤더 포함) */}
+          <Route path="/write" element={<WritePage />} />
         </Route>
 
         {/* 챕터 뷰어 (전체 화면, 헤더 없음) */}
@@ -101,8 +103,6 @@ function AppContent() {
         {/* OAuth2 콜백 */}
         <Route path="/oauth2/callback" element={<OAuth2Callback />} />
 
-        {/* 커뮤니티 배포 - 게시 확인 페이지 */}
-        <Route path="/write" element={<WritePage />} />
 
         {/* 작가 페이지 (인증 필요) */}
         <Route

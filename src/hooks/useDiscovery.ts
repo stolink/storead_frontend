@@ -18,6 +18,7 @@ interface DiscoveryParams {
     limit?: number;
     size?: number; // limit과 동일
     enabled?: boolean; // 조건부 쿼리 활성화 (기본: true)
+    keyword?: string; // 검색어
 }
 
 interface SearchParams {
@@ -70,13 +71,19 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
         // enabled 옵션 적용 (providedWorks가 있을 때 불필요한 API 호출 방지)
         enabled: enabled,
         // 검색어 등이 없을 때만 30초마다 자동 갱신 (실시간 순위 표시용)
+        // 검색어 등이 없을 때만 30초마다 자동 갱신 (실시간 순위 표시용)
         refetchInterval: (_query) => {
-            // 정렬/필터링 조건이 있거나 검색 모드인 경우(query가 유효한 경우) 자동 갱신 중단
-            // 참고: useQuery의 queryKey에 params가 포함되어 있으므로 params 변경 시 쿼리가 다시 실행됨
-            const hasSearchParams = restParams && Object.keys(restParams).length > 0;
-            const hasKeyword = restParams && 'keyword' in restParams && !!(restParams as Record<string, unknown>).keyword;
+            // 정렬/필터링 조건이 있거나 검색 모드인 경우(query가 유효한 경우) 자동 갱신 중단 여부 결정
 
-            if (hasSearchParams || hasKeyword) {
+            // 단순 레이아웃 옵션(limit, size, page, enabled)은 자동 갱신을 방해하지 않도록 함
+            // keyword(검색)나 status(상태 필터)가 있을 때만 중단
+            // genre의 경우 장르별 실시간 랭킹이나 신작 목록 갱신을 위해 갱신 허용 가능
+
+            const hasKeyword = restParams?.keyword && restParams.keyword.length > 0;
+            // status 필터링이 걸려있으면(완결작 보기 등) 리스트가 고정되는 것이 나을 수 있으나, 신작 업데이트를 위해 갱신 허용할 수도 있음.
+            // 여기서는 AI 리뷰 피드백에 따라 "실제 필터링/검색 관련 파라미터" 중 명확히 갱신을 멈춰야 할 것만 체크
+
+            if (hasKeyword) {
                 return false;
             }
             return 30000;

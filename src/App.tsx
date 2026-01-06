@@ -21,7 +21,9 @@ import ChapterViewerPage from "@/pages/ChapterViewerPage";
 import ChapterCommentsPage from "@/pages/ChapterCommentsPage";
 import LibraryPage from "@/pages/LibraryPage";
 import WritePage from "@/pages/WritePage";
-import WritersPage from "@/pages/WritersPage"; // New Import
+import WritersPage from "@/pages/WritersPage";
+import RankingPage from "@/pages/RankingPage"; // 랭킹 페이지
+import CategoryPage from "@/pages/CategoryPage"; // 카테고리 페이지
 
 // 인증 페이지
 import OAuth2Callback from "@/pages/Auth/OAuth2Callback";
@@ -75,6 +77,8 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/writers" element={<WritersPage />} />
           <Route path="/works/:id" element={<WorkDetailPage />} />
+          <Route path="/ranking" element={<RankingPage />} />
+          <Route path="/category/:genreId" element={<CategoryPage />} />
           <Route
             path="/library"
             element={

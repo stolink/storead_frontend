@@ -158,7 +158,7 @@ export const RankingList = ({ works, title = '실시간 인기 순위', moreLink
                     className="mt-4 mx-4 mb-4 py-3 px-4 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg flex items-center justify-center gap-2 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors group"
                 >
                     <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
-                        View Full Ranking
+                        전체 순위 보기
                     </span>
                     <span className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">→</span>
                 </div>

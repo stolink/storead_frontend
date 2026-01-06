@@ -282,6 +282,12 @@ export const useCategoryWorks = (
 
 /**
  * 랭킹 조회
+ * GET /api/discovery/rankings
+ * 
+ * - HomePage의 실시간 랭킹 섹션
+ * - RankingPage의 전체 랭킹 목록
+ * 에서 사용됩니다.
+ * 
  * 탭 비활성 시 백그라운드 폴링 중단
  */
 export const useRankings = (period: string, genre?: string) => {

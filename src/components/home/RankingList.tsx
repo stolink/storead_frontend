@@ -5,6 +5,7 @@
  */
 import { useMemo, useLayoutEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import type { Work } from '@/types';
 import { RankingItem } from './RankingItem';
 
@@ -124,7 +125,17 @@ export const RankingList = ({ works, title = '실시간 인기 순위', moreLink
         <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg overflow-hidden sticky top-24 transition-colors duration-300 border border-border flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-6 pb-4">
-                <h3 className="text-lg font-heading font-bold text-ink dark:text-white">{title}</h3>
+                <div
+                    onClick={() => moreLink && navigate(moreLink)}
+                    className={moreLink ? "flex items-center gap-1 cursor-pointer group" : ""}
+                >
+                    <h3 className="text-lg font-heading font-bold text-ink dark:text-white group-hover:text-mocha-600 transition-colors">
+                        {title}
+                    </h3>
+                    {moreLink && (
+                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-mocha-600 transition-colors" />
+                    )}
+                </div>
                 <span className="text-xs text-mocha-400 dark:text-zinc-500 flex items-center gap-1">
                     <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -158,7 +169,7 @@ export const RankingList = ({ works, title = '실시간 인기 순위', moreLink
                     className="mt-4 mx-4 mb-4 py-3 px-4 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg flex items-center justify-center gap-2 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors group"
                 >
                     <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
-                        View Full Ranking
+                        전체 순위 보기
                     </span>
                     <span className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">→</span>
                 </div>

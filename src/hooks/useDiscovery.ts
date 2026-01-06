@@ -17,6 +17,8 @@ interface DiscoveryParams {
     page?: number;
     limit?: number;
     size?: number; // limit과 동일
+    enabled?: boolean; // 조건부 쿼리 활성화 (기본: true)
+    keyword?: string; // 검색어
 }
 
 interface SearchParams {
@@ -31,22 +33,25 @@ interface SearchParams {
  * 30초마다 자동 갱신 (실시간 순위용)
  */
 export const useDiscoveryWorks = (params?: DiscoveryParams) => {
+    // enabled 옵션을 별도로 추출하여 API 파라미터에서 제외
+    const { enabled = true, ...restParams } = params || {};
+
     return useQuery<PaginatedResponse<Work>>({
-        queryKey: ["discovery", params],
+        queryKey: ["discovery", restParams],
         queryFn: async () => {
             // 백엔드 API는 'genres' (배열)를 기대하므로 'genre' 단일 값을 변환
             // 또한 백엔드는 'size'를 기대하지만 프론트엔드에서 'limit'을 사용할 수 있으므로 변환
-            const apiParams: Record<string, unknown> = { ...params };
+            const apiParams: Record<string, unknown> = { ...restParams };
 
             // genre -> genres 변환 (단일 값을 배열로)
-            if (params?.genre && !params?.genres) {
-                apiParams.genres = [params.genre];
+            if (restParams?.genre && !restParams?.genres) {
+                apiParams.genres = [restParams.genre];
                 delete apiParams.genre;
             }
 
             // limit -> size 변환 (백엔드 파라미터명에 맞춤)
-            if (params?.limit && !params?.size) {
-                apiParams.size = params.limit;
+            if (restParams?.limit && !restParams?.size) {
+                apiParams.size = restParams.limit;
                 delete apiParams.limit;
             }
 
@@ -63,14 +68,22 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
                 hasMore: responseData?.pagination?.hasNext || false,
             };
         },
+        // enabled 옵션 적용 (providedWorks가 있을 때 불필요한 API 호출 방지)
+        enabled: enabled,
+        // 검색어 등이 없을 때만 30초마다 자동 갱신 (실시간 순위 표시용)
         // 검색어 등이 없을 때만 30초마다 자동 갱신 (실시간 순위 표시용)
         refetchInterval: (_query) => {
-            // 정렬/필터링 조건이 있거나 검색 모드인 경우(query가 유효한 경우) 자동 갱신 중단
-            // 참고: useQuery의 queryKey에 params가 포함되어 있으므로 params 변경 시 쿼리가 다시 실행됨
-            const hasSearchParams = params && Object.keys(params).length > 0;
-            const hasKeyword = params && 'keyword' in params && !!params.keyword;
+            // 정렬/필터링 조건이 있거나 검색 모드인 경우(query가 유효한 경우) 자동 갱신 중단 여부 결정
 
-            if (hasSearchParams || hasKeyword) {
+            // 단순 레이아웃 옵션(limit, size, page, enabled)은 자동 갱신을 방해하지 않도록 함
+            // keyword(검색)나 status(상태 필터)가 있을 때만 중단
+            // genre의 경우 장르별 실시간 랭킹이나 신작 목록 갱신을 위해 갱신 허용 가능
+
+            const hasKeyword = restParams?.keyword && restParams.keyword.length > 0;
+            // status 필터링이 걸려있으면(완결작 보기 등) 리스트가 고정되는 것이 나을 수 있으나, 신작 업데이트를 위해 갱신 허용할 수도 있음.
+            // 여기서는 AI 리뷰 피드백에 따라 "실제 필터링/검색 관련 파라미터" 중 명확히 갱신을 멈춰야 할 것만 체크
+
+            if (hasKeyword) {
                 return false;
             }
             return 30000;
@@ -269,6 +282,12 @@ export const useCategoryWorks = (
 
 /**
  * 랭킹 조회
+ * GET /api/discovery/rankings
+ * 
+ * - HomePage의 실시간 랭킹 섹션
+ * - RankingPage의 전체 랭킹 목록
+ * 에서 사용됩니다.
+ * 
  * 탭 비활성 시 백그라운드 폴링 중단
  */
 export const useRankings = (period: string, genre?: string) => {

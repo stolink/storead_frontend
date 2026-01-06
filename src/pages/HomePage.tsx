@@ -9,7 +9,7 @@ import { ContentGrid } from '@/components/home/ContentGrid';
 import { BookCard } from '@/components/home/BookCard';
 import { RankingList } from '@/components/home/RankingList';
 import { ContinueReadingSection } from '@/components/home/ContinueReadingSection';
-import { WorkListRow } from '@/components/home/WorkListRow';
+import { WorkGridSection } from '@/components/home/WorkGridSection';
 import { PersonalizedRecommendationSection } from '@/components/home/PersonalizedRecommendationSection';
 import { useDiscoveryWorks, useSearchWorks, useRankings } from '@/hooks/useDiscovery';
 import { useThemeStore, backgroundThemeClasses } from '@/stores/useTheme';
@@ -140,12 +140,12 @@ export const HomePage = () => {
             </div>
           )}
 
-          {/* 장르별 섹션 (가로 스크롤) */}
+          {/* 장르별 섹션 (그리드) */}
           {!isSearching && (
             <div className="pb-12 space-y-8">
-              <WorkListRow title="판타지 소설" genre="FANTASY" limit={6} moreLink="/category/FANTASY" />
-              <WorkListRow title="로맨스 소설" genre="ROMANCE" limit={6} moreLink="/category/ROMANCE" />
-              <WorkListRow title="무협 소설" genre="MARTIAL_ARTS" limit={6} moreLink="/category/MARTIAL_ARTS" />
+              <WorkGridSection title="판타지 소설" genre="FANTASY" limit={6} moreLink="/category/FANTASY" />
+              <WorkGridSection title="로맨스 소설" genre="ROMANCE" limit={6} moreLink="/category/ROMANCE" />
+              <WorkGridSection title="무협 소설" genre="MARTIAL_ARTS" limit={6} moreLink="/category/MARTIAL_ARTS" />
             </div>
           )}
 

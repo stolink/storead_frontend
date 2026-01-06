@@ -17,6 +17,7 @@ interface DiscoveryParams {
     page?: number;
     limit?: number;
     size?: number; // limit과 동일
+    enabled?: boolean; // 조건부 쿼리 활성화 (기본: true)
 }
 
 interface SearchParams {
@@ -31,22 +32,25 @@ interface SearchParams {
  * 30초마다 자동 갱신 (실시간 순위용)
  */
 export const useDiscoveryWorks = (params?: DiscoveryParams) => {
+    // enabled 옵션을 별도로 추출하여 API 파라미터에서 제외
+    const { enabled = true, ...restParams } = params || {};
+
     return useQuery<PaginatedResponse<Work>>({
-        queryKey: ["discovery", params],
+        queryKey: ["discovery", restParams],
         queryFn: async () => {
             // 백엔드 API는 'genres' (배열)를 기대하므로 'genre' 단일 값을 변환
             // 또한 백엔드는 'size'를 기대하지만 프론트엔드에서 'limit'을 사용할 수 있으므로 변환
-            const apiParams: Record<string, unknown> = { ...params };
+            const apiParams: Record<string, unknown> = { ...restParams };
 
             // genre -> genres 변환 (단일 값을 배열로)
-            if (params?.genre && !params?.genres) {
-                apiParams.genres = [params.genre];
+            if (restParams?.genre && !restParams?.genres) {
+                apiParams.genres = [restParams.genre];
                 delete apiParams.genre;
             }
 
             // limit -> size 변환 (백엔드 파라미터명에 맞춤)
-            if (params?.limit && !params?.size) {
-                apiParams.size = params.limit;
+            if (restParams?.limit && !restParams?.size) {
+                apiParams.size = restParams.limit;
                 delete apiParams.limit;
             }
 
@@ -63,12 +67,14 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
                 hasMore: responseData?.pagination?.hasNext || false,
             };
         },
+        // enabled 옵션 적용 (providedWorks가 있을 때 불필요한 API 호출 방지)
+        enabled: enabled,
         // 검색어 등이 없을 때만 30초마다 자동 갱신 (실시간 순위 표시용)
         refetchInterval: (_query) => {
             // 정렬/필터링 조건이 있거나 검색 모드인 경우(query가 유효한 경우) 자동 갱신 중단
             // 참고: useQuery의 queryKey에 params가 포함되어 있으므로 params 변경 시 쿼리가 다시 실행됨
-            const hasSearchParams = params && Object.keys(params).length > 0;
-            const hasKeyword = params && 'keyword' in params && !!params.keyword;
+            const hasSearchParams = restParams && Object.keys(restParams).length > 0;
+            const hasKeyword = restParams && 'keyword' in restParams && !!(restParams as Record<string, unknown>).keyword;
 
             if (hasSearchParams || hasKeyword) {
                 return false;

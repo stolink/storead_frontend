@@ -4,7 +4,7 @@ import { BookCard } from './BookCard';
 import type { Work } from '@/types';
 import { useDiscoveryWorks } from '@/hooks/useDiscovery';
 
-interface WorkListRowProps {
+interface WorkGridSectionProps {
     title: string;
     genre?: string; // e.g. 'FANTASY'
     limit?: number;
@@ -12,14 +12,20 @@ interface WorkListRowProps {
     works?: Work[]; // Directly provided works (optional)
 }
 
-export const WorkListRow = ({ title, genre, limit = 6, moreLink, works: providedWorks }: WorkListRowProps) => {
+/**
+ * 작품 그리드 섹션 컴포넌트
+ * - 6열 반응형 그리드 레이아웃
+ * - providedWorks가 없을 때만 API 호출 (성능 최적화)
+ */
+export const WorkGridSection = ({ title, genre, limit = 6, moreLink, works: providedWorks }: WorkGridSectionProps) => {
     const navigate = useNavigate();
 
-    // If works are not provided, fetch them based on genre
+    // providedWorks가 없을 때만 API 호출 (TanStack Query enabled 옵션 활용)
     const { data: fetchedData, isLoading } = useDiscoveryWorks({
         genre: genre,
         limit: limit,
-        sort: 'latest'
+        sort: 'latest',
+        enabled: !providedWorks // providedWorks가 있으면 API 호출 비활성화
     });
 
     const works = providedWorks || fetchedData?.data || [];
@@ -38,7 +44,7 @@ export const WorkListRow = ({ title, genre, limit = 6, moreLink, works: provided
                         onClick={() => moreLink && navigate(moreLink)}
                         className={moreLink ? "cursor-pointer group flex items-center gap-1" : ""}
                     >
-                        <h2 className="text-xl font-heading font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-mocha-600 transition-colors">
+                        <h2 className="text-2xl font-heading font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-mocha-600 transition-colors">
                             {title}
                         </h2>
                         {moreLink && (

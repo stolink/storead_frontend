@@ -88,7 +88,7 @@ export default defineConfig(({ mode }) => ({
     },
 
     // Performance optimizations
-    target: "es2015",
+    target: "esnext",
     minify: "esbuild",
     cssCodeSplit: true,
 

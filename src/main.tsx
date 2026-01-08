@@ -29,6 +29,29 @@ window.addEventListener("error", (event) => {
   }
 });
 
+// 동적 import() Promise 거부 처리 (네트워크 장애 등)
+window.addEventListener("unhandledrejection", (event) => {
+  const reason = event.reason?.message || String(event.reason) || "";
+
+  if (
+    reason.includes("Loading chunk") ||
+    reason.includes("Failed to fetch dynamically imported module") ||
+    reason.includes("error loading dynamically imported module")
+  ) {
+    const reloadCount = parseInt(
+      sessionStorage.getItem("chunk-reload-count") || "0"
+    );
+
+    if (reloadCount < 1) {
+      sessionStorage.setItem(
+        "chunk-reload-count",
+        (reloadCount + 1).toString()
+      );
+      window.location.reload();
+    }
+  }
+});
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />

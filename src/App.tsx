@@ -69,6 +69,11 @@ function AppContent() {
     }
   }, [searchParams, setSearchParams, openAuthModal]);
 
+  // 정상 로드 시 chunk-reload-count 초기화 (다음 에러 대응 가능하도록)
+  useEffect(() => {
+    sessionStorage.removeItem("chunk-reload-count");
+  }, []);
+
   return (
     <>
       <Routes>

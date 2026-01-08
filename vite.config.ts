@@ -4,8 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: process.env.NODE_ENV === "production" ? "/storead/" : "/",
+export default defineConfig(({ mode }) => ({
+  base: mode === "production" ? "/storead/" : "/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -24,4 +24,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

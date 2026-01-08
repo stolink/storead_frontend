@@ -88,8 +88,10 @@ export const useWorkByProjectId = (projectId: string | null) => {
     queryKey: ["work", "byProjectId", projectId],
     queryFn: async () => {
       const { data } = await api.get(`/works?projectId=${projectId}`);
-      return data; // { works: [...] }
+      // 백엔드 응답: { code, status, data: { works: [...] } }
+      return data.data || data;
     },
     enabled: !!projectId,
   });
 };
+

@@ -79,10 +79,11 @@ jobs:
         run: |
           aws s3 sync ./dist s3://${{ vars.STOREAD_S3_BUCKET_NAME }} --delete
 
-      - name: CloudFront Invalidation
+      - name: CloudFront Invalidation (index.html only)
         run: |
-          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?DomainName=='${{ vars.STOREAD_CLOUDFRONT_URL }}'].Id | [0]" --output text)
-          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/storead/index.html"
 
       - name: Health Check
         run: |

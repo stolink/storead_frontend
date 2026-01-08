@@ -471,7 +471,7 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
   const [synopsis, setSynopsis] = useState("");
   const [showGraphModal, setShowGraphModal] = useState(false);
 
-  // 기존 Work 조회
+  // 작품 정보는 상위 WritePage에서 제공받거나 필요시 내부에서 조회 (현재는 상위에서 로딩 처리)
   const { data: workData, isLoading: isWorkLoading } = useWorkByProjectId(
     draft?.projectId || null
   );
@@ -774,15 +774,15 @@ export const WritePage = () => {
   const {
     data: singleDraft,
     isLoading: isSingleDraftLoading,
-    isError: isSingleDraftError,
-    error: singleDraftError,
+    isError: _isSingleDraftError,
+    error: _singleDraftError,
   } = useDraft(isAuthenticated && !isBatchMode ? draftId : null);
 
   // 다중 Draft 조회
   const {
     data: multipleDrafts,
     isLoading: isMultipleDraftsLoading,
-    isError: isMultipleDraftsError,
+    isError: _isMultipleDraftsError,
   } = useDrafts(isAuthenticated && isBatchMode ? draftIds : []);
 
   // 로그인 체크
@@ -854,55 +854,60 @@ export const WritePage = () => {
     );
   }
 
-  // 로딩 중
-  if (isSingleDraftLoading || isMultipleDraftsLoading) {
+  // 1. 공통 데이터 추출 (작품 정보)
+  const draftForWork = useMemo(() => {
+    if (isBatchMode && multipleDrafts && multipleDrafts.length > 0) return multipleDrafts[0];
+    return singleDraft;
+  }, [isBatchMode, multipleDrafts, singleDraft]);
+
+  // 게시할 Draft 목록 결정 (단일/다중 모드 통합) - Hook 규칙 준수를 위해 조건부 return 전에 위치
+  const allDrafts = useMemo(() => {
+    if (isBatchMode && multipleDrafts) {
+      return multipleDrafts;
+    }
+    if (singleDraft) {
+      return [singleDraft];
+    }
+    return [];
+  }, [isBatchMode, multipleDrafts, singleDraft]);
+
+  const { data: workData, isLoading: isWorkLoading } = useWorkByProjectId(
+    draftForWork?.projectId || null
+  );
+  const existingWork = (workData as { works?: { id: string; title?: string }[] })?.works?.[0];
+
+  // 로딩 중 (작품 정보 조회 포함)
+  if (isSingleDraftLoading || isMultipleDraftsLoading || isWorkLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 text-mocha-500 animate-spin" />
-          <p className="text-muted-foreground">Draft 데이터를 불러오는 중...</p>
+          <p className="text-muted-foreground">데이터를 불러오는 중...</p>
         </div>
       </div>
     );
   }
 
-  // 에러 처리
-  if (isSingleDraftError || isMultipleDraftsError) {
-    const errorMessage =
-      (singleDraftError as { response?: { status?: number } })?.response
-        ?.status === 404
-        ? "Draft를 찾을 수 없습니다. 링크가 만료되었거나 이미 게시되었을 수 있습니다."
-        : "Draft를 불러오는 데 실패했습니다.";
-
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4">
-              <AlertCircle className="w-6 h-6 text-amber-600" />
-            </div>
-            <CardTitle className="text-amber-600">링크 만료</CardTitle>
-            <CardDescription>{errorMessage}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <Button variant="outline" onClick={() => navigate("/")}>
-              홈으로 이동
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // === 메인 렌더링 ===
-  if (isBatchMode && multipleDrafts) {
-    // 다중 Draft: 일괄 게시 UI
-    return <BatchPublishView drafts={multipleDrafts} onComplete={handleBatchComplete} />;
+
+  // 신규 작품 배포 시 → SinglePublishView (진행 바, 작품 정보 자동 생성)
+  if (!existingWork) {
+    const targetDraft = draftForWork;
+    const targetDraftId = isBatchMode && targetDraft ? targetDraft.id : draftId;
+
+    if (targetDraft && (targetDraftId || isBatchMode)) {
+      return (
+        <SinglePublishView
+          draft={targetDraft}
+          draftId={targetDraftId || targetDraft.id}
+        />
+      );
+    }
   }
 
-  if (singleDraft && draftId) {
-    // 단일 Draft: 기존 UI
-    return <SinglePublishView draft={singleDraft} draftId={draftId} />;
+  // 기존 작품 추가 배포 시 → BatchPublishView (작품 정보 확인, 제목 수정 불가)
+  if (existingWork && allDrafts.length > 0) {
+    return <BatchPublishView drafts={allDrafts} onComplete={handleBatchComplete} />;
   }
 
   return null;

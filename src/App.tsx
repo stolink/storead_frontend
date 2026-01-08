@@ -103,7 +103,6 @@ function AppContent() {
         {/* OAuth2 콜백 */}
         <Route path="/oauth2/callback" element={<OAuth2Callback />} />
 
-
         {/* 작가 페이지 (인증 필요) */}
         <Route
           path="/author"
@@ -154,7 +153,7 @@ function AppContent() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <ScrollToTop />
         <AppContent />
       </BrowserRouter>

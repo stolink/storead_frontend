@@ -481,33 +481,35 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
   const publishMutation = usePublish();
   const deleteDraftMutation = useDeleteDraft();
 
-  // Draft 데이터로 폼 초기화
+  // Draft 데이터로 폼 초기화 (draft.id 변경 시에만 실행)
   useEffect(() => {
-    if (draft?.id) {
-      if (draft.workCoverUrl && !coverUrl) {
-        setCoverUrl(draft.workCoverUrl);
-      }
-      if (draft.workGenre) {
-        const validGenre = GENRE_OPTIONS.find(
-          (opt) => opt.value === draft.workGenre
-        );
-        if (validGenre) {
-          setGenre(validGenre.value);
-        }
-      }
-      if (!synopsis) {
-        if (draft.workSynopsis) {
-          setSynopsis(draft.workSynopsis);
-        } else if (draft.content) {
-          const previewText = draft.content
-            .replace(/<[^>]*>/g, "")
-            .slice(0, 500);
-          setSynopsis(previewText);
-        }
+    if (!draft?.id) return;
+
+    // 표지 URL 초기화 (빈 값일 때만)
+    if (draft.workCoverUrl) {
+      setCoverUrl((prev) => prev || (draft.workCoverUrl ?? ""));
+    }
+
+    // 장르 초기화
+    if (draft.workGenre) {
+      const validGenre = GENRE_OPTIONS.find(
+        (opt) => opt.value === draft.workGenre
+      );
+      if (validGenre) {
+        setGenre(validGenre.value);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft?.id]);
+
+    // 줄거리 초기화 (빈 값일 때만)
+    if (draft.workSynopsis) {
+      setSynopsis((prev) => prev || (draft.workSynopsis ?? ""));
+    } else if (draft.content) {
+      const previewText = draft.content
+        .replace(/<[^>]*>/g, "")
+        .slice(0, 500);
+      setSynopsis((prev) => prev || (previewText ?? ""));
+    }
+  }, [draft?.id, draft?.workCoverUrl, draft?.workGenre, draft?.workSynopsis, draft?.content]);
 
   // 게시하기 핸들러
   const handlePublish = async () => {

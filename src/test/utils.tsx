@@ -7,7 +7,8 @@ import {
     type RenderHookOptions,
 } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
+import { useState } from "react";
 
 // 테스트용 QueryClient (에러 재시도 비활성화)
 function createTestQueryClient() {
@@ -30,11 +31,11 @@ interface AllTheProvidersProps {
 }
 
 function AllTheProviders({ children }: AllTheProvidersProps) {
-    const testQueryClient = createTestQueryClient();
+    const [testQueryClient] = useState(() => createTestQueryClient());
 
     return (
         <QueryClientProvider client={testQueryClient}>
-            <BrowserRouter>{children}</BrowserRouter>
+            <MemoryRouter>{children}</MemoryRouter>
         </QueryClientProvider>
     );
 }

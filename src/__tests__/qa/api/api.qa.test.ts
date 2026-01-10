@@ -10,28 +10,28 @@ const testGroups: { title: string; tests: ApiTestCase[] }[] = [
         title: "[Auth/User] TC-STR-001 ~ 010",
         tests: [
             { id: "TC-STR-001", description: "회원가입 (독자)", method: "POST", url: "/auth/register", mockResponse: { status: 201, body: { data: { id: "u-new", email: "reader@test.com" } } }, expectedStatus: 201 },
-            { id: "TC-STR-002", description: "로그인", method: "POST", url: "/auth/login", mockResponse: { body: { data: { accessToken: "token" } } }, verify: (j) => { if (j.data.accessToken !== "token") throw new Error("Token mismatch") } },
+            { id: "TC-STR-002", description: "로그인", method: "POST", url: "/auth/login", mockResponse: { body: { data: { accessToken: "token" } } }, verify: (j) => expect(j.data.accessToken).toBe("token") },
             { id: "TC-STR-003", description: "로그아웃", method: "POST", url: "/auth/logout", mockResponse: { body: { success: true } } },
             { id: "TC-STR-004", description: "토큰 갱신", method: "POST", url: "/auth/refresh", mockResponse: { body: { data: { accessToken: "new-token" } } } },
-            { id: "TC-STR-005", description: "내 정보 조회", method: "GET", url: "/users/me", mockResponse: { body: { data: { nickname: "Reader" } } }, verify: (j) => { if (j.data.nickname !== "Reader") throw new Error("Nick mismatch") } },
-            { id: "TC-STR-006", description: "프로필 수정", method: "PATCH", url: "/users/me", mockResponse: { body: { data: { nickname: "NewNick" } } }, verify: (j) => { if (j.data.nickname !== "NewNick") throw new Error("Nick mismatch") } },
+            { id: "TC-STR-005", description: "내 정보 조회", method: "GET", url: "/users/me", mockResponse: { body: { data: { nickname: "Reader" } } }, verify: (j) => expect(j.data.nickname).toBe("Reader") },
+            { id: "TC-STR-006", description: "프로필 수정", method: "PATCH", url: "/users/me", mockResponse: { body: { data: { nickname: "NewNick" } } }, verify: (j) => expect(j.data.nickname).toBe("NewNick") },
             { id: "TC-STR-007", description: "비밀번호 변경", method: "PATCH", url: "/users/me/password", mockResponse: { body: { success: true } } },
-            { id: "TC-STR-008", description: "알림 설정 조회", method: "GET", url: "/users/me/notifications", mockResponse: { body: { data: { email: true } } }, verify: (j) => { if (j.data.email !== true) throw new Error("Email not true") } },
-            { id: "TC-STR-009", description: "알림 설정 수정", method: "PATCH", url: "/users/me/notifications", mockResponse: { body: { data: { email: false } } }, verify: (j) => { if (j.data.email !== false) throw new Error("Email not false") } },
+            { id: "TC-STR-008", description: "알림 설정 조회", method: "GET", url: "/users/me/notifications", mockResponse: { body: { data: { email: true } } }, verify: (j) => expect(j.data.email).toBe(true) },
+            { id: "TC-STR-009", description: "알림 설정 수정", method: "PATCH", url: "/users/me/notifications", mockResponse: { body: { data: { email: false } } }, verify: (j) => expect(j.data.email).toBe(false) },
             { id: "TC-STR-010", description: "회원 탈퇴", method: "DELETE", url: "/users/me", mockResponse: { body: { success: true } } }
         ]
     },
     {
         title: "[Discovery] TC-STR-011 ~ 018",
         tests: [
-            { id: "TC-STR-011", description: "메인 배너/추천 조회", method: "GET", url: "/discovery/banner", mockResponse: { body: { data: [{ id: "b1" }] } }, verify: (j) => { if (j.data.length !== 1) throw new Error("Length mismatch") } },
-            { id: "TC-STR-012", description: "실시간 랭킹 조회", method: "GET", url: "/discovery/ranking", mockResponse: { body: { data: [{ rank: 1 }] } }, verify: (j) => { if (j.data[0].rank !== 1) throw new Error("Rank mismatch") } },
-            { id: "TC-STR-013", description: "신작 목록 조회", method: "GET", url: "/discovery/new", mockResponse: { body: { data: [{ id: "w2" }] } }, verify: (j) => { if (j.data.length !== 1) throw new Error("Length mismatch") } },
-            { id: "TC-STR-014", description: "완결작 목록 조회", method: "GET", url: "/discovery/completed", mockResponse: { body: { data: [{ id: "w3" }] } }, verify: (j) => { if (j.data.length !== 1) throw new Error("Length mismatch") } },
-            { id: "TC-STR-015", description: "통합 검색", method: "GET", url: "/discovery/search", requestUrl: "/discovery/search?keyword=test", mockResponse: { body: { data: { content: [{ title: "Search Result" }] } } }, verify: (j) => { if (j.data.content[0].title !== "Search Result") throw new Error("Title mismatch") } },
-            { id: "TC-STR-016", description: "태그 검색", method: "GET", url: "/discovery/tags", requestUrl: "/discovery/tags?tag=Fantasy", mockResponse: { body: { data: [{ tags: ["Fantasy"] }] } }, verify: (j) => { if (!j.data[0].tags.includes("Fantasy")) throw new Error("Tag mismatch") } },
-            { id: "TC-STR-017", description: "카테고리별 조회", method: "GET", url: "/discovery/category", requestUrl: "/discovery/category?code=ROMANCE", mockResponse: { body: { data: [{ category: "Romance" }] } }, verify: (j) => { if (j.data[0].category !== "Romance") throw new Error("Category mismatch") } },
-            { id: "TC-STR-018", description: "작가별 작품 조회", method: "GET", url: "/discovery/author/:id", requestUrl: "/discovery/author/writer1", mockResponse: { body: { data: [{ writer: "Author1" }] } }, verify: (j) => { if (j.data[0].writer !== "Author1") throw new Error("Writer mismatch") } }
+            { id: "TC-STR-011", description: "메인 배너/추천 조회", method: "GET", url: "/discovery/banner", mockResponse: { body: { data: [{ id: "b1" }] } }, verify: (j) => expect(j.data.length).toBe(1) },
+            { id: "TC-STR-012", description: "실시간 랭킹 조회", method: "GET", url: "/discovery/ranking", mockResponse: { body: { data: [{ rank: 1 }] } }, verify: (j) => expect(j.data[0].rank).toBe(1) },
+            { id: "TC-STR-013", description: "신작 목록 조회", method: "GET", url: "/discovery/new", mockResponse: { body: { data: [{ id: "w2" }] } }, verify: (j) => expect(j.data.length).toBe(1) },
+            { id: "TC-STR-014", description: "완결작 목록 조회", method: "GET", url: "/discovery/completed", mockResponse: { body: { data: [{ id: "w3" }] } }, verify: (j) => expect(j.data.length).toBe(1) },
+            { id: "TC-STR-015", description: "통합 검색", method: "GET", url: "/discovery/search", requestUrl: "/discovery/search?keyword=test", mockResponse: { body: { data: { content: [{ title: "Search Result" }] } } }, verify: (j) => expect(j.data.content[0].title).toBe("Search Result") },
+            { id: "TC-STR-016", description: "태그 검색", method: "GET", url: "/discovery/tags", requestUrl: "/discovery/tags?tag=Fantasy", mockResponse: { body: { data: [{ tags: ["Fantasy"] }] } }, verify: (j) => expect(j.data[0].tags).toContain("Fantasy") },
+            { id: "TC-STR-017", description: "카테고리별 조회", method: "GET", url: "/discovery/category", requestUrl: "/discovery/category?code=ROMANCE", mockResponse: { body: { data: [{ category: "Romance" }] } }, verify: (j) => expect(j.data[0].category).toBe("Romance") },
+            { id: "TC-STR-018", description: "작가별 작품 조회", method: "GET", url: "/discovery/author/:id", requestUrl: "/discovery/author/writer1", mockResponse: { body: { data: [{ writer: "Author1" }] } }, verify: (j) => expect(j.data[0].writer).toBe("Author1") }
         ]
     },
     {

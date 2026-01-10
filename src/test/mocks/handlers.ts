@@ -6,7 +6,7 @@ export const handlers = [
     // --- Storead Specific APIs ---
 
     // Discovery / Search
-    http.get(`/discovery/search`, ({ request }) => {
+    http.get(`${API_URL}/discovery/search`, ({ request }) => {
         const url = new URL(request.url);
         const keyword = url.searchParams.get("keyword");
         const page = url.searchParams.get("page");

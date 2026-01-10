@@ -25,7 +25,9 @@ export const runApiTest = async (tc: ApiTestCase) => {
         throw new Error(`Unsupported method: ${tc.method}`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handler = (http[method] as any)(`${API_URL}${tc.url}`, async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return HttpResponse.json(tc.mockResponse.body, { status: tc.mockResponse.status || 200 });
     });
     server.use(handler);

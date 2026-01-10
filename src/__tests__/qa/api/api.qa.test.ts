@@ -2,8 +2,8 @@
  * QA API 테스트 케이스 (Storead Comprehensive)
  * Range: TC-STR-001 ~ TC-STR-061
  */
-import { describe, it, beforeEach, vi } from "vitest";
-import { runApiTest, ApiTestCase } from "@/test/api-helpers";
+import { describe, it, beforeEach, vi, expect } from "vitest";
+import { runApiTest, type ApiTestCase } from "@/test/api-helpers";
 
 const testGroups: { title: string; tests: ApiTestCase[] }[] = [
     {

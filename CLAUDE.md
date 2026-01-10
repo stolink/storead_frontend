@@ -1,17 +1,18 @@
-# CLAUDE.md - Storead Project Constitution
+# CLAUDE.md - StoRead Project Constitution
 
-> AI 모델이 세션 시작 시 **반드시** 읽어야 하는 핵심 헌법입니다.
+> 이 문서는 AI 모델이 프로젝트 컨텍스트를 이해하고, 코드 품질과 디자인 철학을 일관되게 유지하기 위한 **프로젝트 헌법(Constitution)**입니다.
 
-**버전**: 1.0
-**최종 수정**: 2026년 1월 8일
-**문서 상태**: 활성
+**버전:** 1.3
+**최종 수정:** 2026년 1월 10일
+**문서 상태:** 활성
 
 ---
 
 ## 프로젝트 개요
 
-**Storead** - AI 스마트 스토리 독자 플랫폼
-웹소설 열람, 댓글/별점, 내 서재, 캐릭터 관계도 뷰어, 결제 시스템을 지원하는 독자용 서비스
+**StoRead** - 독자용 웹소설/연재물 열람 플랫폼
+작품 탐색, 챕터 읽기, 댓글, 좋아요, 북마크, 별점, 결제(크레딧) 기능을 제공하는 독자 중심 플랫폼
+연동 프로젝트: StoLink (작가용 집필 도구)
 
 **기술 스택**: React 19.0, TypeScript 5.7, Zustand 5.0, TanStack Query 5.90, Tailwind CSS 4.1
 **백엔드**: Spring Boot (storead_spring), PostgreSQL
@@ -33,6 +34,7 @@
 - useQuery 내부에서 Zustand 직접 업데이트
 - 결제 로직에서 금액 프론트엔드 조작 (서버 검증 필수)
 - 콘텐츠 보호 우회 로직 작성 (useSecureContent 준수)
+- 뷰어 렌더링 로직에서 `dangerouslySetInnerHTML`을 검증 없이 사용
 
 ---
 
@@ -48,123 +50,85 @@
 ### State Management
 
 - **TanStack Query**: 서버 상태 (작품, 챕터, 댓글 등)
+  - `staleTime`: 작품 목록 5분, 챕터 본문 무제한 캐시
 - **Zustand**: 클라이언트 UI 상태 (인증, 테마, 모달)
-- **React Hook Form**: 폼 상태 (로그인, 댓글 작성 등)
+  - `persist`: 뷰어 설정(폰트 등) 저장
+  - **직렬화 불가 객체(Set, Map) 저장 금지**
+- **React Hook Form**: 폼 상태
 
-### React
+### React & Performance
 
-- 비즈니스 로직은 커스텀 훅으로 분리 (src/hooks/)
+- 비즈니스 로직은 커스텀 훅으로 분리 (`src/hooks/`)
 - Props는 인터페이스로 명시적 정의
-- useEffect 의존성 배열 정확히 관리
+- **Rendering**: 뷰어 컴포넌트는 타이핑/스크롤 성능 최우선 최적화
+- **Virtualization**: 50개 이상의 리스트는 `Virtuoso` 또는 `React Virtual` 사용
 
 ### Style
 
 - Tailwind CSS 사용, `cn()` 유틸로 클래스 조합
 - shadcn/ui 컴포넌트 우선 사용
-- Radix UI primitives 활용
+- **Design Thinking**: "Warm & Soft" (따뜻함과 부드러움) 미학 추구
+- **Typography**: Pretendard 폰트 사용, 가독성 최우선
 
 ### Naming
 
 - 컴포넌트: PascalCase
-- 훅: use + camelCase
+- 훅: useCamelCase
 - 서비스: xxxService
 - 타입: PascalCase (I 접두사 지양)
 - 상수: UPPER_SNAKE_CASE
 
 ---
 
-## Workflow Protocol
-
-AI 모델이 따라야 할 4단계 프로토콜:
-
-1. **Analyze**: 사용자 요청 파악, 관련 파일 경로 확인, 기존 코드베이스에서 유사 패턴 검색
-2. **Plan**: 변경 계획 수립, 영향 받는 파일 나열, 데이터 구조 호환성 확인
-3. **Implement**: 코드 작성, 기존 코드 파괴 방지, hooks/services 레이어 분리 유지
-4. **Verify**: 타입 에러 확인, 의존성 배열 검증, 린트 에러 해결
-
----
-
-## 핵심 Entity (Quick Reference)
-
-| Entity | 설명 | 관련 Hook |
-|--------|------|-----------|
-| **User** | 사용자 (email, nickname, profileImageUrl) | `useAuth` |
-| **Work** | 작품 (title, synopsis, genre, status) | `useWorks`, `useDiscovery` |
-| **Chapter** | 챕터 (title, content, accessType, price) | `useChapters` |
-| **Comment** | 계층형 댓글 (parentId로 대댓글 구현) | `useComments` |
-| **Library** | 내 서재 (userId, workId 매핑) | `useLibrary` |
-| **Bookmark** | 북마크/읽은 위치 | `useBookmark` |
-| **ChapterRating** | 챕터 별점 (1~10점) | `useRating` |
-
-**상세 타입**: `src/types/index.ts`
-
----
-
-## 파일 구조 (File Structure)
-
-```
-src/
-├── api/               # API 클라이언트 (client.ts)
-├── adapters/          # 데이터 변환 어댑터 (graphSnapshotAdapter)
-├── hooks/             # 커스텀 훅 (21개) ⭐ 핵심
-│   ├── useAuth.ts, useAuthAction.ts    # 인증
-│   ├── useWorks.ts, useChapters.ts     # 작품/챕터
-│   ├── useDiscovery.ts                 # 탐색 (홈, 랭킹 등)
-│   ├── useLibrary.ts, useBookmark.ts   # 서재/북마크
-│   ├── useComments.ts, useRating.ts    # 댓글/별점
-│   ├── usePublish.ts, useDraft.ts      # 발행/초안 (StoLink 연동)
-│   ├── useChapterPurchase.ts           # 챕터 구매
-│   ├── useSecureContent.ts             # 콘텐츠 보호
-│   └── useCharacterGraph*.ts           # 캐릭터 관계도 (4개)
-├── stores/            # Zustand 스토어 (3개)
-│   ├── useAuthStore.ts                 # 인증 상태
-│   ├── useAuthModalStore.ts            # 로그인 모달
-│   └── useTheme.ts                     # 테마 설정
-├── services/          # API 서비스 (2개)
-│   ├── creditService.ts                # 크레딧 관련
-│   └── paymentService.ts               # 결제 관련
-├── components/
-│   ├── ui/            # shadcn/ui 컴포넌트
-│   ├── common/        # 공통 컴포넌트
-│   ├── viewer/        # 챕터 뷰어
-│   ├── comments/      # 댓글 시스템
-│   ├── CharacterGraph/# 캐릭터 관계도 (D3 기반)
-│   └── ...
-├── pages/             # 페이지 컴포넌트
-│   ├── HomePage.tsx, CategoryPage.tsx, RankingPage.tsx
-│   ├── WorkDetailPage.tsx, ChapterViewerPage.tsx
-│   ├── LibraryPage.tsx, WritePage.tsx
-│   └── Auth/, Profile/, payment/
-├── types/             # 타입 정의 (6개)
-└── lib/               # 유틸리티 (cn 함수 등)
-```
-
----
-
 ## Design System
 
-### 컬러 팔레트
+### Target Color Palette
 
-Tailwind CSS 기본 팔레트 + 커스텀 확장 사용
+| 이름 (Token) | HEX     | 용도 및 특징               |
+| ------------ | ------- | -------------------------- |
+| Mocha 500    | #A47764 | 핵심 브랜드 색상           |
+| Mocha 400    | #BD9B8D | Hover 상태 (고휘도)        |
+| Mocha 700    | #7D5A4B | Dark/Active 상태           |
+| Cloud 50     | #F1F0EC | 메인 배경색 (Cloud Dancer) |
+| Espresso 900 | #3D302A | 본문 텍스트                |
 
-### 디자인 원칙
+### Status Colors
 
-- **Modern & Clean**: 모던하고 깔끔한 독서 경험
-- **가독성 우선**: 장시간 독서에 최적화된 타이포그래피
-- **다크모드 지원**: useTheme 스토어로 테마 전환
-- **모바일 친화적**: 반응형 레이아웃 필수
+| 이름    | HEX     | 용도                    |
+| ------- | ------- | ----------------------- |
+| Success | #5B7B4B | 성공/긍정 피드백        |
+| Warning | #B8860B | 경고 (가독성 확보 골드) |
+| Error   | #A33A3A | 오류 (공학용 레드)      |
+
+### Sage Colors (독자 플랫폼 특화)
+
+| 이름     | HEX     | 용도             |
+| -------- | ------- | ---------------- |
+| Sage 50  | #F0F4EF | 밝은 배경        |
+| Sage 400 | #7A9878 | 액센트           |
+| Sage 500 | #5F7D5F | 버튼, 강조       |
+| Sage 700 | #3E4C3E | 다크 모드 액센트 |
+
+### Design Principles (Warm & Soft)
+
+- **Typography**: Pretendard 단일 폰트 사용, 가독성 `line-height` 최적화
+- **Texture**: Grain Overlay 및 Paper Texture 활용
+- **Interaction**: `framer-motion`을 활용한 부드러운 전환
 
 ---
 
-## Git 브랜치 전략 (3-Layer)
+## StoLink 연동
 
-| 브랜치 | 용도 | 직접 Push | PR 대상 |
-|--------|------|-----------|---------|
-| `main` | 프로덕션 | ❌ 금지 | hotfix/\* |
-| `dev` | 개발 통합 | ❌ 금지 | feature/\*, fix/\* |
-| `feature/*` | 기능 개발 | ✅ 허용 | → dev |
-| `fix/*` | 버그 수정 | ✅ 허용 | → dev |
-| `hotfix/*` | 긴급 수정 | ✅ 허용 | → main |
+Storead는 StoLink와 연동되어 작가 → 독자 워크플로우를 지원합니다:
+
+| 항목 | StoLink (작가) | Storead (독자) |
+|------|---------------|----------------|
+| **Document** | 원본 문서 편집 | - |
+| **Draft** | 발행 준비 | - |
+| **Work** | projectId 연결 | 작품 열람 |
+| **Chapter** | documentId 연결 | 챕터 열람 |
+
+**발행 플로우**: StoLink Document → Draft → Storead Chapter
 
 ---
 
@@ -185,34 +149,6 @@ hotfix: 긴급 수정
 
 ---
 
-## StoLink 연동
-
-Storead는 StoLink와 연동되어 작가 → 독자 워크플로우를 지원합니다:
-
-| 항목 | StoLink (작가) | Storead (독자) |
-|------|---------------|----------------|
-| **Document** | 원본 문서 편집 | - |
-| **Draft** | 발행 준비 | - |
-| **Work** | projectId 연결 | 작품 열람 |
-| **Chapter** | documentId 연결 | 챕터 열람 |
-
-**발행 플로우**: StoLink Document → Draft → Storead Chapter
-
----
-
-## Request Guidelines
-
-1. 새 기능은 기존 데이터 구조(Work, Chapter 등)와 호환성 확인
-2. 상태 추가 시 TanStack Query (서버) vs Zustand (클라이언트) 판단 필수
-3. API 호출은 훅에서 직접 또는 services/ 레이어 사용
-4. 결제 관련 로직은 서버 사이드 검증 필수
-5. 콘텐츠 보호(DRM)는 useSecureContent 훅 패턴 준수
-6. UI 컴포넌트는 shadcn/ui 스타일 가이드 준수
-7. 기존 hooks/services 확인 후 중복 방지
-8. **응답은 한국어로 작성**
-
----
-
 ## Commands
 
 | 명령어 | 설명 |
@@ -224,8 +160,100 @@ Storead는 StoLink와 연동되어 작가 → 독자 워크플로우를 지원�
 
 ---
 
+## 🧪 테스트 (Tests)
+
+### Unit & QA Tests (Vitest)
+
+`src/__tests__/qa` 디렉토리에서 주요 기능과 API에 대한 테스트를 관리합니다.
+
+- **API Tests**: `src/__tests__/qa/api` - 백엔드 API와의 연동을 검증합니다.
+- **Scenario Tests**: `src/__tests__/qa/scenarios` - 시나리오 기반의 기능(Auth, Editor 등) 테스트를 수행합니다.
+
+```bash
+# 전체 테스트 실행
+npm test
+
+# 특정 파일 실행
+npm test src/__tests__/qa/api
+```
+
+---
+
+## Workflow Protocol
+
+AI 모델이 따라야 할 4단계 프로토콜:
+
+1. **Analyze (이해)**: 사용자 요청 파악, 관련 파일/코드 분석
+2. **Plan (설계)**: 변경 계획 수립, 데이터 구조/호환성 확인
+3. **Implement (구현)**: 코드 작성, 기존 코드 파괴 방지, Hooks 분리
+4. **Verify (검토)**: 타입 에러 확인, 린트 에러 해결
+
+---
+
+## 참고 문서 구조 (docs/)
+
+사람이 읽는 상세 문서:
+
+```
+docs/
+└── TROUBLESHOOTING.md # 트러블슈팅 및 이슈 해결 기록
+```
+
+---
+
+## 핵심 Entity (Quick Reference)
+
+| Entity | 설명 | 관련 Hook |
+|--------|------|-----------|
+| **Work** | 작품 (제목, 작가, 장르, 태그, 시놉시스, 상태) | `useWorks` |
+| **Chapter** | 챕터 (본문, 조회수, 가격) | `useChapters` |
+| **Viewer** | 뷰어 설정 (폰트, 테마) | `useViewerSettings` |
+| **Payment** | 결제 및 크레딧 | `usePayment`, `useCredit` |
+| **Library** | 내 서재 (구독/소장) | `useLibrary` |
+
+---
+
+## 참고 문서 구조 (docs/)
+
+사람이 읽는 상세 문서:
+
+```
+src/
+├── api/               # API 클라이언트
+├── hooks/             # 커스텀 훅 (비즈니스 로직)
+├── services/          # 도메인 서비스 (Payment 등)
+├── components/        # UI 및 뷰어 컴포넌트
+├── pages/             # 라우트 페이지
+├── stores/            # Zustand 스토어
+└── types/             # 타입 정의
+```
+
+---
+
+## Git 브랜치 전략 (3-Layer)
+
+| 브랜치 | 용도 | 직접 Push | PR 대상 |
+|--------|------|-----------|---------|
+| `main` | 프로덕션 | ❌ 금지 | hotfix/\* |
+| `dev` | 개발 통합 | ❌ 금지 | feature/\*, fix/\* |
+| `feature/*` | 기능 개발 | ✅ 허용 | → dev |
+| `fix/*` | 버그 수정 | ✅ 허용 | → dev |
+
+---
+
+## Request Guidelines
+
+1. **Design First**: UI 요청 시 "Warm & Soft" 분위기 연출 우선
+2. **Context Aware**: StoLink(작가툴) 데이터 호환성 확인
+3. **Secure**: 결제/인증 로직 보안 가이드 준수
+4. **Language**: 모든 응답은 한국어 기준
+
+---
+
 ## 버전 이력
 
-| 버전 | 날짜 | 변경 내용 |
-|------|------|----------|
-| 1.0 | 2026.01.08 | 최초 작성 (StoLink CLAUDE.md 기반) |
+| 버전 | 날짜       | 변경 내용                                         |
+| ---- | ---------- | ------------------------------------------------- |
+| 1.3  | 2026.01.10 | 테스트 섹션 추가 및 문서 구조 동기화 (Mkd)        |
+| 1.2  | 2026.01.05 | 결제 시스템 및 인증 반영                          |
+| 1.0  | 2026.01.04 | 최초 작성                                         |

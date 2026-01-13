@@ -1,13 +1,13 @@
 import { useRef, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, MessageSquare, Heart, CornerDownRight } from "lucide-react";
+import { Loader2, MessageSquare, CornerDownRight } from "lucide-react";
 import { useComments, useCreateComment, useToggleCommentLike } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { RelationshipLink } from "@/types/characterGraph";
+import { RelationshipCommentItem } from "./RelationshipCommentItem";
 
 interface RelationshipCommentListProps {
     chapterId: string;
@@ -73,11 +73,9 @@ export function RelationshipCommentList({
 
         createComment.mutate(
             {
-                chapterId: String(chapterId),
                 content: content.trim(),
-                relationId: activeRelationId ? String(activeRelationId) : undefined,
                 parentId: replyTo?.id,
-            } as any,
+            },
             {
                 onSuccess: () => {
                     setContent("");
@@ -133,88 +131,15 @@ export function RelationshipCommentList({
                             </p>
                         </div>
                     ) : (
-                        comments.map((comment, idx) => {
-                            const isReply = !!comment.parentId;
-
-                            return (
-                                <div
-                                    key={`RelationshipCommentList-${activeRelationId}-${comment.id || idx}`}
-                                    className={cn(
-                                        "group flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300",
-                                        isReply && "ml-10 pl-6 border-l-2 border-mocha-100/50 relative bg-mocha-50/20 py-2 rounded-r-2xl"
-                                    )}
-                                    style={{ animationDelay: `${idx * 50}ms` }}
-                                >
-                                    {isReply && (
-                                        <div className="absolute left-0 top-6 -ml-[15px]">
-                                            <CornerDownRight className="w-4 h-4 text-mocha-300" />
-                                        </div>
-                                    )}
-
-                                    <Avatar className={cn("shrink-0 border-2 border-white shadow-paper", isReply ? "h-8 w-8" : "h-10 w-10")}>
-                                        <AvatarImage src={comment.author?.profileImageUrl} />
-                                        <AvatarFallback className="bg-mocha-50 text-mocha-400 font-bold uppercase text-xs">
-                                            {comment.author?.nickname?.[0] || "?"}
-                                        </AvatarFallback>
-                                    </Avatar>
-
-                                    <div className="flex-1 space-y-2 min-w-0">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="text-sm font-bold text-espresso-900 tracking-tight">
-                                                {comment.author?.nickname || "익명"}
-                                            </span>
-                                            <span className="text-[10px] text-stone-400 shrink-0 font-medium">
-                                                {new Date(comment.createdAt).toLocaleDateString("ko-KR", {
-                                                    month: "short",
-                                                    day: "numeric",
-                                                    hour: "2-digit",
-                                                    minute: "2-digit",
-                                                })}
-                                            </span>
-                                        </div>
-
-                                        <div className="bg-white px-5 py-4 rounded-[1.25rem] rounded-tl-none border border-stone-100 shadow-paper group-hover:shadow-paper-hover group-hover:border-mocha-100/30 transition-all duration-500">
-                                            <p className="text-sm leading-relaxed text-espresso-700 break-words whitespace-pre-wrap font-serif">
-                                                {comment.content}
-                                            </p>
-                                        </div>
-
-                                        <div className="flex items-center gap-6 px-1">
-                                            <button
-                                                onClick={() => toggleLike.mutate(comment.id)}
-                                                className={cn(
-                                                    "flex items-center gap-1.5 text-[11px] font-bold transition-all",
-                                                    comment.isLiked
-                                                        ? "text-red-500"
-                                                        : "text-stone-400 hover:text-stone-600"
-                                                )}
-                                            >
-                                                <Heart className={cn("h-3.5 w-3.5", comment.isLiked && "fill-[#EF4444] text-[#EF4444]")} />
-                                                {comment.likeCount > 0 ? comment.likeCount : "좋아요"}
-                                            </button>
-                                            {!isReply && (
-                                                <button
-                                                    onClick={() => setReplyTo({ id: comment.id, name: comment.author?.nickname || "익명" })}
-                                                    className="text-[11px] font-bold text-stone-400 hover:text-mocha-600 transition-all"
-                                                >
-                                                    답글 달기
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Sub-comments Count (Only for parents) */}
-                                        {!isReply && (comment.replyCount || 0) > 0 && (
-                                            <div className="mt-4 pl-4 space-y-4">
-                                                <div className="text-[10px] font-bold text-mocha-400 flex items-center gap-1">
-                                                    <MessageSquare className="w-3 h-3" />
-                                                    답글 {comment.replyCount}개
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })
+                        comments.map((comment, idx) => (
+                            <RelationshipCommentItem
+                                key={`RelationshipCommentList-${activeRelationId}-${comment.id || idx}`}
+                                comment={comment}
+                                activeRelationId={String(activeRelationId)}
+                                onToggleLike={(id) => toggleLike.mutate(id)}
+                                onSetReplyTo={setReplyTo}
+                            />
+                        ))
                     )}
 
                     <div ref={loadMoreRef} className="h-10" />

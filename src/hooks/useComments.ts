@@ -16,15 +16,11 @@ import type { Comment, PaginatedResponse, CreateCommentRequest } from "@/types";
  * GET /api/chapters/{chapterId}/comments
  */
 export const useComments = (chapterId: string, relationId?: string, sort: string = 'latest') => {
+  // [FIX] relationId가 있을 때만 쿼리 실행하여 로딩 무한 표시 방지
   return useInfiniteQuery<PaginatedResponse<Comment>>({
-    queryKey: ["comments", String(chapterId), relationId ? String(relationId) : undefined, sort],
+    queryKey: ["comments", String(chapterId), String(relationId || ''), sort],
     queryFn: async ({ pageParam }) => {
       const cid = String(chapterId);
-      const rid = relationId ? String(relationId) : undefined;
-
-      if (!rid) {
-        return { data: [], hasMore: false, nextCursor: undefined };
-      }
       const { data } = await api.get(`/chapters/${cid}/comments`, {
         params: {
           relationId,
@@ -36,28 +32,24 @@ export const useComments = (chapterId: string, relationId?: string, sort: string
       // 백엔드 응답 구조: { code, status, data: { comments: [...], pagination: {...} } }
       const responseData = data.data || data;
       const rawComments = responseData.comments || responseData.data || [];
-      const rawCount = Array.isArray(rawComments) ? rawComments.length : 0;
 
-      console.log(`[DEBUG] useComments (rid: ${rid}):`, {
-        rawCount,
-        firstCommentKeys: rawCount > 0 ? Object.keys(rawComments[0]) : [],
-        firstCommentSample: rawCount > 0 ? rawComments[0] : null,
-      });
+      // DTO Mapping: 백엔드는 userNickname/userAvatarUrl 필드를 평탄하게 보내지만,
+      // 프론트엔드 UI(RelationshipCommentList)는 author 객체를 기대합니다.
+      const mappedComments = rawComments.map((c: Comment & { userId?: string; userNickname?: string; userAvatarUrl?: string }) => ({
+        ...c,
+        author: c.author || {
+          id: c.userId,
+          nickname: c.userNickname,
+          profileImageUrl: c.userAvatarUrl,
+        }
+      }));
 
-      let filteredComments = rawComments;
-      // [Safety] Client-side filtering to ensure comments belong to the active relation
-      // This prevents legacy data with empty relationId from leaking into the list.
-      if (Array.isArray(rawComments) && rid) {
-        filteredComments = rawComments.filter((c: any) => {
-          // Try different possible field names
-          const cRid = c.relationId || c.relation_id || c.linkId || c.activeRelationId;
-          return String(cRid) === rid;
-        });
-      }
 
-      console.log(`[DEBUG] Filter result (rid: ${rid}):`, {
-        filteredCount: filteredComments.length,
-      });
+      // [Safety] 현재 백엔드 응답 DTO에 relationId 필드가 누락되어 있어 
+      // 클라이언트 사이드 필터링을 일시적으로 비활성화합니다.
+      // 백엔드 API가 쿼리 파라미터(relationId)로 이미 필터링을 수행한다면 안전합니다.
+      // 그렇지 않다면 모든 챕터 댓글이 노출되지만, 아예 보이지 않는 것보다는 낫습니다.
+      const filteredComments = mappedComments;
 
       return {
         data: Array.isArray(filteredComments) ? filteredComments : [],
@@ -68,7 +60,7 @@ export const useComments = (chapterId: string, relationId?: string, sort: string
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
-    enabled: !!chapterId,
+    enabled: !!chapterId && !!relationId, // [FIX] relationId가 있을 때만 쿼리 실행
   });
 };
 
@@ -97,14 +89,25 @@ export const useCreateComment = (chapterId: string, relationId?: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (newComment: CreateCommentRequest) => {
-      // console.log("[DEBUG] creating comment payload:", newComment);
-      const { data } = await api.post(`/chapters/${chapterId}/comments`, newComment);
+    mutationFn: async (payload: CreateCommentRequest) => {
+      const fullPayload: CreateCommentRequest = {
+        chapterId,
+        relationId,
+        ...payload,
+      };
+      // Ensure chapterId is present (API requirement)
+      if (!fullPayload.chapterId) {
+        throw new Error("chapterId is required");
+      }
+      const { data } = await api.post(`/chapters/${fullPayload.chapterId}/comments`, fullPayload);
       return data;
     },
     onSuccess: () => {
-      // 댓글 목록 갱신 (관계별 격리 키 준수 + 모든 정렬 상태 키 무효화)
-      queryClient.invalidateQueries({ queryKey: ["comments", chapterId, relationId] });
+      // [FIX] 모든 정렬 상태(latest, likes)의 캐시를 무효화
+      queryClient.invalidateQueries({
+        queryKey: ["comments", chapterId, relationId],
+        exact: false
+      });
     },
   });
 };
@@ -132,8 +135,11 @@ export const useCreateReply = (chapterId: string, relationId?: string) => {
       return data;
     },
     onSuccess: () => {
-      // 부모 댓글이 속한 챕터 및 관계의 댓글 목록 갱신 (모든 정렬 상태 포함)
-      queryClient.invalidateQueries({ queryKey: ["comments", chapterId, relationId] });
+      // [FIX] 모든 정렬 상태의 캐시를 무효화
+      queryClient.invalidateQueries({
+        queryKey: ["comments", chapterId, relationId],
+        exact: false
+      });
     },
   });
 };

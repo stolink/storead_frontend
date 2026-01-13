@@ -9,14 +9,14 @@ interface Dimensions {
  * ResizeObserver를 사용하여 컨테이너 크기를 감지하는 훅
  */
 export function useResize(
-  containerRef: React.RefObject<HTMLDivElement | null>
+  containerRef: React.RefObject<HTMLDivElement | null>,
 ): Dimensions {
   const [dimensions, setDimensions] = useState<Dimensions>({
     width: 800,
     height: 600,
   });
 
-  const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 디바운스된 리사이즈 핸들러
   const handleResize = useCallback((entries: ResizeObserverEntry[]) => {

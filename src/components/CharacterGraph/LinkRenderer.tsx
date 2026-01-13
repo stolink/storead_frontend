@@ -1,6 +1,11 @@
-import { memo, useRef, useEffect, useState, useMemo } from "react";
-import * as d3 from "d3";
-import type { RelationshipLink, CharacterNode } from "@/types";
+import { memo, useMemo } from "react";
+import type { RelationshipLink, UIRelationType } from "@/types";
+import {
+  RELATION_PALETTE,
+  MIN_CURVE_DISTANCE_SQ,
+  MAX_CURVE_OFFSET,
+  CURVE_FACTOR,
+} from "./constants";
 import { getRelationshipColor } from "./utils";
 
 interface LinkRendererProps {
@@ -8,21 +13,16 @@ interface LinkRendererProps {
   isHighlighted: boolean;
   isDimmed: boolean;
   isFiltered: boolean;
-  onHover?: (
-    link: RelationshipLink | null,
-    coords?: { x: number; y: number }
-  ) => void;
-  onClick?: (link: RelationshipLink) => void;
+  onClick: (link: RelationshipLink) => void;
+  onHover: (linkId: string | null) => void;
+  changeType?: "new" | "updated" | "collapse" | null;
 }
 
 /**
- * SVG 링크(엣지) 렌더러 - Premium Flowing Animation
- *
- * Features:
- * - 물 흐르듯 부드러운 그라데이션 애니메이션
- * - 관계 타입별 고유 색상/패턴
- * - 강도 기반 굵기/속도/입체감
- * - 호버 시 강화된 글로우 + 파티클 느낌
+ * SVG 엣지(Link) 렌더러 - Enhanced with Complex Curves & Flow
+ * - 2차 베지에 곡선 (Quadratic Bezier) 적용
+ * - Animated Flow Gradients for Directionality
+ * - Tension/Conflict indicators
  */
 export const LinkRenderer = memo(function LinkRenderer({
   link,
@@ -31,45 +31,26 @@ export const LinkRenderer = memo(function LinkRenderer({
   isFiltered,
   onClick,
   onHover,
+  changeType,
 }: LinkRendererProps) {
-  const groupRef = useRef<SVGGElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
+  // Safe Accessors for D3 Node Objects
+  const source = typeof link.source === "object" ? link.source : null;
+  const target = typeof link.target === "object" ? link.target : null;
 
-  // 고유 ID 생성 (그라데이션용)
-  const gradientId = useMemo(() => `flow-gradient-${link.id}`, [link.id]);
-  const glowFilterId = useMemo(() => `glow-${link.id}`, [link.id]);
+  // Memoized ID for gradient/filter uniqueness
+  const gradientId = useMemo(
+    () => `link-grad-${link.id || Math.random().toString(36).substr(2, 9)}`,
+    [link.id],
+  );
 
-  // Fallback random delay (stable across renders) - Moved up to avoid conditional hook call
-  // Using useState initializer to avoid impure function in useMemo
-  const [randomDelay] = useState(() => Math.random() * 2);
-
-  // D3 데이터 바인딩
-  useEffect(() => {
-    if (groupRef.current) {
-      // [Fix] Bind data to the GROUP element so the parent's optimized tick handler can access it
-      d3.select(groupRef.current).datum(link);
-
-      // Also bind to paths to ensure child elements have access if needed
-      d3.select(groupRef.current).selectAll("path").datum(link);
-    }
-  }, [link]);
-
-  const source = link.source as CharacterNode;
-  const target = link.target as CharacterNode;
-
-  const primaryColor = getRelationshipColor(link.type, link.strength);
-
-  // 보조 색상 (그라데이션용 - 더 밝은 버전, 거의 흰색에 가깝게)
-  const secondaryColor = useMemo(() => {
-    // Electric feel needs very bright color
-    const hex = primaryColor.replace("#", "");
-    const r = Math.min(255, parseInt(hex.slice(0, 2), 16) + 120);
-    const g = Math.min(255, parseInt(hex.slice(2, 4), 16) + 120);
-    const b = Math.min(255, parseInt(hex.slice(4, 6), 16) + 120);
-    return `rgb(${r}, ${g}, ${b})`;
-  }, [primaryColor]);
+  const glowFilterId = useMemo(
+    () => `glow-${link.id || Math.random().toString(36).substr(2, 9)}`,
+    [link.id],
+  );
 
   if (
+    !source ||
+    !target ||
     source.x === undefined ||
     source.y === undefined ||
     target.x === undefined ||
@@ -78,210 +59,180 @@ export const LinkRenderer = memo(function LinkRenderer({
     return null;
   }
 
-  // 강도 기반 스타일 계산
-  const baseWidth = 2 + ((link.strength - 1) / 9) * 3; // 2-5px
-  const activeBonus = (isHovered ? 2 : 0) + (isHighlighted ? 1.5 : 0);
+  // --- 1. Curve Calculation (Cubic Bezier for Smoother S-Curves) ---
+  const dx = target.x - source.x;
+  const dy = target.y - source.y;
+  const distSq = dx * dx + dy * dy;
+
+  const isCurved = distSq > MIN_CURVE_DISTANCE_SQ;
+  let pathD = "";
+
+  if (isCurved) {
+    // Cubic Bezier calculation
+    const dist = Math.sqrt(distSq);
+
+    const ux = dx / dist;
+    const uy = dy / dist;
+
+    const curveDirection =
+      source.index !== undefined && target.index !== undefined
+        ? source.index < target.index
+          ? 1
+          : -1
+        : 1;
+
+    let offset = Math.min(dist * CURVE_FACTOR, MAX_CURVE_OFFSET);
+    if (link.bidirectional) offset *= 1.5;
+
+    // Symmetric Cubic Bezier for smoother S-shape if needed, but here we use it for a smoother arc
+    const cp1X = source.x + dx * 0.25 - uy * offset * curveDirection;
+    const cp1Y = source.y + dy * 0.25 + ux * offset * curveDirection;
+    const cp2X = source.x + dx * 0.75 - uy * offset * curveDirection;
+    const cp2Y = source.y + dy * 0.75 + ux * offset * curveDirection;
+
+    pathD = `M${source.x},${source.y} C${cp1X},${cp1Y} ${cp2X},${cp2Y} ${target.x},${target.y}`;
+  } else {
+    pathD = `M${source.x},${source.y} L${target.x},${target.y}`;
+  }
+
+  // --- 2. Color & Style Logic ---
+  const primaryColor = useMemo(() => {
+    if (changeType === "new") return "#10B981"; // Green
+    if (changeType === "updated") return "#3B82F6"; // Blue
+    if (changeType === "collapse") return "#F59E0B"; // Amber for collapse path
+
+    return getRelationshipColor(
+      link.type as UIRelationType,
+      link.strength,
+      link.relationTypes as string[],
+    );
+  }, [link.type, link.strength, link.relationTypes, changeType]);
+
+  const secondaryColor = useMemo(() => {
+    // Gradient end color (slightly lighter or related hue)
+    if (changeType) return "#FFF";
+    const palette = RELATION_PALETTE[link.type as UIRelationType] || RELATION_PALETTE.neutral;
+    return palette.weak;
+  }, [link.type, changeType]);
+
+  // Interaction State
+  const isHovered = false; // We use onHover prop typically, but local state if needed. React handles hover via parent.
+  // Actually, parent handles hover logic, this component just receives props.
+
+  // Strength-based Width
+  const baseWidth = Math.max(1.5, Math.min(link.strength * 0.6, 5));
+  const activeBonus = isHighlighted || isHovered ? 2 : 0;
   const strokeWidth = baseWidth + activeBonus;
 
-  // 투명도
-  const getOpacity = () => {
-    if (isFiltered) return 0.02;
+  // Opacity Logic
+  const opacity = (() => {
+    if (changeType === "collapse") return 0.3;
+    if (isFiltered) return 0.02; // Ghostly visible
     if (isDimmed) return 0.08;
     if (isHighlighted) return 0.95;
-    if (isHovered) return 1;
-    return 0.4 + (link.strength / 10) * 0.2;
-  };
-  const opacity = getOpacity();
-  // 적대 관계 점선
-  const dashArray =
-    link.type === "hostile"
-      ? `${6 + link.strength}, ${4 + (10 - link.strength) / 2}`
-      : undefined;
+    return 0.4 + (link.strength / 10) * 0.2; // Base opacity 0.4 ~ 0.6
+  })();
 
-  // 활성 상태 (호버 또는 하이라이트)
-  const isActive = (isHighlighted || isHovered) && !isFiltered && !isDimmed;
+  const isActive = isHighlighted || changeType === "new";
+  const showFlow = isActive || changeType !== null;
 
-  // Idle 상태 (아무것도 선택/호버 안됨 - 주인공 흐름 애니메이션용)
-  // const isIdle = !isHighlighted && !isDimmed && !isFiltered && !isActive;
-
-  // 흐름 애니메이션 활성화 조건 (Active or Idle)
-  // [Modified] 항상 흐름 애니메이션 표시 (필터링된 것 제외)
-  const showFlow = !isFiltered;
-
-  // Animation Parameters based on State
-  // [Modified] 항상 BFS Rhythmic 속도 유지 (Interaction에 따라 빨라지지 않음 - Global Wave 유지)
+  // Optimized Flow Animation (Electric Feel)
   const flowDuration = 3 - (link.strength / 10) * 1.5;
+  const flowDelay = link.flowDepth !== undefined && link.flowDepth >= 0
+    ? link.flowDepth * 0.2
+    : Math.random() * 2;
 
-  // BFS depth 기반 딜레이 (Protagonist로부터 퍼져나가는 효과)
-  // [Modified] Interaction 여부와 관계없이 항상 BFS Depth 따름
-  const flowDelay =
-    link.flowDepth !== undefined && link.flowDepth >= 0
-      ? link.flowDepth * 0.2
-      : randomDelay;
-
-  // [Modified] Interaction 시 애니메이션 리셋 방지 (Constant Key)
-  const animKey = "constant-flow";
+  // Transition Styles
+  const transitionStyle = {
+    transitionProperty: "stroke, stroke-width, stroke-opacity, filter",
+    transitionDuration: "300ms",
+    transitionTimingFunction: "ease-out",
+  };
 
   return (
     <g
-      ref={groupRef}
-      className={
-        (onClick
-          ? "cursor-pointer pointer-events-auto"
-          : "pointer-events-none") + " link-group" // Add class for D3 selection
-      }
+      className="link-group"
+      style={{ cursor: "pointer" }}
       onClick={(e) => {
         e.stopPropagation();
-        onClick?.(link);
+        onClick(link);
       }}
-      onMouseEnter={(e) => {
-        setIsHovered(true);
-        onHover?.(link, { x: e.clientX, y: e.clientY });
+      onMouseEnter={() => {
+        if (onHover) onHover(link.id);
       }}
       onMouseLeave={() => {
-        setIsHovered(false);
-        onHover?.(null);
+        if (onHover) onHover(null);
       }}
     >
-      {/* === Defs: 그라데이션 & 필터 === */}
       <defs>
-        {/* 흐르는 그라데이션 (Electric Feel: 경계 뚜렷하게) */}
-        <linearGradient
-          id={gradientId}
-          key={`${gradientId}-${animKey}`} // Fixed Key
-          gradientUnits="userSpaceOnUse"
-          x1={source.x}
-          y1={source.y}
-          x2={target.x}
-          y2={target.y}
-        >
-          {/* 흐름 패턴: 투명 -> 밝음(pulse) -> 투명 */}
-          {/* Base stroke is drawn separately, so this is just the overlay highlight */}
+        <linearGradient id={gradientId} gradientUnits="userSpaceOnUse" x1={source.x} y1={source.y} x2={target.x} y2={target.y}>
           <stop offset="0%" stopColor={secondaryColor} stopOpacity="0">
-            <animate
-              attributeName="offset"
-              values="-1; 1"
-              dur={`${flowDuration}s`}
-              begin={`${flowDelay}s`}
-              repeatCount="indefinite"
-            />
+            <animate attributeName="offset" values="-1; 1" dur={`${flowDuration}s`} begin={`${flowDelay}s`} repeatCount="indefinite" />
           </stop>
-          <stop
-            offset="25%"
-            stopColor={secondaryColor}
-            // [Modified] Dimmed 상태일 때는 흐름도 연하게 (Visual Hierarchy)
-            stopOpacity={isActive ? 1 : isDimmed ? 0.3 : 0.9}
-          >
-            <animate
-              attributeName="offset"
-              values="-0.75; 1.25"
-              dur={`${flowDuration}s`}
-              begin={`${flowDelay}s`}
-              repeatCount="indefinite"
-            />
+          <stop offset="25%" stopColor={secondaryColor} stopOpacity={isActive ? 1 : 0.9}>
+            <animate attributeName="offset" values="-0.75; 1.25" dur={`${flowDuration}s`} begin={`${flowDelay}s`} repeatCount="indefinite" />
           </stop>
-          <stop offset="50%" stopColor={secondaryColor} stopOpacity="0">
-            <animate
-              attributeName="offset"
-              values="-0.5; 1.5"
-              dur={`${flowDuration}s`}
-              begin={`${flowDelay}s`}
-              repeatCount="indefinite"
-            />
+          <stop offset="50%" stopColor={primaryColor} stopOpacity="0">
+            <animate attributeName="offset" values="-0.5; 1.5" dur={`${flowDuration}s`} begin={`${flowDelay}s`} repeatCount="indefinite" />
           </stop>
         </linearGradient>
 
-        {/* 글로우 필터 */}
-        <filter id={glowFilterId} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation={isActive ? 4 : 2} result="blur" />
-          <feFlood
-            floodColor={primaryColor}
-            floodOpacity={isActive ? 0.6 : 0.3}
-          />
-          <feComposite in2="blur" operator="in" />
-          <feMerge>
-            <feMergeNode />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
+        <filter id={glowFilterId} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation={isActive ? 3 : 1} result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
       </defs>
 
-      {/* === Layer 1: 히트박스 (투명) === */}
+      {/* 1. Hitbox (Invisible wide stroke for easier selection) */}
       <path
-        className="link-path-hitbox"
+        d={pathD}
         fill="none"
         stroke="transparent"
-        strokeWidth={28}
-        strokeLinecap="round"
+        strokeWidth={Math.max(12, strokeWidth * 3)}
+        style={{ pointerEvents: "stroke" }}
       />
 
-      {/* === Layer 2: 깊은 그림자 (입체감) === */}
+      {/* 2. Base Line */}
       <path
-        className="link-path"
-        fill="none"
-        stroke="rgba(0,0,0,0.2)"
-        strokeWidth={strokeWidth + 3}
-        strokeOpacity={isFiltered ? 0 : opacity * 0.4}
-        strokeLinecap="round"
-        strokeDasharray={dashArray}
-        style={{ transform: "translate(1px, 2px)" }}
-      />
-
-      {/* === Layer 3: 부드러운 외부 글로우 === */}
-      {!isFiltered && !isDimmed && (
-        <path
-          className="link-path"
-          fill="none"
-          stroke={primaryColor}
-          strokeWidth={strokeWidth + 6}
-          strokeOpacity={isActive ? 0.25 : 0.08}
-          strokeLinecap="round"
-          style={{ filter: "blur(6px)" }}
-        />
-      )}
-
-      {/* === Layer 4: Base Line (Solid) - 항상 잘 보이게 === */}
-      <path
-        className="link-path"
+        d={pathD}
         fill="none"
         stroke={primaryColor}
         strokeWidth={strokeWidth}
-        // 기본 0.5 이상 유지하여 "너무 연해지지 않도록"
-        strokeOpacity={isFiltered ? 0.05 : isDimmed ? 0.1 : 0.5}
+        strokeOpacity={opacity}
         strokeLinecap="round"
-        strokeDasharray={dashArray}
-        style={{
-          transition: "stroke-width 200ms, stroke-opacity 200ms",
-        }}
+        filter={isActive ? `url(#${glowFilterId})` : undefined}
+        style={transitionStyle}
       />
 
-      {/* === Layer 5: Flow Overlay (Electric Pulse) === */}
-      {showFlow && (
+      {/* 3. Flow Animation Overlay - Enhanced for Premium Feel */}
+      {showFlow && !link.bidirectional && (
         <path
-          className="link-path"
+          d={pathD}
           fill="none"
           stroke={`url(#${gradientId})`}
-          strokeWidth={strokeWidth + (isActive ? 2 : 1)}
-          strokeOpacity={1}
+          strokeWidth={strokeWidth + (isActive ? 3 : 1.5)}
+          strokeOpacity={isActive ? 1 : 0.8}
           strokeLinecap="round"
-          strokeDasharray={dashArray}
-          // Remove mixBlendMode: screen (causes invisibility on light bg)
+          style={{
+            mixBlendMode: "plus-lighter",
+            pointerEvents: "none"
+          }}
         />
       )}
 
-      {/* === Layer 6: 하이라이트 (상단 빛 반사) - 더 subtle하게 === */}
-      <path
-        className="link-path"
-        fill="none"
-        stroke="rgba(255,255,255,0.4)"
-        strokeWidth={Math.max(0.8, strokeWidth * 0.3)}
-        strokeOpacity={isFiltered ? 0 : isDimmed ? 0.05 : isActive ? 0.5 : 0.2}
-        strokeLinecap="round"
-        strokeDasharray={dashArray}
-        style={{ transform: "translate(-0.3px, -0.8px)" }}
-      />
-
-      {/* === Layer 7: Removed Pulse Sphere per user request === */}
+      {/* 3b. Glow Path (Secondary Layer) */}
+      {isActive && (
+        <path
+          d={pathD}
+          fill="none"
+          stroke={primaryColor}
+          strokeWidth={strokeWidth + 4}
+          strokeOpacity={0.15}
+          strokeLinecap="round"
+          filter={`blur(4px)`}
+          style={{ pointerEvents: "none" }}
+        />
+      )}
     </g>
   );
 });

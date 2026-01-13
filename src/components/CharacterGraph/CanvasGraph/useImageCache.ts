@@ -33,7 +33,7 @@ export function useImageCache(characters: Character[]) {
             promises.push(
                 new Promise<void>((resolve) => {
                     const img = new Image();
-                    // img.crossOrigin = "anonymous"; // CORS 처리 차단 회피를 위해 주석 처리
+                    img.crossOrigin = "anonymous"; // CORS 처리 차단 회피를 위해 명시적 허용 (Canvas 오염 방지)
 
                     img.onload = () => {
                         newCache.set(imageUrl, img);

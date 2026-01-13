@@ -147,19 +147,23 @@ function CollisionMesh({
     const { viewport } = useThree();
 
     // 색상 데이터 추출 (Memoized to prevent recalc)
-    // ESLint fix: Complex expression in dependency array
-    const serializedFactorsA = JSON.stringify(factorsA);
+    // [OPTIMIZATION] JSON.stringify 대신 가벼운 키 생성 방식 사용 (Performance suggestion)
+    const factorsKeyA = useMemo(() =>
+        factorsA?.map(f => `${f.type}-${f.score}`).join(',') || '',
+        [factorsA]
+    );
     const colorDataA = useMemo(
         () => extractColorData(factorsA),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [serializedFactorsA],
+        [factorsKeyA, factorsA],
     );
 
-    const serializedFactorsB = JSON.stringify(factorsB);
+    const factorsKeyB = useMemo(() =>
+        factorsB?.map(f => `${f.type}-${f.score}`).join(',') || '',
+        [factorsB]
+    );
     const colorDataB = useMemo(
         () => extractColorData(factorsB),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [serializedFactorsB],
+        [factorsKeyB, factorsB],
     );
 
     const uniforms = useMemo(

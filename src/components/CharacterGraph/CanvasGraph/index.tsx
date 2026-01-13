@@ -142,6 +142,15 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
                 ? linksProp.map(l => ({ ...l }))
                 : generateLinksFromCharacters(characters);
 
+            // [STABILITY] Fix: Ensure links have stable IDs if missing
+            links.forEach((l, idx) => {
+                if (!l.id) {
+                    const sId = typeof l.source === 'string' ? l.source : (l.source as { id: string } | undefined)?.id || 'unknown';
+                    const tId = typeof l.target === 'string' ? l.target : (l.target as { id: string } | undefined)?.id || 'unknown';
+                    l.id = `rel-${sId}-${tId}-${idx}`;
+                }
+            });
+
             const counts = calculateRelationCounts(links);
 
             nodes.forEach((n) => {
@@ -264,6 +273,8 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
         }, [initialLinks, processedNodes, internalFilter]);
 
         // [FIX] graphData 객체 메모이제이션 - 리렌더링 시 시뮬레이션 초기화(드리프트) 방지 핵심
+        // [STABILITY] node/link 정렬 또는 ID 기반 매핑을 고려할 수 있으나, 
+        // 현재는 상위 processedNodes/Links가 변경될 때만 참조가 바뀌도록 유지
         const graphData = useMemo(() => ({
             nodes: processedNodes,
             links: processedLinks

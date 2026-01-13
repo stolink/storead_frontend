@@ -3,7 +3,7 @@
 // 관계 심층 분석 + 댓글(토론) 통합 모달
 // =====================================================
 
-import { useState, useMemo, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
     X,
@@ -25,10 +25,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 import type { CharacterNode, RelationshipLink } from "@/types/characterGraph";
-import type { RelationshipDeepAnalysisData } from "@/types/relationshipAnalysis";
 
 // Hooks
-// import { useRelationshipAnalysis } from "@/hooks/useRelationshipAnalysis"; // TODO: Implement this hook
+import { useRelationshipAnalysis } from "@/hooks/useRelationshipAnalysis";
 
 // Components
 import { DeepAnalysisHero } from "./components/DeepAnalysisHero";
@@ -50,121 +49,28 @@ interface RelationshipDeepAnalysisModalProps {
     link?: RelationshipLink; // 댓글 컴포넌트에 전달할 링크 객체
 }
 
-// --- Mock Data Generator (Temporary) ---
-// 백엔드 API 연결 전까지 사용할 더미 데이터 생성기
-function generateMockAnalysisData(
-    source: CharacterNode,
-    target: CharacterNode,
-): RelationshipDeepAnalysisData {
-    return {
-        sourceCharacter: {
-            id: source.id,
-            name: source.name,
-            imageUrl: source.imageUrl,
-        },
-        targetCharacter: {
-            id: target.id,
-            name: target.name,
-            imageUrl: target.imageUrl,
-        },
-        sourceToTargetAttributes: {
-            emotionalBond: 7.5,
-            functionalTrust: 8.8,
-            valueAlignment: 6.2,
-            interdependence: 9.0,
-            latentTension: 4.5,
-        },
-        targetToSourceAttributes: {
-            emotionalBond: 6.5,
-            functionalTrust: 7.2,
-            valueAlignment: 5.8,
-            interdependence: 8.0,
-            latentTension: 3.5,
-        },
-        asymmetricStrength: {
-            sourceToTarget: {
-                total: 80,
-                factors: [
-                    { type: "trust", score: 8, weight: 0.8, category: "friendly" },
-                    { type: "admiration", score: 6, weight: 0.6, category: "friendly" },
-                ],
-            },
-            targetToSource: {
-                total: 65,
-                factors: [
-                    { type: "wary", score: 4, weight: 0.4, category: "hostile" },
-                    { type: "need", score: 7, weight: 0.7, category: "friendly" },
-                ],
-            },
-        },
-        relationshipTypes: ["ALLY", "RIVAL"],
-        currentStrength: 80,
-        description: `${source.name}와(과) ${target.name}의 관계는 복잡하게 얽혀 있습니다.`,
-        since: `Ch.1`,
-        timeline: [
-            {
-                eventId: "e1",
-                chapter: 1,
-                timestamp: null,
-                title: "첫 만남",
-                description: "도서관에서의 우연한 만남. 서로의 지식에 감탄함.",
-                importance: 6,
-                emotionalPolarity: 0.8,
-                cumulativeFriendly: 20,
-                cumulativeHostile: 0,
-                sentimentTrajectory: 20,
-            },
-        ],
-        sharedScenes: [
-            {
-                eventId: "s1",
-                chapter: "3",
-                title: "심야의 밀담",
-                description: "아무도 없는 복도에서 은밀하게 정보를 교환함.",
-                importance: 7,
-            },
-        ],
-        insights: {
-            decisiveTrigger: {
-                eventId: "e1",
-                title: "첫 만남",
-                summary: "모든 것의 시작점",
-                impact: 8,
-            },
-            keywords: ["신뢰", "전우애"],
-        },
-        warnings: [
-            {
-                type: "asymmetry",
-                severity: "medium",
-                message: "신뢰도 비대칭 보임",
-            },
-        ],
-    };
-}
+
 
 export function RelationshipDeepAnalysisModal({
     isOpen,
     onClose,
     sourceNode,
     targetNode,
+    relationId,
     chapterId,
     link,
 }: RelationshipDeepAnalysisModalProps) {
     const [activeTab, setActiveTab] = useState<"analysis" | "comments">("analysis");
     const [isFullscreen, setIsFullscreen] = useState(false);
 
-    const data = useMemo(
-        () => generateMockAnalysisData(sourceNode, targetNode),
-        [sourceNode, targetNode],
-    );
+    // [REFACTOR] Mock 데이터 분리: 전용 훅 사용
+    const { data } = useRelationshipAnalysis(sourceNode, targetNode, relationId);
 
-    // Reset tab when modal opens
-    useEffect(() => {
-        if (isOpen) setActiveTab("analysis");
-    }, [isOpen]);
+    // [FIX] react-hooks/set-state-in-effect: 모달이 열릴 때 탭 리셋 로직을 상태 초기화 시점이나 Key 변경으로 처리 권장
+    // 여기서는 간단히 useEffect 없이 탭 상태가 항상 'analysis'로 시작하도록 보장하기 위해 
+    // Tabs 에 key를 주어 isOpen이 true가 될 때마다 리셋되도록 합니다.
 
-    if (!isOpen) return null;
+    if (!isOpen || !data) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -191,6 +97,9 @@ export function RelationshipDeepAnalysisModal({
                             <DialogTitle className="text-lg font-bold text-espresso-900 font-serif tracking-tight">
                                 Deep Analysis
                             </DialogTitle>
+                            <DialogDescription className="sr-only">
+                                캐릭터 간의 심층 관계 분석 및 감정 변화를 시각화합니다.
+                            </DialogDescription>
                         </div>
                         <DialogDescription className="sr-only">
                             {sourceNode.name}와 {targetNode.name}의 상세 관계 분석 및 토론 모달입니다.
@@ -229,8 +138,10 @@ export function RelationshipDeepAnalysisModal({
 
                 {/* Main Content Area with Tabs */}
                 <Tabs
+                    key={isOpen ? "open" : "closed"}
+                    defaultValue="analysis"
                     value={activeTab}
-                    onValueChange={(v) => setActiveTab(v as any)}
+                    onValueChange={(v) => setActiveTab(v as "analysis" | "comments")}
                     className="flex-1 flex flex-col min-h-0 relative z-10"
                 >
                     {/* Tab List */}

@@ -77,7 +77,18 @@ jobs:
 
       - name: Deploy Frontend to S3
         run: |
-          aws s3 sync ./dist s3://${{ vars.STOREAD_S3_BUCKET_NAME }} --delete
+          # 1. Assets 업로드 (해시된 파일 - 영구 캐시)
+          aws s3 sync ./dist/assets/ s3://${{ vars.STOREAD_S3_BUCKET_NAME }}/assets/ \
+            --cache-control "max-age=31536000, immutable" \
+            --delete
+
+          # 2. 기타 정적 파일 (version.json 등)
+          aws s3 cp ./dist/version.json s3://${{ vars.STOREAD_S3_BUCKET_NAME }}/ \
+            --cache-control "no-cache, no-store, must-revalidate" || true
+
+          # 3. index.html (항상 최신 버전 확인)
+          aws s3 cp ./dist/index.html s3://${{ vars.STOREAD_S3_BUCKET_NAME }}/ \
+            --cache-control "no-cache, no-store, must-revalidate"
 
       - name: CloudFront Invalidation (index.html only)
         run: |
@@ -94,7 +105,7 @@ jobs:
           echo "🔍 Starting health check for: $URL"
 
           for i in $(seq 1 $MAX_RETRIES); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "000")
+            STATUS=$(curl -sL -o /dev/null -w "%{http_code}" "$URL" || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "✅ Health check passed! (attempt $i)"
               exit 0

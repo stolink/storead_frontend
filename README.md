@@ -13,6 +13,23 @@ AI 스마트 스토리 플랫폼 - 독자 서비스 및 작가 배포 시스템
 | **Forms**        | React Hook Form, Zod       |
 | **Routing**      | React Router DOM           |
 
+## 🧪 테스트 (Tests)
+
+### Unit & QA Tests (Vitest)
+
+`src/__tests__/qa` 디렉토리에서 주요 기능과 API에 대한 테스트를 관리합니다.
+
+- **API Tests**: `src/__tests__/qa/api` - 백엔드 API와의 연동을 검증합니다.
+- **Scenario Tests**: `src/__tests__/qa/scenarios` - 시나리오 기반의 기능(Auth, Editor 등) 테스트를 수행합니다.
+
+```bash
+# 전체 테스트 실행
+npm test
+
+# 특정 파일 실행
+npm test src/__tests__/qa/api
+```
+
 ## 🚀 시작하기
 
 ### 의존성 설치

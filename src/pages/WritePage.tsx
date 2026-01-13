@@ -787,9 +787,9 @@ export const WritePage = () => {
     isError: _isMultipleDraftsError,
   } = useDrafts(isAuthenticated && isBatchMode ? draftIds : []);
 
-  // 로그인 체크
+  // 로그인 체크 - 무한 루프 방지를 위해 메모이제이션된 값 사용
   useEffect(() => {
-    if (!isAuthenticated && (draftId || draftIds.length > 0)) {
+    if (!isAuthenticated && (draftId || (draftIds && draftIds.length > 0))) {
       const redirectUrl = isBatchMode
         ? `/write?draftIds=${draftIds.join(",")}`
         : `/write?draftId=${draftId}`;

@@ -26,7 +26,7 @@ export default defineConfig(({ mode: _mode }) => ({
     open: true,
     proxy: {
       "/api": {
-        target: "http://localhost:8081", // storead 백엔드
+        target: "http://127.0.0.1:8081", // storead 백엔드
         changeOrigin: false, // 호스트 헤더를 target에 맞게 변경하지 않음 (OAuth 리다이렉트 문제 방지)
         secure: false,
       },

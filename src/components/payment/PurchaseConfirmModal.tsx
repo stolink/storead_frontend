@@ -212,6 +212,10 @@ export function PurchaseConfirmModal({
                         {/* 처리 중 */}
                         {step === 'processing' && (
                             <div className="flex flex-col items-center py-8">
+                                <DialogHeader className="sr-only">
+                                    <DialogTitle>처리 중</DialogTitle>
+                                    <DialogDescription>구매 요청을 처리하고 있습니다.</DialogDescription>
+                                </DialogHeader>
                                 <Loader2 className="w-8 h-8 animate-spin text-mocha-500 mb-4" />
                                 <p className="text-muted-foreground">구매 처리 중...</p>
                             </div>
@@ -220,6 +224,10 @@ export function PurchaseConfirmModal({
                         {/* 구매 성공 */}
                         {step === 'success' && (
                             <div className="flex flex-col items-center py-8">
+                                <DialogHeader className="sr-only">
+                                    <DialogTitle>구매 성공</DialogTitle>
+                                    <DialogDescription>구매가 성공적으로 완료되었습니다.</DialogDescription>
+                                </DialogHeader>
                                 <div className="w-16 h-16 rounded-full bg-sage-100 dark:bg-sage-900/30 flex items-center justify-center mb-4">
                                     <CheckCircle className="w-8 h-8 text-sage-500" />
                                 </div>

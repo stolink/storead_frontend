@@ -1,5 +1,12 @@
-import type { Character, RelationshipLink, RelationType } from "@/types";
-import { RELATION_PALETTE } from "./constants";
+import type { Character, RelationshipLink } from "@/types";
+import {
+  RELATION_PALETTE,
+  RELATION_TO_META_CATEGORY,
+  type UIRelationType,
+} from "./constants";
+
+// Re-export UIRelationType for convenience
+export type { UIRelationType };
 
 /**
  * @deprecated Use extractRelationshipLinks from @/utils/relationshipMapper
@@ -9,28 +16,51 @@ import { RELATION_PALETTE } from "./constants";
 export function generateLinksFromCharacters(
   characters: Character[],
 ): RelationshipLink[] {
-  console.warn(
-    "generateLinksFromCharacters is deprecated. Use extractRelationshipLinks from @/utils/relationshipMapper instead.",
-  );
+  // Storead might not have relationshipMapper, so we keep this logic inline for now if needed.
+  // But generally we should be careful about dependencies.
+  // For visual parity, the critical parts are colors and formatting.
+
   const links: RelationshipLink[] = [];
   const linkSet = new Set<string>();
 
   // 관계 타입 문자열에서 RelationType 추출 (새 스키마의 relationType 값 매핑)
-  const getRelationType = (relType: string): RelationType => {
+  const getRelationType = (relType: string): UIRelationType => {
     const normalized = relType?.toLowerCase() || "";
-    // 적대 관계
+    // 특수 관계 (Specific)
+    if (
+      normalized.includes("romantic") ||
+      normalized.includes("love") ||
+      normalized.includes("lover")
+    ) {
+      return "romantic";
+    }
+    if (
+      normalized.includes("family") ||
+      normalized.includes("kin") ||
+      normalized.includes("brother") ||
+      normalized.includes("sister") ||
+      normalized.includes("parent") ||
+      normalized.includes("mentor") ||
+      normalized.includes("teacher") ||
+      normalized.includes("student") ||
+      normalized.includes("master")
+    ) {
+      return "friendly";
+    }
+
+    // 갈등 관계
+    if (normalized.includes("rival")) {
+      return "hostile";
+    }
     if (
       normalized.includes("hostile") ||
       normalized.includes("enemy") ||
-      normalized.includes("rival")
+      normalized.includes("antagonist")
     ) {
       return "hostile";
     }
-    // 연인 관계
-    if (normalized.includes("romantic") || normalized.includes("love")) {
-      return "romantic";
-    }
-    // 나머지는 친구 관계 (family, ally, mentor 등 포함)
+
+    // 나머지는 우호/협력 관계
     return "friendly";
   };
 
@@ -98,15 +128,23 @@ export function calculateRelationCounts(
  * @param strength 관계 강도 (1-10)
  */
 export function getRelationshipColor(
-  type: RelationType,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  type: UIRelationType,
   _strength: number,
+  relationTypes?: string[],
 ): string {
+  // 5개 이상의 복합 관계인 경우 무조건 complex 색상 반환
+  if (relationTypes && relationTypes.length >= 5) {
+    return RELATION_PALETTE.complex.standard;
+  }
+
   const palette = RELATION_PALETTE[type];
   if (!palette) return "#9ca3af"; // Default gray
 
-  // Unified color (Strength ignored per user request)
   return palette.standard;
+}
+
+export function getRelationshipMetaCategory(type: UIRelationType): string {
+  return RELATION_TO_META_CATEGORY[type] || "neutral";
 }
 
 // =====================================================

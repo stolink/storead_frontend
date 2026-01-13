@@ -35,7 +35,7 @@ export default {
         espresso: {
           "900": "#3D302A",
         },
-        paper: "#F1F0EC",
+        paper: "#FDFBF8", // Cloud 50 equivalent
         ink: "#3D302A",
         relation: {
           friendly: "#7A8C6F",
@@ -79,7 +79,7 @@ export default {
           foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
+          DEFAULT: "#F1F0EC", // Cloud 100 equivalent
           foreground: "hsl(var(--card-foreground))",
         },
         sidebar: {

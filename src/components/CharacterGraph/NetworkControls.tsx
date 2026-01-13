@@ -3,11 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Layers,
   ChevronDown,
-  Heart,
-  Users,
-  Skull,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -19,39 +14,45 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { RelationType } from "@/types";
-import { RELATION_LABELS, RELATION_COLORS_HEX } from "./constants";
+import {
+  RELATION_LABELS,
+  RELATION_COLORS_HEX,
+  type UIRelationType,
+} from "./constants";
 import { cn } from "@/lib/utils";
 
-// 관계 타입별 아이콘 (컴팩트)
-const RELATION_ICONS: Record<RelationType, React.ReactNode> = {
-  friendly: <Users className="w-3 h-3" />,
-  hostile: <Skull className="w-3 h-3" />,
-  romantic: <Heart className="w-3 h-3" />,
-};
-
 interface NetworkControlsProps {
-  relationTypeFilter: RelationType | "all";
-  onFilterChange: (value: RelationType | "all") => void;
+  relationTypeFilter: UIRelationType | "all";
+  onFilterChange: (value: UIRelationType | "all") => void;
+  /** 주요 캐릭터만 보기 필터 */
+  showMainOnly?: boolean;
+  onShowMainOnlyChange?: (enabled: boolean) => void;
   enableGrouping?: boolean;
   onGroupingChange?: (enabled: boolean) => void;
-  hoveredType?: RelationType | null;
-  onHoverType?: (type: RelationType | null) => void;
+  // Insights Props
+  showTension?: boolean;
+  onToggleTension?: (val: boolean) => void;
+  showLogicCheck?: boolean;
+  onToggleLogicCheck?: (val: boolean) => void;
 }
 
 /**
  * 네트워크 그래프 컨트롤 패널
  * - 관계 타입 필터
  * - 범례 (인터랙티브)
- * - 그룹 토글 (Switch)
  */
 export function NetworkControls({
   relationTypeFilter,
   onFilterChange,
+  showMainOnly = false,
+  onShowMainOnlyChange,
   enableGrouping = false,
   onGroupingChange,
-  hoveredType,
-  onHoverType,
+  // Insights
+  showTension = false,
+  onToggleTension,
+  showLogicCheck = false,
+  onToggleLogicCheck,
 }: NetworkControlsProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -60,17 +61,12 @@ export function NetworkControls({
       ? "모든 관계"
       : RELATION_LABELS[relationTypeFilter];
 
-  const relationTypes = Object.keys(RELATION_LABELS) as RelationType[];
+  const relationTypes = Object.keys(RELATION_LABELS) as UIRelationType[];
 
   return (
     <>
       {/* 좌측 컨트롤 패널 */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="absolute left-3 top-3 z-20 frosted-glass rounded-xl overflow-hidden shadow-lg"
-      >
+      <div className="bg-cloud-50/80 backdrop-blur-md border border-mocha-100/50 rounded-xl overflow-hidden shadow-lg">
         {/* 헤더 - 토글 가능 */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
@@ -78,7 +74,7 @@ export function NetworkControls({
         >
           <div className="flex items-center gap-2">
             <Layers className="h-3.5 w-3.5 text-mocha-500" />
-            <span className="text-xs font-semibold text-stone-600 uppercase tracking-wider">
+            <span className="text-[10px] font-semibold text-mocha-900 uppercase tracking-wider">
               컨트롤
             </span>
           </div>
@@ -86,7 +82,7 @@ export function NetworkControls({
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.2 }}
           >
-            <ChevronDown className="h-3.5 w-3.5 text-stone-400" />
+            <ChevronDown className="h-3.5 w-3.5 text-mocha-400" />
           </motion.div>
         </button>
 
@@ -102,7 +98,7 @@ export function NetworkControls({
               <div className="p-3 pt-0 space-y-4">
                 {/* 필터 드롭다운 */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">
+                  <Label className="text-[10px] font-semibold text-mocha-600 uppercase tracking-wider">
                     필터
                   </Label>
                   <DropdownMenu>
@@ -111,9 +107,9 @@ export function NetworkControls({
                         variant="outline"
                         size="sm"
                         className={cn(
-                          "w-full justify-between gap-1 h-8 text-xs bg-white/80 hover:bg-white border-stone-200",
+                          "w-full justify-between gap-1 h-8 text-xs bg-white/50 hover:bg-white border-mocha-100",
                           relationTypeFilter !== "all" &&
-                          "border-mocha-300 bg-mocha-50",
+                          "border-mocha-300 bg-mocha-50"
                         )}
                       >
                         <span className="flex items-center gap-1.5">
@@ -126,27 +122,27 @@ export function NetworkControls({
                               }}
                             />
                           )}
-                          <span className="font-medium">
+                          <span className="font-medium text-mocha-900">
                             {activeFilterLabel}
                           </span>
                         </span>
-                        <ChevronDown className="h-3 w-3 text-stone-400" />
+                        <ChevronDown className="h-3 w-3 text-mocha-400" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-40">
+                    <DropdownMenuContent align="start" className="w-40 bg-white/95 backdrop-blur-lg border-mocha-100">
                       <DropdownMenuRadioGroup
                         value={relationTypeFilter}
                         onValueChange={(v) =>
-                          onFilterChange(v as RelationType | "all")
+                          onFilterChange(v as UIRelationType | "all")
                         }
                       >
                         <DropdownMenuRadioItem
                           value="all"
-                          className="cursor-pointer text-xs"
+                          className="cursor-pointer text-xs text-mocha-800"
                         >
                           <span className="flex items-center gap-2">
-                            <span className="w-3 h-3 rounded-full bg-gradient-to-br from-stone-200 to-stone-100 flex items-center justify-center">
-                              <span className="w-1 h-1 rounded-full bg-stone-400" />
+                            <span className="w-3 h-3 rounded-full bg-gradient-to-br from-cloud-200 to-stone-100 flex items-center justify-center">
+                              <span className="w-1 h-1 rounded-full bg-cloud-400" />
                             </span>
                             모든 관계
                           </span>
@@ -155,7 +151,7 @@ export function NetworkControls({
                           <DropdownMenuRadioItem
                             key={type}
                             value={type}
-                            className="cursor-pointer text-xs"
+                            className="cursor-pointer text-xs text-mocha-800"
                           >
                             <span className="flex items-center gap-2">
                               <span
@@ -183,27 +179,47 @@ export function NetworkControls({
                   {relationTypeFilter !== "all" && (
                     <button
                       onClick={() => onFilterChange("all")}
-                      className="w-full text-[10px] text-stone-400 hover:text-stone-600 transition-colors text-center py-1"
+                      className="w-full text-[10px] text-mocha-400 hover:text-mocha-600 transition-colors text-center py-1"
                     >
                       초기화
                     </button>
                   )}
                 </div>
 
+                {/* 주요 캐릭터만 필터 */}
+                {onShowMainOnlyChange && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-semibold text-mocha-600 uppercase tracking-wider">
+                        주요 캐릭터만
+                      </Label>
+                      <Switch
+                        checked={showMainOnly}
+                        onChange={onShowMainOnlyChange}
+                        size="sm"
+                      />
+                    </div>
+                    <p className="text-[9px] text-mocha-400 leading-tight">
+                      주인공, 적대자 및 소수 정예 캐릭터만 표시
+                    </p>
+                  </div>
+                )}
+
                 {/* 그룹 토글 */}
                 {onGroupingChange && (
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">
+                      <Label className="text-[10px] font-semibold text-mocha-600 uppercase tracking-wider">
                         그룹 보기
                       </Label>
                       <Switch
                         checked={enableGrouping}
                         onChange={onGroupingChange}
+                        size="sm"
                       />
                     </div>
-                    <p className="text-[9px] text-stone-400 leading-tight">
-                      진영별로 노드를 그룹화합니다
+                    <p className="text-[9px] text-mocha-400 leading-tight">
+                      세력/진영별로 노드를 밀집시킵니다
                     </p>
                   </div>
                 )}
@@ -211,89 +227,37 @@ export function NetworkControls({
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
 
-      {/* 하단 범례 - 인터랙티브 */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1, ease: "easeOut" }}
-        className="absolute left-3 bottom-3 z-20 frosted-glass rounded-xl p-3 shadow-lg"
-      >
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-0.5 h-3 rounded-full bg-mocha-500" />
-          <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">
-            범례
-          </span>
-          <span className="text-[9px] text-stone-400 ml-auto">
-            클릭하여 필터
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          {relationTypes.map((type) => {
-            const isActive = relationTypeFilter === type;
-            const isHovered = hoveredType === type;
-            const isDimmed = relationTypeFilter !== "all" && !isActive;
-
-            return (
-              <motion.div
-                key={type}
-                onClick={() => onFilterChange(isActive ? "all" : type)}
-                onMouseEnter={() => onHoverType?.(type)}
-                onMouseLeave={() => onHoverType?.(null)}
-                className={cn(
-                  "flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-all",
-                  isActive && "bg-white shadow-sm",
-                  isHovered && !isActive && "bg-white/60",
-                  isDimmed && "opacity-40",
-                )}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="flex items-center gap-2">
-                  {/* 아이콘 */}
-                  <span
-                    className="w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{
-                      backgroundColor: `${RELATION_COLORS_HEX[type]}15`,
-                      color: RELATION_COLORS_HEX[type],
-                    }}
-                  >
-                    {RELATION_ICONS[type]}
-                  </span>
-
-                  {/* 선 샘플 */}
-                  <div
-                    className="w-6 h-0.5 rounded-full"
-                    style={{
-                      backgroundColor: RELATION_COLORS_HEX[type],
-                      ...(type === "hostile" && {
-                        background: `repeating-linear-gradient(90deg, ${RELATION_COLORS_HEX[type]} 0px, ${RELATION_COLORS_HEX[type]} 3px, transparent 3px, transparent 6px)`,
-                      }),
-                    }}
-                  />
-                </div>
-
-                <span
-                  className={cn(
-                    "text-xs transition-colors",
-                    isActive ? "font-medium text-stone-800" : "text-stone-600",
-                  )}
-                >
-                  {RELATION_LABELS[type]}
-                </span>
-
-                {/* Active indicator */}
-                {isActive && <Eye className="w-3 h-3 text-mocha-500 ml-auto" />}
-                {isDimmed && (
-                  <EyeOff className="w-3 h-3 text-stone-300 ml-auto" />
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.div>
+      {/* 우측 상단 Insights Panel Toggle (기능 비활성화 상태) */}
+      <div className="absolute right-3 top-3 z-20 flex gap-2">
+        {onToggleTension && (
+          <Button
+            variant={showTension ? "destructive" : "outline"}
+            size="sm"
+            className={cn(
+              "h-8 text-[10px] gap-1.5 shadow-sm bg-white/50 backdrop-blur-sm border-mocha-100",
+              showTension && "bg-red-500/10 border-red-200 text-red-600 hover:bg-red-50"
+            )}
+            onClick={() => onToggleTension(!showTension)}
+          >
+            🔥 Tension
+          </Button>
+        )}
+        {onToggleLogicCheck && (
+          <Button
+            variant={showLogicCheck ? "default" : "outline"}
+            size="sm"
+            className={cn(
+              "h-8 text-[10px] gap-1.5 shadow-sm bg-white/50 backdrop-blur-sm border-mocha-100",
+              showLogicCheck && "bg-amber-500/10 border-amber-200 text-amber-700 hover:bg-amber-50"
+            )}
+            onClick={() => onToggleLogicCheck(!showLogicCheck)}
+          >
+            ⚠️ Logic
+          </Button>
+        )}
+      </div>
     </>
   );
 }

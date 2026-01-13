@@ -50,30 +50,26 @@ export function useCharacterData(
       return {
         name: targetName,
         relation: relationLabel,
+        type: rel.type || "friendly",
       };
     });
   }, [character?.relations?.graph, allCharacters]);
 
-  // 등장 챕터 (Reader에서는 아직 데이터가 없으므로 빈 배열 혹은 추후 구현)
+  // 등장 챕터
   const appearances = useMemo(() => {
-    return [];
-  }, []);
+    const char = character as any;
+    return char?.appearances || (char?.firstAppearance ? [char.firstAppearance] : []);
+  }, [character]);
 
   // 설명
   const description = useMemo(() => {
     return character?.profile?.backstory || "";
   }, [character?.profile?.backstory]);
 
-  // 진행률 (기본값)
-  const arcProgress = useMemo(() => {
-    return 50;
-  }, []);
-
   return {
     traits,
     relationships,
     appearances,
     description,
-    arcProgress,
   };
 }

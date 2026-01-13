@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => ({
     setupFiles: path.resolve(__dirname, "./src/test/setup.ts"),
     css: true,
   },
-  base: mode === "production" ? "/storead/" : "/",
+  base: "/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

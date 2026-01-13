@@ -1,6 +1,7 @@
 import type { CharacterNode } from "@/types";
 import type { LinkRenderOptions } from "./types";
 import { getRelationshipColor, type UIRelationType } from "../utils";
+import tinycolor from "tinycolor2";
 
 /**
  * Canvas에 링크를 렌더링하는 함수
@@ -409,12 +410,15 @@ export function drawLink(options: LinkRenderOptions): void {
 }
 
 /**
- * 색상을 밝게 만드는 헬퍼 함수
+ * 색상을 밝게 만드는 헬퍼 함수 (tinycolor2 사용)
+ * 3자리 Hex, 잘못된 입력값에도 안전하게 동작합니다.
  */
-function lightenColor(hex: string, amount: number): string {
-    const cleanHex = hex.replace("#", "");
-    const r = Math.min(255, parseInt(cleanHex.slice(0, 2), 16) + amount);
-    const g = Math.min(255, parseInt(cleanHex.slice(2, 4), 16) + amount);
-    const b = Math.min(255, parseInt(cleanHex.slice(4, 6), 16) + amount);
-    return `rgb(${r}, ${g}, ${b})`;
+function lightenColor(color: string, amount: number): string {
+    const tc = tinycolor(color);
+    if (!tc.isValid()) {
+        return `rgb(255, 255, 255)`; // 유효하지 않은 색상은 흰색 반환
+    }
+    // tinycolor의 lighten은 %, 기존 로직은 0-255 범위. 
+    // amount / 255 * 100으로 변환하여 유사한 효과 적용
+    return tc.lighten((amount / 255) * 100).toRgbString();
 }

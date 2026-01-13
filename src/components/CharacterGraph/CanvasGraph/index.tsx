@@ -7,6 +7,7 @@ import {
     forwardRef,
     useImperativeHandle,
 } from "react";
+import { throttle } from "lodash-es";
 import ForceGraph2D, {
     type ForceGraphMethods,
 } from "react-force-graph-2d";
@@ -64,6 +65,10 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
         const containerRef = useRef<HTMLDivElement>(null);
         const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
         const nodeCharacterMapRef = useRef<Map<string, Character>>(new Map());
+
+        // [FIX] 콜백 Ref: 부모로부터 전달받은 핸들러를 Ref로 관리하여 의존성 제거 (시뮬레이션 드리프트 방지)
+        const onNodeClickRef = useRef(onNodeClick);
+        onNodeClickRef.current = onNodeClick;
 
         useEffect(() => {
             if (!containerRef.current) return;
@@ -372,14 +377,14 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
             (node: CharacterNode) => {
                 // [FIX] Stolink Parity: nodeCharacterMapRef를 통한 정밀 매핑으로 이전 프로필 노출 방지
                 const char = nodeCharacterMapRef.current.get(node.id);
-                if (char && onNodeClick) {
-                    onNodeClick(char);
+                if (char && onNodeClickRef.current) {
+                    onNodeClickRef.current(char);
                 }
                 setSelectedNodeId(node.id);
                 graphRef.current?.centerAt(node.x, node.y, 400);
                 graphRef.current?.zoom(2.5, 400);
             },
-            [onNodeClick],
+            [], // [FIX] 의존성 배열 비움 - Ref 사용으로 안정적 참조 유지
         );
 
         // [FIX] CharacterSearchOverlay 콜백을 useCallback으로 메모이제이션하여 무한 루프 방지
@@ -610,8 +615,8 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
                         ctx.stroke();
                     }}
                     onLinkHover={handleLinkHover}
-                    onZoom={(transform) => {
-                        // [FIX] Stolink Parity: requestAnimationFrame으로 리렌더링 충돌 방지
+                    onZoom={useMemo(() => throttle((transform: { k: number; x: number; y: number }) => {
+                        // [FIX] throttle + requestAnimationFrame으로 줌 이벤트 과부하 방지
                         requestAnimationFrame(() => {
                             setZoomState({
                                 scale: transform.k,
@@ -619,7 +624,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
                                 y: transform.y
                             });
                         });
-                    }}
+                    }, 16), [])}
                     minZoom={ZOOM_CONFIG.min}
                     maxZoom={ZOOM_CONFIG.max}
                 />

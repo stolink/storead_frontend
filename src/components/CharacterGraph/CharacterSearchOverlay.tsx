@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useDeferredValue } from "react";
+import { useState, useMemo, useEffect, useRef, useDeferredValue, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -44,10 +44,12 @@ export function CharacterSearchOverlay({
   }, [deferredQuery, characters]);
 
   // Virtualizer 설정 - 화면에 보이는 항목만 렌더링
+  // [FIX] estimateSize를 useCallback으로 메모이제이션하여 불필요한 virtualizer 재생성 방지
+  const estimateSize = useCallback(() => 52, []);
   const rowVirtualizer = useVirtualizer({
     count: matches.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 52, // 각 항목 높이 (px)
+    estimateSize, // 각 항목 높이 (px)
     overscan: 5, // 버퍼 항목 수
   });
 

@@ -10,7 +10,8 @@ import type { RelationshipDeepAnalysisData } from "@/types/relationshipAnalysis"
  */
 export function useRelationshipAnalysis(
     source: CharacterNode,
-    target: CharacterNode
+    target: CharacterNode,
+    relationId?: string
 ) {
     // [STABILITY] 쿼리 키 또는 의존성 관리
     // 실제 API 연동 시 ['relationship-analysis', source.id, target.id, relationId] 등을 키로 사용
@@ -101,7 +102,7 @@ export function useRelationshipAnalysis(
                 },
             ],
         };
-    }, [source, target]);
+    }, [source, target, relationId]);
 
     return {
         data,

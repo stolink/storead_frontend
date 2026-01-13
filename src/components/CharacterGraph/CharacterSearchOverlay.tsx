@@ -34,6 +34,10 @@ export function CharacterSearchOverlay({
   const inputRef = useRef<HTMLInputElement>(null);
   const parentRef = useRef<HTMLDivElement>(null); // Virtualizer parent
 
+  // [FIX] Latest Ref 패턴: 부모가 인라인 함수를 전달해도 무한 루프 방지
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
+
   // Search Logic with Fuzzy + Chosung (deferred query 사용)
   const matches = useMemo(() => {
     if (!deferredQuery.trim()) return [];
@@ -60,10 +64,10 @@ export function CharacterSearchOverlay({
     const searchKey = currentMatches ? currentMatches.join(",") : "null";
 
     if (lastSearchRef.current !== searchKey) {
-      onSearch(currentMatches);
+      onSearchRef.current(currentMatches); // [FIX] Ref를 통해 호출하여 의존성 제거
       lastSearchRef.current = searchKey;
     }
-  }, [matches, deferredQuery, onSearch]);
+  }, [matches, deferredQuery]); // [FIX] onSearch 의존성 제거
 
   // Click outside handler
   useEffect(() => {

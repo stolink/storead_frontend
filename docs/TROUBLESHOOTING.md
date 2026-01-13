@@ -100,3 +100,54 @@
 - 낙관적 업데이트(Optimistic Update) 적용으로 UX 개선.
 
 ---
+
+### 6. D3 관계도 노드 렌더링 누락 (ID 매핑 이슈)
+
+**증상:**
+- StoLink에서 전달된 데이터를 기반으로 관계도를 렌더링할 때, 데이터는 정상이나 화면에 노드가 나타나지 않음.
+- D3 Force Simulation 로그에서 링크의 `source`, `target`이 유효한 노드를 찾지 못함.
+
+**원인:**
+- StoLink 데이터의 캐릭터 ID가 D3 전처리 과정에서 객체로 변환되거나, 원본 ID 필드 매칭이 어긋남.
+
+**해결:**
+- `adaptGraphSnapshot` 함수에서 노드와 링크의 ID를 D3가 인식할 수 있는 문자열 형식으로 정규화하고, 시뮬레이션 시작 전 모든 링크가 유효한 노드를 참조하는지 검증하는 로직 추가.
+
+---
+
+### 7. Framer Motion `organic` Easing 에러
+
+**증상:**
+- 관계 상세 정보 확인 시 화면이 백화(Crash)되며 `Invalid easing type "organic"` 에러 발생.
+
+**원인:**
+- `RelationshipDetailSheet` 등에서 사용된 애니메이션 설정 중 `framer-motion`이 지원하지 않는 비표준 easing 값(`organic`)이 포함됨.
+
+**해결:**
+- 지원되는 표준 easing 값(`easeInOut`, `easeOut` 등) 또는 베지어 곡선으로 수정하여 해결.
+
+---
+
+### 8. 관계도 캔버스 시각적 불일치 (Global CSS 간섭)
+
+**증상:**
+- 관계도 캔버스 주변에 검은색 테두리가 생기거나 배경 이미지가 어긋나 보이는 현상.
+
+**원인:**
+- `storead` 전역 CSS에서 `canvas` 또는 `container` 요소에 공통적으로 적용된 border-radius, box-shadow 등이 Canvas 및 TiledBackground와 충돌.
+
+**해결:**
+- 관계도 전용 컨테이너에 CSS Isolation(`stolink-graph-container`)을 적용하고, 캔버스 요소에 대해 명시적으로 초기화 스타일(`reset-css`) 부여.
+
+---
+
+### 9. API 프록시 연결 불안정 (localhost vs 127.0.0.1)
+
+**증상:**
+- 개발 서버 구동 중 백엔드 API 호출이 간헐적으로 `ECONNREFUSED`로 실패.
+
+**원인:**
+- Node.js 버전이나 OS 환경에 따라 `localhost`가 IPv6(`::1`)로 먼저 해석되나 백엔드는 IPv4(`127.0.0.1`)에서만 대기할 경우 발생.
+
+**해결:**
+- `vite.config.ts`의 프록시 대상을 `http://127.0.0.1`로 명시하여 해결.

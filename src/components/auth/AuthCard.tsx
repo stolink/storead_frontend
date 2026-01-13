@@ -76,10 +76,10 @@ export function AuthCard({
     const currentPath = window.location.pathname + window.location.search;
     localStorage.setItem("oauth_redirect_path", currentPath);
 
-    // Use relative path to go through Vite proxy (localhost:5174)
-    // This ensures cookies are set on the same domain/port as the frontend
+    // VITE_API_URL 환경변수 사용
+    const apiUrl = import.meta.env.VITE_API_URL || "/api";
     const state = encodeURIComponent(currentPath);
-    window.location.href = `/api/oauth2/authorization/google?state=${state}`;
+    window.location.href = `${apiUrl}/oauth2/authorization/google?state=${state}`;
   };
 
   const handleApiError = (error: unknown, defaultMsg: string) => {

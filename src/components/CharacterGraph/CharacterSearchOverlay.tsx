@@ -52,11 +52,14 @@ export function CharacterSearchOverlay({
   });
 
   // Notify parent of matches for highlighting
+  const lastSearchRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!deferredQuery.trim()) {
-      onSearch(null);
-    } else {
-      onSearch(matches.map((c) => c._id));
+    const currentMatches = deferredQuery.trim() ? matches.map((c) => c._id) : null;
+    const searchKey = currentMatches ? currentMatches.join(",") : "null";
+
+    if (lastSearchRef.current !== searchKey) {
+      onSearch(currentMatches);
+      lastSearchRef.current = searchKey;
     }
   }, [matches, deferredQuery, onSearch]);
 

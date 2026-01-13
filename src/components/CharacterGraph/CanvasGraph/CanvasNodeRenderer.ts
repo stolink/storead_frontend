@@ -202,7 +202,10 @@ export function drawNode(options: NodeRenderOptions): void {
         // Switched to Playfair Display for true 900 weight support
         // Increased size by +4px per request (was +20, now +24)
         const fontSize = Math.max(16, radius * 0.38 + 5);
-        ctx.font = `900 ${fontSize + 24}px "Playfair Display", "DM Serif Display", serif`;
+        const fontName = "Playfair Display";
+        const isFontLoaded = document.fonts.check(`900 10px "${fontName}"`);
+
+        ctx.font = `900 ${fontSize + 24}px "${isFontLoaded ? fontName : 'serif'}", "DM Serif Display", serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
 

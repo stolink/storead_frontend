@@ -27,6 +27,8 @@ export interface GraphSnapshotDTO {
     type: string;
     strength: number;
     description?: string;
+    publicStance?: string;
+    privateFeeling?: string;
   }>;
   profiles?: Record<
     string,
@@ -258,8 +260,8 @@ export function adaptGraphSnapshot(
       type: getRelationType(link.type),
       strength: link.strength,
       description: link.description,
-      publicStance: (link as any).publicStance,
-      privateFeeling: (link as any).privateFeeling,
+      publicStance: link.publicStance,
+      privateFeeling: link.privateFeeling,
     }));
 
     return { characters, links };

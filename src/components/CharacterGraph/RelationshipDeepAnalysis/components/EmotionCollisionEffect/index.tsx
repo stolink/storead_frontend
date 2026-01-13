@@ -308,18 +308,12 @@ export const EmotionCollisionEffect = memo(
     (prev, next) => {
         // Custom comparison function for React.memo
         // Primitives check
-        if (
-            prev.strengthA !== next.strengthA ||
-            prev.strengthB !== next.strengthB ||
-            prev.className !== next.className
-        ) {
-            return false;
-        }
-
-        // Deep comparison for arrays to avoid re-render on new references with same data
         return (
-            JSON.stringify(prev.factorsA) === JSON.stringify(next.factorsA) &&
-            JSON.stringify(prev.factorsB) === JSON.stringify(next.factorsB)
+            prev.strengthA === next.strengthA &&
+            prev.strengthB === next.strengthB &&
+            prev.className === next.className &&
+            prev.factorsA === next.factorsA &&
+            prev.factorsB === next.factorsB
         );
     },
 );

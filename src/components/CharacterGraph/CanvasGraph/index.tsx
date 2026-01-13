@@ -334,32 +334,38 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
 
         const handleNodeHover = useCallback(
             (node: any) => {
-                // Reheat(restart) 트리거 제거 - 호버 시 시뮬레이션을 깨우지 않음
+                if ((!node && !hoverNode) || (node && hoverNode && node.id === hoverNode.id)) return;
+
                 setHoverNode(node || null);
                 if (containerRef.current) {
                     containerRef.current.style.cursor = node ? "pointer" : "default";
                 }
 
+                if (!node) {
+                    setHighlightNodes(new Set());
+                    setHighlightLinks(new Set());
+                    return;
+                }
+
                 const newHighlightNodes = new Set<string>();
                 const newHighlightLinks = new Set<string>();
 
-                if (node) {
-                    newHighlightNodes.add(node.id);
-                    processedLinks.forEach((link) => {
-                        const sId = typeof link.source === 'object' ? (link.source as any).id : link.source;
-                        const tId = typeof link.target === 'object' ? (link.target as any).id : link.target;
+                newHighlightNodes.add(node.id);
+                processedLinks.forEach((link) => {
+                    const sId = typeof link.source === 'object' ? (link.source as any).id : link.source;
+                    const tId = typeof link.target === 'object' ? (link.target as any).id : link.target;
 
-                        if (sId === node.id || tId === node.id) {
-                            newHighlightLinks.add(link.id);
-                            newHighlightNodes.add(sId);
-                            newHighlightNodes.add(tId);
-                        }
-                    });
-                }
+                    if (sId === node.id || tId === node.id) {
+                        newHighlightLinks.add(link.id);
+                        newHighlightNodes.add(sId);
+                        newHighlightNodes.add(tId);
+                    }
+                });
+
                 setHighlightNodes(newHighlightNodes);
                 setHighlightLinks(newHighlightLinks);
             },
-            [processedLinks],
+            [processedLinks, hoverNode],
         );
 
         const handleNodeClick = useCallback(

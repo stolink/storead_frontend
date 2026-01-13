@@ -751,7 +751,7 @@ export const ChapterViewerPage = () => {
           onClose={() => setShowGraphModal(false)}
           characters={graphData?.characters ?? []}
           links={graphData?.links ?? []}
-          chapterNumber={chapter.chapterNumber}
+          chapterId={id}
         />
       )}
     </div>

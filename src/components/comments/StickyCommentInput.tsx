@@ -30,7 +30,7 @@ export const StickyCommentInput = ({ chapterId }: StickyCommentInputProps) => {
 
     try {
       await createComment.mutateAsync({
-        chapterId: parseInt(chapterId, 10),
+        chapterId: chapterId,
         content: content.trim(),
       });
       setContent("");

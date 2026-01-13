@@ -15,25 +15,52 @@ import type { Comment, PaginatedResponse, CreateCommentRequest } from "@/types";
  * 챕터 댓글 목록 조회 (무한 스크롤)
  * GET /api/chapters/{chapterId}/comments
  */
-export const useComments = (chapterId: string) => {
+export const useComments = (chapterId: string, relationId?: string, sort: string = 'latest') => {
   return useInfiniteQuery<PaginatedResponse<Comment>>({
-    queryKey: ["comments", chapterId],
+    queryKey: ["comments", String(chapterId), relationId ? String(relationId) : undefined, sort],
     queryFn: async ({ pageParam }) => {
-      const { data } = await api.get(`/chapters/${chapterId}/comments`, {
+      const cid = String(chapterId);
+      const rid = relationId ? String(relationId) : undefined;
+
+      if (!rid) {
+        return { data: [], hasMore: false, nextCursor: undefined };
+      }
+      const { data } = await api.get(`/chapters/${cid}/comments`, {
         params: {
+          relationId,
+          sort,
           cursor: pageParam,
-          // pageParam이 문자열(커서)일 경우 page 파라미터로 전송하지 않음
           page: typeof pageParam === 'number' ? pageParam : 0
         },
       });
-      // console.log('[DEBUG] Comments API Response:', data);
-
       // 백엔드 응답 구조: { code, status, data: { comments: [...], pagination: {...} } }
       const responseData = data.data || data;
-      const comments = responseData.comments || responseData.data || [];
+      const rawComments = responseData.comments || responseData.data || [];
+      const rawCount = Array.isArray(rawComments) ? rawComments.length : 0;
+
+      console.log(`[DEBUG] useComments (rid: ${rid}):`, {
+        rawCount,
+        firstCommentKeys: rawCount > 0 ? Object.keys(rawComments[0]) : [],
+        firstCommentSample: rawCount > 0 ? rawComments[0] : null,
+      });
+
+      let filteredComments = rawComments;
+      // [Safety] Client-side filtering to ensure comments belong to the active relation
+      // This prevents legacy data with empty relationId from leaking into the list.
+      if (Array.isArray(rawComments) && rid) {
+        filteredComments = rawComments.filter((c: any) => {
+          // Try different possible field names
+          const cRid = c.relationId || c.relation_id || c.linkId || c.activeRelationId;
+          return String(cRid) === rid;
+        });
+      }
+
+      console.log(`[DEBUG] Filter result (rid: ${rid}):`, {
+        filteredCount: filteredComments.length,
+      });
 
       return {
-        data: Array.isArray(comments) ? comments : [],
+        data: Array.isArray(filteredComments) ? filteredComments : [],
         hasMore: responseData.pagination?.hasNext || false,
         nextCursor: responseData.pagination?.nextCursor,
       };
@@ -66,18 +93,18 @@ export const useReplies = (commentId: string, isOpen: boolean) => {
  * 댓글 생성
  * POST /api/comments
  */
-export const useCreateComment = (chapterId: string) => {
+export const useCreateComment = (chapterId: string, relationId?: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (newComment: CreateCommentRequest) => {
       // console.log("[DEBUG] creating comment payload:", newComment);
-      const { data } = await api.post("/comments", newComment);
+      const { data } = await api.post(`/chapters/${chapterId}/comments`, newComment);
       return data;
     },
     onSuccess: () => {
-      // 댓글 목록 갱신
-      queryClient.invalidateQueries({ queryKey: ["comments", chapterId] });
+      // 댓글 목록 갱신 (관계별 격리 키 준수 + 모든 정렬 상태 키 무효화)
+      queryClient.invalidateQueries({ queryKey: ["comments", chapterId, relationId] });
     },
   });
 };
@@ -86,7 +113,7 @@ export const useCreateComment = (chapterId: string) => {
  * 대댓글 생성
  * POST /api/comments/{parentId}/replies
  */
-export const useCreateReply = (chapterId: string) => {
+export const useCreateReply = (chapterId: string, relationId?: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -99,17 +126,14 @@ export const useCreateReply = (chapterId: string) => {
     }) => {
       const { data } = await api.post(`/comments/${parentId}/replies`, {
         content,
-        chapterId: parseInt(chapterId), // 챕터 ID 포함
+        chapterId,
+        relationId, // 대댓글에도 관계 ID 포함하여 격리 강화
       });
       return data;
     },
     onSuccess: () => {
-      // 부모 댓글의 답글 목록은 invalidateQueries로 갱신
-      // (지금은 간단히 전체 comments 쿼리를 무효화하거나, 해당 comment의 답글만 refetch 할 수도 있음)
-      queryClient.invalidateQueries({ queryKey: ["comments", chapterId] });
-
-      // 부모 댓글이 속한 챕터의 댓글 목록도 갱신
-      queryClient.invalidateQueries({ queryKey: ["comments"] });
+      // 부모 댓글이 속한 챕터 및 관계의 댓글 목록 갱신 (모든 정렬 상태 포함)
+      queryClient.invalidateQueries({ queryKey: ["comments", chapterId, relationId] });
     },
   });
 };
@@ -130,12 +154,12 @@ const updateCommentInCache = (
           ? {
             ...comment,
             isLiked: newIsLiked,
-            likeCount: newLikeCount,
+            likeCount: Math.max(0, newLikeCount),
           }
           : comment
       ),
     })),
-  };
+  } as typeof oldData;
 };
 
 /**
@@ -144,13 +168,13 @@ const updateCommentInCache = (
  * 
  * @param chapterId - 현재 챕터 ID (상태 오염 방지를 위해 특정 챕터만 업데이트)
  */
-export const useToggleCommentLike = (chapterId: string) => {
+export const useToggleCommentLike = (chapterId: string, relationId?: string, sort: string = 'latest') => {
   const queryClient = useQueryClient();
+  const commentQueryKey = ["comments", chapterId, relationId, sort];
 
   return useMutation({
     mutationFn: async (commentId: string) => {
       const { data } = await api.post(`/comments/${commentId}/like`);
-      // 서버 응답에서 isLiked, likeCount 추출
       const responseData = data.data || data;
       return {
         commentId,
@@ -158,23 +182,17 @@ export const useToggleCommentLike = (chapterId: string) => {
         likeCount: responseData.likeCount,
       };
     },
-    // 낙관적 업데이트 - 특정 chapterId의 댓글만 업데이트 (상태 오염 방지)
     onMutate: async (commentId) => {
-      // 해당 챕터의 댓글 쿼리만 취소
-      await queryClient.cancelQueries({ queryKey: ["comments", chapterId] });
-
-      // 이전 상태 저장 (롤백용)
+      await queryClient.cancelQueries({ queryKey: commentQueryKey });
       const previousData = queryClient.getQueryData<{ pages: PaginatedResponse<Comment>[]; pageParams: unknown[] }>(
-        ["comments", chapterId]
+        commentQueryKey
       );
 
-      // 낙관적 업데이트
       queryClient.setQueryData<{ pages: PaginatedResponse<Comment>[]; pageParams: unknown[] }>(
-        ["comments", chapterId],
+        commentQueryKey,
         (oldData) => {
           if (!oldData) return oldData;
 
-          // 현재 상태 찾기
           let targetComment: Comment | undefined;
           for (const page of oldData.pages) {
             targetComment = page.data.find(c => c.id === commentId);
@@ -194,20 +212,17 @@ export const useToggleCommentLike = (chapterId: string) => {
 
       return { previousData };
     },
-    // 서버 응답으로 캐시 최종 업데이트 (Race Condition 방지)
     onSuccess: (data) => {
       queryClient.setQueryData<{ pages: PaginatedResponse<Comment>[]; pageParams: unknown[] }>(
-        ["comments", chapterId],
+        commentQueryKey,
         (oldData) => updateCommentInCache(oldData, data.commentId, data.isLiked, data.likeCount)
       );
     },
-    // 에러 시 롤백
     onError: (_error, _commentId, context) => {
       if (context?.previousData) {
-        queryClient.setQueryData(["comments", chapterId], context.previousData);
+        queryClient.setQueryData(commentQueryKey, context.previousData);
       }
     },
-    // invalidation을 onSettled에서 제거하여 서버 응답 유지
     onSettled: () => {
     },
   });

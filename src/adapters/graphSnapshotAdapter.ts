@@ -80,9 +80,13 @@ export interface GraphSnapshotDTO {
         graph?: Array<{
           target: string;
           type: string;
+          relationTypes?: string[]; // Added
           description?: string;
           history?: string | null;
           strength?: number;
+          publicStance?: string; // Added
+          privateFeeling?: string; // Added
+          revealedInChapter?: number; // Added
         }>;
       };
       // Meta
@@ -138,6 +142,7 @@ export function adaptGraphSnapshot(
 
       return {
         _id: node.id,
+        id: node.id, // Added for D3 compatibility
         projectId: "unknown",
         role: (profile?.role || node.role) as any,
         profile: {
@@ -162,33 +167,33 @@ export function adaptGraphSnapshot(
         status: "alive",
         appearance: profile?.appearance
           ? {
-              physique: profile.appearance.physique ?? "",
-              skinTone: profile.appearance.skinTone ?? "",
-              eyes: profile.appearance.eyes ?? "",
-              nose: profile.appearance.nose ?? "",
-              mouth: profile.appearance.mouth ?? "",
-              hairStyle: profile.appearance.hairStyle ?? "",
-              hairColor: profile.appearance.hairColor ?? "",
-              attire: normalizeToArray(profile.appearance.attire),
-              expression: profile.appearance.expression ?? "",
-              scarsTattoos: normalizeToArray(profile.appearance.scarsTattoos),
-              styleContext: {
-                artStyle: profile.appearance.styleContext?.artStyle ?? "",
-              },
-            }
-          : {
-              physique: "",
-              skinTone: "",
-              eyes: "",
-              nose: "",
-              mouth: "",
-              hairStyle: "",
-              hairColor: "",
-              attire: [],
-              expression: "",
-              scarsTattoos: [],
-              styleContext: { artStyle: "" },
+            physique: profile.appearance.physique ?? "",
+            skinTone: profile.appearance.skinTone ?? "",
+            eyes: profile.appearance.eyes ?? "",
+            nose: profile.appearance.nose ?? "",
+            mouth: profile.appearance.mouth ?? "",
+            hairStyle: profile.appearance.hairStyle ?? "",
+            hairColor: profile.appearance.hairColor ?? "",
+            attire: normalizeToArray(profile.appearance.attire),
+            expression: profile.appearance.expression ?? "",
+            scarsTattoos: normalizeToArray(profile.appearance.scarsTattoos),
+            styleContext: {
+              artStyle: profile.appearance.styleContext?.artStyle ?? "",
             },
+          }
+          : {
+            physique: "",
+            skinTone: "",
+            eyes: "",
+            nose: "",
+            mouth: "",
+            hairStyle: "",
+            hairColor: "",
+            attire: [],
+            expression: "",
+            scarsTattoos: [],
+            styleContext: { artStyle: "" },
+          },
         personality: {
           coreTraits: profile?.personality?.coreTraits ?? [],
           strengths: profile?.personality?.strengths ?? [],
@@ -209,23 +214,23 @@ export function adaptGraphSnapshot(
         inventory: [],
         meta: profile?.meta
           ? {
-              createdAt: profile.meta.createdAt ?? null,
-              updatedAt: profile.meta.updatedAt ?? null,
-              dataVersion: "",
-              lockVersion: 0,
-            }
+            createdAt: profile.meta.createdAt ?? null,
+            updatedAt: profile.meta.updatedAt ?? null,
+            dataVersion: "",
+            lockVersion: 0,
+          }
           : {
-              createdAt: null,
-              updatedAt: null,
-              dataVersion: "",
-              lockVersion: 0,
-            },
+            createdAt: null,
+            updatedAt: null,
+            dataVersion: "",
+            lockVersion: 0,
+          },
         imageUrl: profile?.imageUrl || node.imageUrl,
-        // Layout coordinates
+        // Layout coordinates (Respect fixed positions from snapshot)
         x: node.x,
         y: node.y,
-        fx: node.fx,
-        fy: node.fy,
+        fx: node.fx !== undefined ? node.fx : node.x,
+        fy: node.fy !== undefined ? node.fy : node.y,
       } as Character;
     });
 
@@ -247,12 +252,14 @@ export function adaptGraphSnapshot(
     };
 
     const links: RelationshipLink[] = data.links.map((link) => ({
-      id: link.id,
+      id: link.id || `${link.source}-${link.target}`,
       source: link.source,
       target: link.target,
       type: getRelationType(link.type),
       strength: link.strength,
       description: link.description,
+      publicStance: (link as any).publicStance,
+      privateFeeling: (link as any).privateFeeling,
     }));
 
     return { characters, links };

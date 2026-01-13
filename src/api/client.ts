@@ -6,7 +6,7 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 
-// API 기본 URL - Vite 프록시 사용 시 상대 경로 필요
+// API 기본 URL - Vite 환경 변수 사용
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 // Axios 인스턴스 생성

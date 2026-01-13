@@ -5,7 +5,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   X,
   Compass,
@@ -14,7 +13,6 @@ import {
   Heart,
   Users,
   BookOpen,
-  ChevronRight,
 } from "lucide-react";
 import type { Character } from "@/types/character";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

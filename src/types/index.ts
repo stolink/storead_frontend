@@ -177,7 +177,7 @@ export interface CreateChapterRequest {
 }
 
 export interface CreateCommentRequest {
-  chapterId: string; // 챕터 ID 필수 (UUID)
+  chapterId?: string; // 챕터 ID (훅에서 주입 가능하므로 선택사항으로 변경)
   content: string;
   parentId?: string; // 대댓글인 경우
   relationId?: string; // 특정 관계에 대한 댓글인 경우

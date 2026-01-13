@@ -300,26 +300,25 @@ export function drawLink(options: LinkRenderOptions): void {
     if (showFlow && !isDimmed) {
         ctx.save();
 
+        // [STOLINK PARITY] Staggered Flow Animation
+        // flowDepth * 0.2s delay logic
+        const flowDelay = (link as any).flowDepth !== undefined ? (link as any).flowDepth * 0.2 : 0;
+        // const flowDuration = 1.0; // 1s cycle
+        const adjustedPhase = (animationPhase + 10 - (flowDelay % 1.0)) % 1.0;
+
         const gradient = ctx.createLinearGradient(sx, sy, tx, ty);
-        const pos = animationPhase; // 0 to 1
+        const pos = adjustedPhase; // 0 to 1
 
         if ((link as any).bidirectional) {
             // === Bidirectional Flow: Pulse Outward from Center ===
-            // Two pulses moving away from 0.5
-            // We map pos (0..1) to (0..0.5) distance
-
-            // Pulse 1: 0.5 -> 1
             const p1 = 0.5 + pos * 0.5;
-            // Pulse 2: 0.5 -> 0
             const p2 = 0.5 - pos * 0.5;
 
             gradient.addColorStop(0, "transparent");
             gradient.addColorStop(Math.max(0, p2 - 0.1), "transparent");
             gradient.addColorStop(p2, secondaryColor);
             gradient.addColorStop(Math.min(0.5, p2 + 0.1), "transparent");
-
             gradient.addColorStop(0.5, "transparent");
-
             gradient.addColorStop(Math.max(0.5, p1 - 0.1), "transparent");
             gradient.addColorStop(p1, secondaryColor);
             gradient.addColorStop(Math.min(1, p1 + 0.1), "transparent");
@@ -333,13 +332,11 @@ export function drawLink(options: LinkRenderOptions): void {
 
         ctx.strokeStyle = gradient;
         ctx.lineWidth = strokeWidth + (isActive ? 2 : 1);
-        ctx.globalAlpha = isActive ? 1 : 0.9;
+        ctx.globalAlpha = isActive ? 1 : 0.8; // 연하게 조정
         ctx.lineCap = "round";
         ctx.setLineDash(dashArray);
         ctx.beginPath();
         ctx.moveTo(sx, sy);
-        // Note: Flow gradient for quadratic curve is approximation (linear gradient along start-end vector)
-        // For perfect curve flow, we need path gradient which is heavy. Linear is mostly fine for shallow curves.
         ctx.quadraticCurveTo(controlX, controlY, tx, ty);
         ctx.stroke();
         ctx.restore();

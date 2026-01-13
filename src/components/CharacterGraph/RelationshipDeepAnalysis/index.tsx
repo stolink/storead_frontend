@@ -16,6 +16,8 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -186,10 +188,13 @@ export function RelationshipDeepAnalysisModal({
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                             <Network className="w-5 h-5 text-espresso-600" />
-                            <h2 className="text-lg font-bold text-espresso-900 font-serif tracking-tight">
+                            <DialogTitle className="text-lg font-bold text-espresso-900 font-serif tracking-tight">
                                 Deep Analysis
-                            </h2>
+                            </DialogTitle>
                         </div>
+                        <DialogDescription className="sr-only">
+                            {sourceNode.name}와 {targetNode.name}의 상세 관계 분석 및 토론 모달입니다.
+                        </DialogDescription>
                         <Separator orientation="vertical" className="h-4 bg-espresso-200" />
                         <div className="flex items-center gap-2 text-sm text-espresso-600">
                             <span className="font-semibold">{sourceNode.name}</span>

@@ -47,9 +47,9 @@ export const MOCHA_COLORS = {
 export type MetaCategory = "positive" | "negative" | "neutral";
 
 export const META_CATEGORY_COLORS = {
-  positive: "#15803D", // Green/Blue (안정, 결속)
-  negative: "#F44336", // Red/Orange (긴장, 갈등)
-  neutral: "#7C6BA8", // Purple/Grey (위계, 기능)
+  positive: "#7A8C6F", // relation.friendly (안정, 결속)
+  negative: "#9C4A3F", // relation.hostile (긴장, 갈등)
+  neutral: "#8D8B88", // relation.neutral (위계, 기능)
 } as const;
 
 // 관계 타입별 메타 카테고리 매핑
@@ -62,19 +62,19 @@ export const RELATION_TO_META_CATEGORY: Record<UIRelationType, MetaCategory> = {
   complex: "neutral",
 };
 
-// 관계 타입별 HEX 색상 (메타 카테고리 기반 재정의)
+// 관계 타입별 HEX 색상 (tailwind.config.ts relation 토큰 기준)
 export const RELATION_COLORS_HEX = {
-  // Positive Group (Green/Pink)
-  friendly: "#15803D", // Standard Green
-  romantic: "#FF4081", // Vivid Blossom (Updated)
-  family: "#4F5861", // Blue/Gray via Tokens
+  // Positive Group
+  friendly: "#7A8C6F", // relation.friendly (Tailwind Token)
+  romantic: "#B38B82", // relation.romance (Tailwind Token)
+  family: "#4F5861", // relation.family (Tailwind Token)
 
-  // Negative Group (Red/Orange)
-  hostile: "#F44336", // Red (Updated)
+  // Negative Group
+  hostile: "#9C4A3F", // relation.hostile (Tailwind Token)
 
   // Neutral/Complex
-  neutral: "#9CA3AF", // Gray
-  complex: "#7C3AED", // Violet (Super Edge)
+  neutral: "#8D8B88", // relation.neutral (Tailwind Token)
+  complex: "#7C6BA8", // Muted Violet (메타 카테고리 neutral 계열)
 } as const;
 
 // 관계 타입별 색상 팔레트 (Meta-Category 색조 준수)
@@ -239,8 +239,8 @@ export const FORCE_CONFIG = {
   },
 
   // 수렴 (더 빠른 안정화)
-  alphaDecay: 0.06, // Even faster decay for stability
-  alphaMin: 0.005, // Stop sooner
+  alphaDecay: 0.05, // Faster decay to prevent jitter (0.022 -> 0.05 - Stolink Parity)
+  alphaMin: 0.001, // Stop sooner (Stolink Parity)
   velocityDecay: 0.6,
 } as const;
 

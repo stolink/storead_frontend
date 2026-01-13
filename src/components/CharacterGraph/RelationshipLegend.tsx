@@ -5,14 +5,14 @@ import { Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RelationshipLegendProps {
-    relationTypeFilter: UIRelationType | "all";
-    onFilterChange: (type: UIRelationType | "all") => void;
+    relationTypeFilter?: UIRelationType | "all";
+    onFilterChange?: (type: UIRelationType | "all") => void;
     hoveredType?: UIRelationType | null;
     onHoverType?: (type: UIRelationType | null) => void;
 }
 
 export const RelationshipLegend = memo(function RelationshipLegend({
-    relationTypeFilter,
+    relationTypeFilter = "all",
     onFilterChange,
     hoveredType,
     onHoverType,
@@ -45,7 +45,7 @@ export const RelationshipLegend = memo(function RelationshipLegend({
                         <button
                             key={type}
                             onClick={() =>
-                                onFilterChange(relationTypeFilter === type ? "all" : type)
+                                onFilterChange?.(relationTypeFilter === type ? "all" : type)
                             }
                             onMouseEnter={() => onHoverType?.(type)}
                             onMouseLeave={() => onHoverType?.(null)}

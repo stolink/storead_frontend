@@ -70,13 +70,13 @@ export function RelationshipEventTooltip({
   const tooltipHeight = 400; // Estimated max height
   const padding = 20;
 
-  let leftPos = x + 20;
-  let topPos = y + 20;
+  let leftPos = x + 40;
+  let topPos = y + 40;
 
   // Check right edge
   if (typeof window !== "undefined") {
     if (leftPos + tooltipWidth + padding > window.innerWidth) {
-      leftPos = x - tooltipWidth - 20;
+      leftPos = x - tooltipWidth - 40;
     }
     // Check bottom edge
     if (topPos + tooltipHeight + padding > window.innerHeight) {
@@ -91,7 +91,7 @@ export function RelationshipEventTooltip({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="fixed z-50 pointer-events-auto"
+        className="fixed z-50 pointer-events-none"
         style={{
           left: leftPos,
           top: topPos,
@@ -101,7 +101,7 @@ export function RelationshipEventTooltip({
       >
         <Card
           className={cn(
-            "w-[360px] shadow-2xl border-none bg-white/95 backdrop-blur-md overflow-hidden font-sans",
+            "w-[360px] shadow-2xl border-none bg-white/95 backdrop-blur-md overflow-hidden font-sans pointer-events-auto",
             "ring-1 ring-black/5",
           )}
         >

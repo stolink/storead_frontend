@@ -5,6 +5,7 @@ interface SwitchProps {
   onChange: (checked: boolean) => void;
   disabled?: boolean;
   size?: "sm" | "md";
+  className?: string;
 }
 
 export function Switch({
@@ -12,6 +13,7 @@ export function Switch({
   onChange,
   disabled = false,
   size = "md",
+  className,
 }: SwitchProps) {
   const sizeClasses = {
     sm: {
@@ -41,7 +43,8 @@ export function Switch({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mocha-500 focus-visible:ring-offset-2",
         "disabled:cursor-not-allowed disabled:opacity-50",
         track,
-        checked ? "bg-mocha-500" : "bg-muted"
+        checked ? "bg-mocha-500" : "bg-muted",
+        className
       )}
     >
       <span

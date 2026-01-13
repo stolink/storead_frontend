@@ -20,6 +20,12 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-mocha-500: #A47764;
+  --color-mocha-400: #BD9B8D;
+  --color-mocha-900: #3D302A;
+  --color-paper: #FDFBF8;
+  --color-card: #F1F0EC;
 }
 
 @layer base {
@@ -113,6 +119,7 @@
 }
 
 @layer base {
+
   /* Animations from Stolink */
   @keyframes softAppear {
     from {
@@ -127,6 +134,7 @@
   }
 
   @keyframes lightShimmer {
+
     0%,
     100% {
       opacity: 0;
@@ -147,11 +155,9 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(
-      600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-      rgba(255, 255, 255, 0.06),
-      transparent 40%
-    );
+    background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(255, 255, 255, 0.06),
+        transparent 40%);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -186,6 +192,7 @@
      ============================================ */
 
   @keyframes pulse {
+
     0%,
     100% {
       transform: scale(1);
@@ -235,6 +242,7 @@
 
   /* Node breathing animation - subtle "alive" feel */
   @keyframes breathe {
+
     0%,
     100% {
       transform: scale(1);
@@ -271,6 +279,7 @@
 
   /* Glow pulse for highlighted nodes */
   @keyframes glowPulse {
+
     0%,
     100% {
       opacity: 0.4;
@@ -431,7 +440,7 @@
   }
 
   /* Tab content animation */
-  [data-state="active"] > .tab-content-animate {
+  [data-state="active"]>.tab-content-animate {
     animation: fadeInUp 0.2s cubic-bezier(0.19, 1, 0.22, 1);
   }
 
@@ -451,11 +460,9 @@
 
   /* Editorial Card */
   .editorial-card {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--card)) 0%,
-      hsl(var(--background)) 100%
-    );
+    background: linear-gradient(135deg,
+        hsl(var(--card)) 0%,
+        hsl(var(--background)) 100%);
     border: 1px solid hsl(var(--border));
     border-radius: 0.75rem;
     transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
@@ -513,11 +520,9 @@
   .magazine-image-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      to top,
-      hsl(var(--foreground) / 0.6) 0%,
-      transparent 40%
-    );
+    background: linear-gradient(to top,
+        hsl(var(--foreground) / 0.6) 0%,
+        transparent 40%);
     pointer-events: none;
   }
 
@@ -611,11 +616,9 @@
 
   .editorial-progress-fill {
     height: 100%;
-    background: linear-gradient(
-      90deg,
-      hsl(var(--primary)) 0%,
-      hsl(var(--primary) / 0.7) 100%
-    );
+    background: linear-gradient(90deg,
+        hsl(var(--primary)) 0%,
+        hsl(var(--primary) / 0.7) 100%);
     border-radius: 3px;
     transition: width 0.5s cubic-bezier(0.19, 1, 0.22, 1);
   }
@@ -760,6 +763,7 @@
    ============================================ */
 
 @keyframes pulse {
+
   0%,
   100% {
     transform: scale(1);
@@ -809,6 +813,7 @@
 
 /* Node breathing animation - subtle "alive" feel */
 @keyframes breathe {
+
   0%,
   100% {
     transform: scale(1);
@@ -845,6 +850,7 @@
 
 /* Glow pulse for highlighted nodes */
 @keyframes glowPulse {
+
   0%,
   100% {
     opacity: 0.4;
@@ -1005,7 +1011,7 @@
 }
 
 /* Tab content animation */
-[data-state="active"] > .tab-content-animate {
+[data-state="active"]>.tab-content-animate {
   animation: fadeInUp 0.2s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
@@ -1025,11 +1031,9 @@
 
 /* Editorial Card */
 .editorial-card {
-  background: linear-gradient(
-    135deg,
-    hsl(var(--card)) 0%,
-    hsl(var(--background)) 100%
-  );
+  background: linear-gradient(135deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--background)) 100%);
   border: 1px solid hsl(var(--border));
   border-radius: 0.75rem;
   transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
@@ -1087,11 +1091,9 @@
 .magazine-image-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to top,
-    hsl(var(--foreground) / 0.6) 0%,
-    transparent 40%
-  );
+  background: linear-gradient(to top,
+      hsl(var(--foreground) / 0.6) 0%,
+      transparent 40%);
   pointer-events: none;
 }
 
@@ -1185,11 +1187,9 @@
 
 .editorial-progress-fill {
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    hsl(var(--primary)) 0%,
-    hsl(var(--primary) / 0.7) 100%
-  );
+  background: linear-gradient(90deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--primary) / 0.7) 100%);
   border-radius: 3px;
   transition: width 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
@@ -1300,4 +1300,35 @@
   font-size: 0.875rem;
   color: hsl(var(--muted-foreground));
   max-width: 280px;
+}
+
+/* ============================================
+   Style Isolation & Reset for CharacterGraph
+   ============================================ */
+
+.stolink-graph-container.reset-css {
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.stolink-graph-container.reset-css *,
+.stolink-graph-container.reset-css *::before,
+.stolink-graph-container.reset-css *::after {
+  box-sizing: inherit;
+}
+
+/* Ensure SVG elements don't inherit weird transforms or borders from global themes */
+.stolink-graph-container svg {
+  display: block;
+  overflow: visible;
+}
+
+.stolink-graph-container g,
+.stolink-graph-container circle,
+.stolink-graph-container path,
+.stolink-graph-container line {
+  vector-effect: non-scaling-stroke;
 }

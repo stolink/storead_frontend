@@ -83,11 +83,11 @@ export function useForceSimulation(
       y: d.fy !== undefined ? d.fy : (d.y !== undefined ? d.y : height / 2 + (Math.random() - 0.5) * 50),
     }));
     // [CLEANING] 노드 목록에 존재하지 않는 ID를 참조하는 링크 필터링
-    const validNodeIds = new Set(nodesCopy.map((n) => n.id || (n as any)._id));
-    const validLinks = initialLinks.filter((link: any) => {
-      const sourceId = typeof link.source === "object" ? (link.source as any).id || (link.source as any)._id : link.source;
-      const targetId = typeof link.target === "object" ? (link.target as any).id || (link.target as any)._id : link.target;
-      return validNodeIds.has(sourceId) && validNodeIds.has(targetId);
+    const validNodeIds = new Set(nodesCopy.map((n) => n.id));
+    const validLinks = initialLinks.filter((link) => {
+      const sourceId = typeof link.source === "object" ? (link.source as CharacterNode).id : link.source;
+      const targetId = typeof link.target === "object" ? (link.target as CharacterNode).id : link.target;
+      return validNodeIds.has(sourceId as string) && validNodeIds.has(targetId as string);
     }).map(l => ({ ...l }));
 
     if (simulationRef.current) {
@@ -100,6 +100,20 @@ export function useForceSimulation(
       sim.force("center", d3.forceCenter(width / 2, height / 2).strength(FORCE_CONFIG.centerStrength));
       sim.force("x", d3.forceX(width / 2).strength(FORCE_CONFIG.positionStrength));
       sim.force("y", d3.forceY(height / 2).strength(FORCE_CONFIG.positionStrength));
+
+      // [FIX] tick 핸들러 재등록 - 데이터 변경 시 React 상태와 동기화
+      let rafId: number | null = null;
+      sim.on("tick", () => {
+        if (rafId !== null) return; // RAF 스로틀링
+        rafId = requestAnimationFrame(() => {
+          store.state = {
+            nodes: sim.nodes() as CharacterNode[],
+            links: (sim.force("link") as d3.ForceLink<CharacterNode, RelationshipLink>).links() as RelationshipLink[],
+          };
+          store.listeners.forEach((l) => l());
+          rafId = null;
+        });
+      });
 
       sim.alpha(0.3).restart();
 
@@ -115,7 +129,7 @@ export function useForceSimulation(
         "link",
         d3
           .forceLink<CharacterNode, RelationshipLink>(validLinks)
-          .id((d: any) => d.id || d._id)
+          .id((d) => d.id!)
           .distance(FORCE_CONFIG.linkDistance)
           .strength(FORCE_CONFIG.linkStrength),
       )
@@ -218,9 +232,25 @@ export function useForceSimulation(
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSimulation(newSimulation);
 
+    // [FIX] tick 이벤트 핸들러 - 실시간 좌표 동기화 (지터 및 클릭 문제 해결)
+    // RAF(requestAnimationFrame) 기반 스로틀링으로 성능 최적화
+    let animationFrameId: number | null = null;
+    newSimulation.on("tick", () => {
+      // 이미 예약된 프레임이 있으면 스킵 (성능 최적화)
+      if (animationFrameId !== null) return;
+
+      animationFrameId = requestAnimationFrame(() => {
+        store.state = {
+          nodes: newSimulation.nodes() as CharacterNode[],
+          links: (newSimulation.force("link") as d3.ForceLink<CharacterNode, RelationshipLink>).links() as RelationshipLink[],
+        };
+        store.listeners.forEach((listener) => listener());
+        animationFrameId = null;
+      });
+    });
+
     // [Auto-stop] 시뮬레이션 종료 시 리스너 알림 및 물리 정지 강화
     newSimulation.on("end", () => {
-      // console.log("[D3] Simulation Stabilized.");
       newSimulation.stop(); // 명시적 정지로 지터 방지
     });
 
@@ -230,18 +260,17 @@ export function useForceSimulation(
     }, 5000);
 
     return () => {
+      // RAF 정리
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
       clearTimeout(timer);
       newSimulation.stop();
     };
   }, [width, height, getNodeRadius, enableGrouping]); // Removed initialNodes, initialLinks to prevent constant restart
 
-  // 중앙 포스 업데이트 (리사이즈 시)
-  useEffect(() => {
-    const store = storeRef.current;
-    if (store.simulation) {
-      store.simulation.alpha(0.3).restart();
-    }
-  }, [width, height]);
+  // [REMOVED] 중복 리사이즈 useEffect 제거됨
+  // 메인 useEffect가 이미 width, height를 의존성으로 가지므로 불필요한 restart() 호출 방지
 
   // useSyncExternalStore로 상태 동기화
   const subscribe = useCallback((onStoreChange: () => void) => {

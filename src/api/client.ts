@@ -49,11 +49,24 @@ const clearCacheAndLogout = () => {
 // Promise 큐잉: 동시 refresh 요청을 하나로 통합
 let refreshPromise: Promise<void> | null = null;
 
+// 마지막 refresh 실패 시간 (10초간 재시도 방지)
+let lastRefreshFailureTime: number | null = null;
+const REFRESH_FAILURE_COOLDOWN = 10000; // 10초
+
 /**
  * 토큰 갱신을 보장하는 함수
  * 이미 refresh가 진행 중이면 같은 Promise를 반환하여 중복 요청 방지
  */
 const ensureTokenRefreshed = async (): Promise<void> => {
+  // 최근 실패했다면 쿨다운 기간 동안 재시도하지 않음
+  if (
+    lastRefreshFailureTime &&
+    Date.now() - lastRefreshFailureTime < REFRESH_FAILURE_COOLDOWN
+  ) {
+    console.log("[Auth] Refresh failed recently. Skipping retry (cooldown).");
+    throw new Error("Refresh on cooldown after failure");
+  }
+
   if (refreshPromise) {
     console.log(
       "[Auth] Refresh already in progress. Waiting for existing request..."
@@ -63,7 +76,7 @@ const ensureTokenRefreshed = async (): Promise<void> => {
 
   refreshPromise = (async () => {
     try {
-      // 마지막 refresh 시간 확인 (3초 내 재요청이면 스킵)
+      // 마지막 성공 refresh 시간 확인 (3초 내 재요청이면 스킵)
       const lastRefreshTime = localStorage.getItem("last_refresh_time");
       const now = Date.now();
 
@@ -85,6 +98,10 @@ const ensureTokenRefreshed = async (): Promise<void> => {
 
       console.log("[Auth] Refresh successful.");
       localStorage.setItem("last_refresh_time", Date.now().toString());
+      lastRefreshFailureTime = null; // 성공 시 실패 기록 초기화
+    } catch (error) {
+      lastRefreshFailureTime = Date.now(); // 실패 시간 기록
+      throw error;
     } finally {
       refreshPromise = null;
     }
@@ -144,6 +161,13 @@ api.interceptors.response.use(
       originalRequest &&
       !originalRequest._retry
     ) {
+      // 인증된 적 없는 익명 유저는 refresh 시도하지 않음
+      const { isAuthenticated } = useAuthStore.getState();
+      if (!isAuthenticated) {
+        console.log("[Auth] 401 error for anonymous user. Skipping refresh.");
+        return Promise.reject(error);
+      }
+
       console.log("[Auth] 401 error detected. Attempting to refresh token...");
 
       // /auth/refresh 요청 자체가 실패한 경우는 재시도하지 않음

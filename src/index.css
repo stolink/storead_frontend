@@ -20,11 +20,11 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  --color-mocha-500: #a47764;
-  --color-mocha-400: #bd9b8d;
-  --color-mocha-900: #3d302a;
-  --color-paper: #fdfbf8;
-  --color-card: #f1f0ec;
+  --color-mocha-500: #A47764;
+  --color-mocha-400: #BD9B8D;
+  --color-mocha-900: #3D302A;
+  --color-paper: #FDFBF8;
+  --color-card: #F1F0EC;
 }
 
 @layer base {

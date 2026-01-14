@@ -16,6 +16,20 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
+// 백엔드 ApiResponse 형태에 맞는 Refresh 응답 타입
+interface RefreshResponse {
+  success: boolean;
+  data?: {
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
 // QueryClient 인스턴스를 저장 (App에서 설정)
 let queryClientInstance: QueryClient | null = null;
 
@@ -59,15 +73,14 @@ const ensureTokenRefreshed = async (): Promise<void> => {
       }
 
       console.log("[Auth] Sending refresh request...");
-      const response = await api.post("/auth/refresh");
+      const response = await api.post<RefreshResponse>("/auth/refresh");
 
-      // 응답 검증
-      const responseData = response.data as Record<string, unknown>;
+      // 응답 검증 (타입 안전)
+      const responseData = response.data;
       if (responseData && responseData.success === false) {
-        const errorObj = responseData.error as
-          | Record<string, string>
-          | undefined;
-        throw new Error(errorObj?.message || "Refresh returned success: false");
+        throw new Error(
+          responseData.error?.message || "Refresh returned success: false"
+        );
       }
 
       console.log("[Auth] Refresh successful.");

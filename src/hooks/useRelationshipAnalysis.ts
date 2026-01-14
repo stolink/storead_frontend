@@ -1,112 +1,79 @@
 import { useMemo } from "react";
 import type { CharacterNode } from "@/types/characterGraph";
 import type { RelationshipDeepAnalysisData } from "@/types/relationshipAnalysis";
+import type { GraphSnapshotDTO } from "@/adapters/graphSnapshotAdapter";
 
 /**
- * 캐릭터 관계 심층 분석 데이터를 가져오는 커스텀 훅
- * 현재는 Mock 데이터를 반환하지만, 향후 TanStack Query를 통한 서버 연동으로 대체됨
- * 
- * TODO: 백엔드 API 구현 시 useQuery 패턴으로 전환
+ * 캐릭터 관계 심층 분석 데이터를 graphSnapshot에서 조회하는 커스텀 훅
+ * stolink에서 발행 시 계산된 데이터를 그대로 사용합니다.
+ *
+ * @param source - 소스 캐릭터 노드
+ * @param target - 타겟 캐릭터 노드
+ * @param graphSnapshot - 백엔드에서 받은 graphSnapshot (relationshipAnalysis 포함)
+ * @returns 분석 데이터 및 상태 정보
  */
 export function useRelationshipAnalysis(
     source: CharacterNode,
     target: CharacterNode,
-    relationId?: string
-) {
-    // [STABILITY] 쿼리 키 또는 의존성 관리
-    // 실제 API 연동 시 ['relationship-analysis', source.id, target.id, relationId] 등을 키로 사용
+    graphSnapshot: GraphSnapshotDTO | null | undefined,
+): {
+    data: RelationshipDeepAnalysisData | null;
+    isLoading: boolean;
+    isError: boolean;
+} {
+    const data = useMemo<RelationshipDeepAnalysisData | null>(() => {
+        // [DEFENSIVE] graphSnapshot이 문자열로 들어온 경우 파싱 시도
+        let snapshot = graphSnapshot;
+        if (typeof snapshot === "string") {
+            try {
+                snapshot = JSON.parse(snapshot);
+            } catch (e) {
+                console.error("[useRelationshipAnalysis] Failed to parse graphSnapshot string:", e);
+                return null;
+            }
+        }
 
-    const data = useMemo<RelationshipDeepAnalysisData>(() => {
-        return {
-            sourceCharacter: {
-                id: source.id,
-                name: source.name,
-                imageUrl: source.imageUrl,
-            },
-            targetCharacter: {
-                id: target.id,
-                name: target.name,
-                imageUrl: target.imageUrl,
-            },
-            sourceToTargetAttributes: {
-                emotionalBond: 7.5,
-                functionalTrust: 8.8,
-                valueAlignment: 6.2,
-                interdependence: 9.0,
-                latentTension: 4.5,
-            },
-            targetToSourceAttributes: {
-                emotionalBond: 6.5,
-                functionalTrust: 7.2,
-                valueAlignment: 5.8,
-                interdependence: 8.0,
-                latentTension: 3.5,
-            },
-            asymmetricStrength: {
-                sourceToTarget: {
-                    total: 80,
-                    factors: [
-                        { type: "trust", score: 8, weight: 0.8, category: "friendly" },
-                        { type: "admiration", score: 6, weight: 0.6, category: "friendly" },
-                    ],
+        // snapshot 또는 relationshipAnalysis가 없으면 null 반환
+        if (!snapshot?.relationshipAnalysis) {
+            return null;
+        }
+
+        // 양방향 키 검색 (source-target 또는 target-source)
+        const key1 = `${source.id}-${target.id}`;
+        const key2 = `${target.id}-${source.id}`;
+
+        const analysisFromKey1 = snapshot.relationshipAnalysis[key1];
+        const analysisFromKey2 = snapshot.relationshipAnalysis[key2];
+
+        // key1으로 찾은 경우 그대로 반환
+        if (analysisFromKey1) {
+            return analysisFromKey1;
+        }
+
+        // key2로 찾은 경우 source/target 스왑하여 반환
+        if (analysisFromKey2) {
+            return {
+                ...analysisFromKey2,
+                // 캐릭터 정보 스왑
+                sourceCharacter: analysisFromKey2.targetCharacter,
+                targetCharacter: analysisFromKey2.sourceCharacter,
+                // 속성 스왑
+                sourceToTargetAttributes: analysisFromKey2.targetToSourceAttributes,
+                targetToSourceAttributes: analysisFromKey2.sourceToTargetAttributes,
+                // 비대칭 강도 스왑
+                asymmetricStrength: {
+                    sourceToTarget: analysisFromKey2.asymmetricStrength.targetToSource,
+                    targetToSource: analysisFromKey2.asymmetricStrength.sourceToTarget,
                 },
-                targetToSource: {
-                    total: 65,
-                    factors: [
-                        { type: "wary", score: 4, weight: 0.4, category: "hostile" },
-                        { type: "need", score: 7, weight: 0.7, category: "friendly" },
-                    ],
-                },
-            },
-            relationshipTypes: ["ALLY", "RIVAL"],
-            currentStrength: 80,
-            description: `${source.name}와(과) ${target.name}의 관계는 복잡하게 얽혀 있습니다.`,
-            since: "Ch.1",
-            timeline: [
-                {
-                    eventId: "e1",
-                    chapter: 1,
-                    timestamp: null,
-                    title: "첫 만남",
-                    description: "도서관에서의 우연한 만남. 서로의 지식에 감탄함.",
-                    importance: 6,
-                    emotionalPolarity: 0.8,
-                    cumulativeFriendly: 20,
-                    cumulativeHostile: 0,
-                    sentimentTrajectory: 20,
-                },
-            ],
-            sharedScenes: [
-                {
-                    eventId: "s1",
-                    chapter: "3",
-                    title: "심야의 밀담",
-                    description: "아무도 없는 복도에서 은밀하게 정보를 교환함.",
-                    importance: 7,
-                },
-            ],
-            insights: {
-                decisiveTrigger: {
-                    eventId: "e1",
-                    title: "첫 만남",
-                    summary: "모든 것의 시작점",
-                    impact: 8,
-                },
-                keywords: ["신뢰", "전우애"],
-            },
-            warnings: [
-                {
-                    type: "asymmetry",
-                    severity: "medium",
-                    message: "신뢰도 비대칭 보임",
-                },
-            ],
-        };
-    }, [source, target, relationId]);
+            };
+        }
+
+        return null;
+    }, [source.id, target.id, graphSnapshot]);
 
     return {
         data,
         isLoading: false,
-        isError: false
+        isError: !data,
     };
 }

@@ -749,6 +749,7 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
             ? (adaptGraphSnapshot(draft.graphSnapshot as Parameters<typeof adaptGraphSnapshot>[0])?.links ?? [])
             : []
         }
+        graphSnapshot={draft?.graphSnapshot as any}
       />
     </div>
   );

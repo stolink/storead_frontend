@@ -50,6 +50,8 @@ interface CanvasGraphProps {
     className?: string;
     chapterId?: string;
     showSearch?: boolean;
+    /** graphSnapshot (stolink에서 전달된 심층 분석 데이터 포함) */
+    graphSnapshot?: import('@/adapters/graphSnapshotAdapter').GraphSnapshotDTO | null;
 }
 
 export interface CanvasGraphRef {
@@ -60,7 +62,7 @@ export interface CanvasGraphRef {
 }
 
 const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
-    ({ characters, links: linksProp, onNodeClick, onLinkClick, className, chapterId, showSearch = true }, ref) => {
+    ({ characters, links: linksProp, onNodeClick, onLinkClick, className, chapterId, showSearch = true, graphSnapshot }, ref) => {
         const graphRef = useRef<ForceGraphMethods>();
         const containerRef = useRef<HTMLDivElement>(null);
         const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -676,6 +678,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
                         relationId={deepAnalysisData.link.id}
                         chapterId={chapterId}
                         link={deepAnalysisData.link}
+                        graphSnapshot={graphSnapshot}
                     />
                 )}
             </div>

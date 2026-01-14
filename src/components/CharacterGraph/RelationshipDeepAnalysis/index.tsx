@@ -25,6 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 import type { CharacterNode, RelationshipLink } from "@/types/characterGraph";
+import type { GraphSnapshotDTO } from "@/adapters/graphSnapshotAdapter";
 
 // Hooks
 import { useRelationshipAnalysis } from "@/hooks/useRelationshipAnalysis";
@@ -47,6 +48,8 @@ interface RelationshipDeepAnalysisModalProps {
     relationId?: string;
     chapterId?: string; // 댓글 시스템을 위한 챕터 ID (없으면 탭 비활성화)
     link?: RelationshipLink; // 댓글 컴포넌트에 전달할 링크 객체
+    /** graphSnapshot (stolink에서 전달된 심층 분석 데이터 포함) */
+    graphSnapshot?: GraphSnapshotDTO | null;
 }
 
 
@@ -56,21 +59,23 @@ export function RelationshipDeepAnalysisModal({
     onClose,
     sourceNode,
     targetNode,
-    relationId,
     chapterId,
     link,
+    graphSnapshot,
 }: RelationshipDeepAnalysisModalProps) {
     const [activeTab, setActiveTab] = useState<"analysis" | "comments">("analysis");
     const [isFullscreen, setIsFullscreen] = useState(false);
 
-    // [REFACTOR] Mock 데이터 분리: 전용 훅 사용
-    const { data } = useRelationshipAnalysis(sourceNode, targetNode, relationId);
+    // [REFACTOR] graphSnapshot에서 stolink 심층 분석 데이터 조회
+    const { data } = useRelationshipAnalysis(sourceNode, targetNode, graphSnapshot);
 
     // [FIX] react-hooks/set-state-in-effect: 모달이 열릴 때 탭 리셋 로직을 상태 초기화 시점이나 Key 변경으로 처리 권장
     // 여기서는 간단히 useEffect 없이 탭 상태가 항상 'analysis'로 시작하도록 보장하기 위해 
     // Tabs 에 key를 주어 isOpen이 true가 될 때마다 리셋되도록 합니다.
 
-    if (!isOpen || !data) return null;
+    // [FIX] early return 제거: 분석 데이터가 없더라도 모달 프레임은 열려야 함 (댓글 등 이용 가능)
+    // if (!isOpen || !data) return null;
+    if (!isOpen) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -83,10 +88,12 @@ export function RelationshipDeepAnalysisModal({
                 )}
             >
                 <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
-                    <MoodBackground
-                        type={data.relationshipTypes}
-                        className="w-full h-full"
-                    />
+                    {data && (
+                        <MoodBackground
+                            type={data.relationshipTypes}
+                            className="w-full h-full"
+                        />
+                    )}
                 </div>
 
                 {/* Header (Toolbar) */}
@@ -144,6 +151,7 @@ export function RelationshipDeepAnalysisModal({
                     onValueChange={(v) => setActiveTab(v as "analysis" | "comments")}
                     className="flex-1 flex flex-col min-h-0 relative z-10"
                 >
+                    {/* [FIX] 데이터가 없을 경우 기본 탭 조정 로직 (Optional: 데이터가 없으면 댓글 탭으로 유도 가능) */}
                     {/* Tab List */}
                     <div className="px-6 pt-2 border-b border-black/5 bg-white/20 backdrop-blur-sm">
                         <TabsList className="bg-transparent gap-6 p-0 h-auto">
@@ -169,67 +177,79 @@ export function RelationshipDeepAnalysisModal({
                         value="analysis"
                         className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden"
                     >
-                        <ScrollArea className="h-full w-full">
-                            <div className="p-0 pb-20">
-                                {/* Hero Section */}
-                                <DeepAnalysisHero
-                                    sourceCharacter={data.sourceCharacter}
-                                    targetCharacter={data.targetCharacter}
-                                    asymmetricStrength={data.asymmetricStrength}
-                                    relationshipTypes={data.relationshipTypes}
-                                    description={data.description}
-                                    since={data.since}
-                                    onClose={onClose}
-                                    className="mb-8"
-                                />
+                        {data ? (
+                            <ScrollArea className="h-full w-full">
+                                <div className="p-0 pb-20">
+                                    {/* Hero Section */}
+                                    <DeepAnalysisHero
+                                        sourceCharacter={data.sourceCharacter}
+                                        targetCharacter={data.targetCharacter}
+                                        asymmetricStrength={data.asymmetricStrength}
+                                        relationshipTypes={data.relationshipTypes}
+                                        description={data.description}
+                                        since={data.since}
+                                        onClose={onClose}
+                                        className="mb-8"
+                                    />
 
-                                {/* Dashboard Grid */}
-                                <div className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-                                    {/* Left Column: Timeline & Scenes (8 cols) */}
-                                    <div className="lg:col-span-8 flex flex-col gap-6">
-                                        {/* Warning Banner */}
-                                        {data.warnings && data.warnings.length > 0 && (
-                                            <RelationshipWarningBanner warnings={data.warnings} />
-                                        )}
+                                    {/* Dashboard Grid */}
+                                    <div className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                        {/* Left Column: Timeline & Scenes (8 cols) */}
+                                        <div className="lg:col-span-8 flex flex-col gap-6">
+                                            {/* Warning Banner */}
+                                            {data.warnings && data.warnings.length > 0 && (
+                                                <RelationshipWarningBanner warnings={data.warnings} />
+                                            )}
 
-                                        {/* Timeline Graph */}
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="bg-white/60 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm p-6"
-                                        >
-                                            <div className="flex items-center justify-between mb-6">
-                                                <h3 className="text-lg font-bold text-espresso-900 font-serif">
-                                                    Relationship Timeline
-                                                </h3>
-                                                <div className="text-xs font-medium text-espresso-400">
-                                                    감정 궤적 & 주요 사건
+                                            {/* Timeline Graph */}
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="bg-white/60 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm p-6"
+                                            >
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <h3 className="text-lg font-bold text-espresso-900 font-serif">
+                                                        Relationship Timeline
+                                                    </h3>
+                                                    <div className="text-xs font-medium text-espresso-400">
+                                                        감정 궤적 & 주요 사건
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <RelationshipTimelineGraph
-                                                data={data.timeline}
-                                                height={320}
-                                                animationDelay={0.5}
+                                                <RelationshipTimelineGraph
+                                                    data={data.timeline}
+                                                    height={320}
+                                                    animationDelay={0.5}
+                                                />
+                                            </motion.div>
+                                        </div>
+
+                                        {/* Right Column: Insights & Shared Scenes (4 cols) */}
+                                        <div className="lg:col-span-4 flex flex-col gap-6">
+                                            <InsightsPanel
+                                                insights={data.insights}
+                                                asymmetricStrength={data.asymmetricStrength}
+                                                animationDelay={0.3}
                                             />
-                                        </motion.div>
-                                    </div>
 
-                                    {/* Right Column: Insights & Shared Scenes (4 cols) */}
-                                    <div className="lg:col-span-4 flex flex-col gap-6">
-                                        <InsightsPanel
-                                            insights={data.insights}
-                                            asymmetricStrength={data.asymmetricStrength}
-                                            animationDelay={0.3}
-                                        />
-
-                                        <SharedScenesPanel
-                                            scenes={data.sharedScenes || []}
-                                            className="bg-white/60"
-                                        />
+                                            <SharedScenesPanel
+                                                scenes={data.sharedScenes || []}
+                                                className="bg-white/60"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
+                            </ScrollArea>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-espresso-400 p-12 text-center">
+                                <Network className="w-16 h-16 mb-4 opacity-10 animate-pulse text-espresso-300" />
+                                <h4 className="text-xl font-bold text-espresso-800 font-serif mb-2">Deep Analysis Unavailable</h4>
+                                <p className="max-w-md text-espresso-500/80 leading-relaxed italic">
+                                    이 관계에 대한 심층 분석 데이터가 아직 생성되지 않았거나,<br />
+                                    단순화된 스냅샷으로 배포된 챕터입니다.<br />
+                                    <span className="mt-2 block not-italic font-medium text-mocha-500">대신 '토론' 탭에서 독자들과 의견을 나누어보세요!</span>
+                                </p>
                             </div>
-                        </ScrollArea>
+                        )}
                     </TabsContent>
 
                     {/* Comments Content */}

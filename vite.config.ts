@@ -86,6 +86,12 @@ export default defineConfig(({ mode: _mode }) => ({
 
           // Other UI utilities
           "vendor-ui-utils": ["lucide-react", "class-variance-authority"],
+
+          // 3D Graphics (Heavy)
+          "vendor-three": ["three", "@react-three/fiber"],
+
+          // Graph Visualization
+          "vendor-graph": ["react-force-graph", "react-force-graph-2d"],
         },
 
         // Chunk naming strategy

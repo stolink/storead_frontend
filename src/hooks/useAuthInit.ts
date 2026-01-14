@@ -38,10 +38,6 @@ export function useAuthInit() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((error as any).response?.status === 400) {
           console.log("[AuthInit] No token (400). Stopping init.");
-        } else {
-          // 그 외 오류(401 등)는 로그아웃 처리
-          console.log("[AuthInit] Auth failed. Logging out.");
-          logout();
         }
       } finally {
         setIsInitializing(false);

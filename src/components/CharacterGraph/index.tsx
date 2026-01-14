@@ -8,6 +8,7 @@ import type {
   RelationshipLink,
   Character,
 } from "@/types";
+import type { GraphSnapshotDTO } from "@/adapters/graphSnapshotAdapter";
 
 // Components
 import { CanvasGraph, type CanvasGraphRef } from "./CanvasGraph";
@@ -26,6 +27,8 @@ interface CharacterGraphProps {
   showSearch?: boolean;
   useStolinkStyle?: boolean;
   chapterId?: string;
+  /** graphSnapshot (stolink에서 전달된 심층 분석 데이터 포함) */
+  graphSnapshot?: GraphSnapshotDTO | null;
 }
 
 export const CharacterGraph = memo(function CharacterGraph({
@@ -37,6 +40,7 @@ export const CharacterGraph = memo(function CharacterGraph({
   className,
   showSearch = true,
   chapterId,
+  graphSnapshot,
 }: CharacterGraphProps) {
   const canvasRef = useRef<CanvasGraphRef>(null);
 
@@ -67,6 +71,7 @@ export const CharacterGraph = memo(function CharacterGraph({
         selectedLink={selectedLink}
         chapterId={chapterId}
         showSearch={showSearch}
+        graphSnapshot={graphSnapshot}
         className="w-full h-full"
       />
 

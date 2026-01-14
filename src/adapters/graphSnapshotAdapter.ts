@@ -5,6 +5,7 @@
  */
 import type { Character } from "@/types/character";
 import type { RelationshipLink } from "@/types/characterGraph";
+import type { RelationshipDeepAnalysisData } from "@/types/relationshipAnalysis";
 
 // 백엔드 GraphSnapshot 타입
 export interface GraphSnapshotDTO {
@@ -98,6 +99,11 @@ export interface GraphSnapshotDTO {
       };
     }
   >;
+  /**
+   * 관계별 심층 분석 데이터 (stolink에서 계산하여 전달)
+   * Key: "{sourceId}-{targetId}" 형식
+   */
+  relationshipAnalysis?: Record<string, RelationshipDeepAnalysisData>;
 }
 
 /**

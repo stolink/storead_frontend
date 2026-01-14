@@ -10,6 +10,7 @@ import { NetworkDetailPanelD3 } from "@/components/CharacterGraph/NetworkDetailP
 import { CharacterDetailModal } from "@/components/common/CharacterDetailModal";
 import type { Character } from "@/types/character";
 import type { RelationshipLink } from "@/types/characterGraph";
+import type { GraphSnapshotDTO } from "@/adapters/graphSnapshotAdapter";
 
 interface GraphModalProps {
   isOpen: boolean;
@@ -18,6 +19,8 @@ interface GraphModalProps {
   links: RelationshipLink[];
   // chapterNumber removed
   chapterId?: string; // chapterId as string for comment API
+  /** graphSnapshot (stolink에서 전달된 심층 분석 데이터 포함) */
+  graphSnapshot?: GraphSnapshotDTO | null;
 }
 
 export function GraphModal({
@@ -27,6 +30,7 @@ export function GraphModal({
   links,
   // chapterNumber removed
   chapterId,
+  graphSnapshot,
 }: GraphModalProps) {
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(
     null
@@ -115,6 +119,7 @@ export function GraphModal({
                   selectedLink={selectedLink}
                   isDeepAnalysisOpen={isCommentModalOpen}
                   chapterId={chapterId}
+                  graphSnapshot={graphSnapshot}
                 />
                 <AnimatePresence>
                   {selectedCharacter && (

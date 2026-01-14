@@ -14,6 +14,10 @@ import ScrollToTop from "@/components/layout/ScrollToTop";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 
+// 인증 초기화
+import { useAuthInit } from "@/hooks/useAuthInit";
+import { setQueryClient } from "@/api/client";
+
 // 공개 페이지
 import HomePage from "@/pages/HomePage";
 import WorkDetailPage from "@/pages/WorkDetailPage";
@@ -52,12 +56,18 @@ const queryClient = new QueryClient({
   },
 });
 
+// API 클라이언트에 QueryClient 설정 (캐시 클리어용)
+setQueryClient(queryClient);
+
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 
 function AppContent() {
   const { isOpen, closeAuthModal, openAuthModal } = useAuthModalStore();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // 앱 시작 시 서버에서 인증 상태 확인 (쿠키 기반 세션 복원)
+  const isInitializing = useAuthInit();
 
   // 401 에러 등으로 인한 auth=required 쿼리 감지 시 모달 자동 표시
   useEffect(() => {
@@ -73,6 +83,15 @@ function AppContent() {
   useEffect(() => {
     sessionStorage.removeItem("chunk-reload-count");
   }, []);
+
+  // 인증 초기화 중일 때 로딩 표시
+  if (isInitializing) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="text-mocha-500">로딩 중...</div>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -1,45 +1,44 @@
 /**
  * Zustand 인증 상태 관리 스토어
  * 쿠키 기반 인증 - 토큰 관리 불필요
+ * persist 제거: 서버에서 인증 상태를 확인하여 탭 간 일관성 유지
  */
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { User } from "@/types";
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   // Actions
   setAuth: (user: User) => void;
+  setUser: (user: User) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
+  setLoading: (loading: boolean) => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
 
-      setAuth: (user) => {
-        set({ user, isAuthenticated: true });
-      },
+  setAuth: (user) => {
+    set({ user, isAuthenticated: true });
+  },
 
-      logout: () => {
-        set({ user: null, isAuthenticated: false });
-      },
+  setUser: (user) => {
+    set({ user, isAuthenticated: true });
+  },
 
-      updateUser: (updates) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, ...updates } : null,
-        })),
-    }),
-    {
-      name: "auth-storage",
-      partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-      }),
-    }
-  )
-);
+  logout: () => {
+    set({ user: null, isAuthenticated: false });
+  },
+
+  updateUser: (updates) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...updates } : null,
+    })),
+
+  setLoading: (loading) => set({ isLoading: loading }),
+}));

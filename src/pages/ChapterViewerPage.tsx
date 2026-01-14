@@ -131,20 +131,37 @@ export const ChapterViewerPage = () => {
   const { data: work } = usePublicWork(chapter?.workId || "");
   const saveBookmark = useSaveBookmark();
 
-  // 실제 graphSnapshot 데이터 사용
-  const graphData = useMemo(() => {
-    console.log("[DEBUG] chapter 전체 데이터:", chapter);
-    console.log("[DEBUG] graphSnapshot 원본:", chapter?.graphSnapshot);
-
-    if (!chapter?.graphSnapshot) {
+  // 실제 graphSnapshot 데이터 사용 및 파싱 로직 강화
+  const parsedSnapshot = useMemo(() => {
+    const raw = chapter?.graphSnapshot;
+    if (!raw) {
       console.log("[DEBUG] graphSnapshot이 없습니다!");
       return null;
     }
 
-    const adapted = adaptGraphSnapshot(chapter.graphSnapshot as any);
+    // 문자열인 경우 파싱 (에러 핸들링 포함)
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        console.log("[DEBUG] graphSnapshot 문자열 파싱 성공:", parsed);
+        return parsed as import("@/adapters/graphSnapshotAdapter").GraphSnapshotDTO;
+      } catch (e) {
+        console.error("[DEBUG] graphSnapshot 파싱 실패:", e);
+        return null;
+      }
+    }
+
+    console.log("[DEBUG] graphSnapshot은 이미 객체입니다:", raw);
+    return raw as import("@/adapters/graphSnapshotAdapter").GraphSnapshotDTO;
+  }, [chapter?.graphSnapshot]);
+
+  const graphData = useMemo(() => {
+    if (!parsedSnapshot) return null;
+
+    const adapted = adaptGraphSnapshot(parsedSnapshot);
     console.log("[DEBUG] adaptGraphSnapshot 결과:", adapted);
     return adapted;
-  }, [chapter?.graphSnapshot]);
+  }, [parsedSnapshot]);
 
   // 별점 데이터 및 제출 훅
   const { data: ratingData } = useChapterRating(id || "");
@@ -752,6 +769,7 @@ export const ChapterViewerPage = () => {
           characters={graphData?.characters ?? []}
           links={graphData?.links ?? []}
           chapterId={id}
+          graphSnapshot={parsedSnapshot}
         />
       )}
     </div>

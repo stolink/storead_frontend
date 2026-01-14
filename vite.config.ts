@@ -26,9 +26,11 @@ export default defineConfig(({ mode: _mode }) => ({
     open: true,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8081", // storead 백엔드
-        changeOrigin: false, // 호스트 헤더를 target에 맞게 변경하지 않음 (OAuth 리다이렉트 문제 방지)
+        target: "http://localhost:8081", // storead 백엔드
+        changeOrigin: true, // 쿠키 도메인 일치를 위해 true로 변경
         secure: false,
+        cookieDomainRewrite: "localhost", // 쿠키 도메인 재작성
+        cookiePathRewrite: "/", // 쿠키 경로 재작성
       },
     },
   },
@@ -84,6 +86,12 @@ export default defineConfig(({ mode: _mode }) => ({
 
           // Other UI utilities
           "vendor-ui-utils": ["lucide-react", "class-variance-authority"],
+
+          // 3D Graphics (Heavy)
+          "vendor-three": ["three", "@react-three/fiber"],
+
+          // Graph Visualization
+          "vendor-graph": ["react-force-graph", "react-force-graph-2d"],
         },
 
         // Chunk naming strategy

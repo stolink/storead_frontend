@@ -32,6 +32,54 @@ const clearCacheAndLogout = () => {
   useAuthModalStore.getState().openAuthModal(window.location.pathname);
 };
 
+// Promise 큐잉: 동시 refresh 요청을 하나로 통합
+let refreshPromise: Promise<void> | null = null;
+
+/**
+ * 토큰 갱신을 보장하는 함수
+ * 이미 refresh가 진행 중이면 같은 Promise를 반환하여 중복 요청 방지
+ */
+const ensureTokenRefreshed = async (): Promise<void> => {
+  if (refreshPromise) {
+    console.log(
+      "[Auth] Refresh already in progress. Waiting for existing request..."
+    );
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      // 마지막 refresh 시간 확인 (3초 내 재요청이면 스킵)
+      const lastRefreshTime = localStorage.getItem("last_refresh_time");
+      const now = Date.now();
+
+      if (lastRefreshTime && now - parseInt(lastRefreshTime) < 3000) {
+        console.log("[Auth] Token refreshed recently. Skipping refresh.");
+        return;
+      }
+
+      console.log("[Auth] Sending refresh request...");
+      const response = await api.post("/auth/refresh");
+
+      // 응답 검증
+      const responseData = response.data as Record<string, unknown>;
+      if (responseData && responseData.success === false) {
+        const errorObj = responseData.error as
+          | Record<string, string>
+          | undefined;
+        throw new Error(errorObj?.message || "Refresh returned success: false");
+      }
+
+      console.log("[Auth] Refresh successful.");
+      localStorage.setItem("last_refresh_time", Date.now().toString());
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+};
+
 // Axios 인스턴스 생성
 export const api = axios.create({
   baseURL: API_URL,
@@ -99,38 +147,9 @@ api.interceptors.response.use(
           "[Auth] Acquiring refresh lock for " + originalRequest.url + "..."
         );
 
-        // Web Locks API를 사용하여 탭 간 동기화
+        // Web Locks API + Promise 큐잉으로 탭 간/동시 요청 모두 처리
         await navigator.locks.request("auth_refresh_lock", async () => {
-          // 마지막 refresh 시간을 확인하여 중복 요청 방지 (3초 내 재요청이면 스킵)
-          const lastRefreshTime = localStorage.getItem("last_refresh_time");
-          const now = Date.now();
-
-          if (lastRefreshTime && now - parseInt(lastRefreshTime) < 3000) {
-            console.log(
-              "[Auth] Token refreshed recently. Skipping refresh for " +
-                originalRequest.url +
-                "."
-            );
-            return;
-          }
-
-          // 토큰 재발급 시도
-          console.log("[Auth] Sending refresh request...");
-          const response = await api.post("/auth/refresh");
-
-          // 백엔드가 200 OK를 주더라도 실제로는 실패했을 수 있으므로 응답 확인
-          const responseData = response.data as Record<string, unknown>;
-          if (responseData && responseData.success === false) {
-            const errorObj = responseData.error as
-              | Record<string, string>
-              | undefined;
-            throw new Error(
-              errorObj?.message || "Refresh returned success: false"
-            );
-          }
-
-          console.log("[Auth] Refresh successful.");
-          localStorage.setItem("last_refresh_time", Date.now().toString());
+          await ensureTokenRefreshed();
         });
 
         // 락 해제 후 원래 요청 재시도

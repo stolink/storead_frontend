@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { GraphModal } from "@/components/viewer/GraphModal";
-import { adaptGraphSnapshot } from "@/adapters/graphSnapshotAdapter";
+import { adaptGraphSnapshot, type GraphSnapshotDTO } from "@/adapters/graphSnapshotAdapter";
 import { ChapterSummaryCard } from "@/components/writer/ChapterSummaryCard";
 import {
   Card,
@@ -749,7 +749,7 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
             ? (adaptGraphSnapshot(draft.graphSnapshot as Parameters<typeof adaptGraphSnapshot>[0])?.links ?? [])
             : []
         }
-        graphSnapshot={draft?.graphSnapshot as any}
+        graphSnapshot={draft?.graphSnapshot as GraphSnapshotDTO | undefined}
       />
     </div>
   );

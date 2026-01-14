@@ -60,10 +60,13 @@ export function useRelationshipAnalysis(
                 // 속성 스왑
                 sourceToTargetAttributes: analysisFromKey2.targetToSourceAttributes,
                 targetToSourceAttributes: analysisFromKey2.sourceToTargetAttributes,
-                // 비대칭 강도 스왑
-                asymmetricStrength: {
-                    sourceToTarget: analysisFromKey2.asymmetricStrength.targetToSource,
-                    targetToSource: analysisFromKey2.asymmetricStrength.sourceToTarget,
+                // 비대칭 강도 스왑 (옵셔널 체이닝으로 안전하게 접근)
+                asymmetricStrength: analysisFromKey2.asymmetricStrength ? {
+                    sourceToTarget: analysisFromKey2.asymmetricStrength.targetToSource ?? { total: 0, factors: [] },
+                    targetToSource: analysisFromKey2.asymmetricStrength.sourceToTarget ?? { total: 0, factors: [] },
+                } : {
+                    sourceToTarget: { total: 0, factors: [] },
+                    targetToSource: { total: 0, factors: [] }
                 },
             };
         }

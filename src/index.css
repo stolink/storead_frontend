@@ -7,9 +7,8 @@
 
 /* CSS Variables for Design System - Using HSL to match tailwind.config.ts */
 @theme inline {
-  --font-sans:
-    "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-heading: "Pretendard", sans-serif;
   --font-body: "Pretendard", sans-serif;
 
@@ -119,7 +118,6 @@
 }
 
 @layer base {
-
   /* Animations from Stolink */
   @keyframes softAppear {
     from {
@@ -134,7 +132,6 @@
   }
 
   @keyframes lightShimmer {
-
     0%,
     100% {
       opacity: 0;
@@ -155,9 +152,11 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        rgba(255, 255, 255, 0.06),
-        transparent 40%);
+    background: radial-gradient(
+      600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(255, 255, 255, 0.06),
+      transparent 40%
+    );
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -192,7 +191,6 @@
      ============================================ */
 
   @keyframes pulse {
-
     0%,
     100% {
       transform: scale(1);
@@ -242,7 +240,6 @@
 
   /* Node breathing animation - subtle "alive" feel */
   @keyframes breathe {
-
     0%,
     100% {
       transform: scale(1);
@@ -279,7 +276,6 @@
 
   /* Glow pulse for highlighted nodes */
   @keyframes glowPulse {
-
     0%,
     100% {
       opacity: 0.4;
@@ -440,29 +436,29 @@
   }
 
   /* Tab content animation */
-  [data-state="active"]>.tab-content-animate {
+  [data-state="active"] > .tab-content-animate {
     animation: fadeInUp 0.2s cubic-bezier(0.19, 1, 0.22, 1);
   }
 
   /* Hover lift effect */
   .hover-lift {
-    transition:
-      transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
+    transition: transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
       box-shadow 0.2s cubic-bezier(0.19, 1, 0.22, 1);
   }
 
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow:
-      0 8px 20px -4px rgba(0, 0, 0, 0.08),
+    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.08),
       0 4px 8px -2px rgba(0, 0, 0, 0.04);
   }
 
   /* Editorial Card */
   .editorial-card {
-    background: linear-gradient(135deg,
-        hsl(var(--card)) 0%,
-        hsl(var(--background)) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--background)) 100%
+    );
     border: 1px solid hsl(var(--border));
     border-radius: 0.75rem;
     transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
@@ -520,9 +516,11 @@
   .magazine-image-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top,
-        hsl(var(--foreground) / 0.6) 0%,
-        transparent 40%);
+    background: linear-gradient(
+      to top,
+      hsl(var(--foreground) / 0.6) 0%,
+      transparent 40%
+    );
     pointer-events: none;
   }
 
@@ -616,9 +614,11 @@
 
   .editorial-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg,
-        hsl(var(--primary)) 0%,
-        hsl(var(--primary) / 0.7) 100%);
+    background: linear-gradient(
+      90deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--primary) / 0.7) 100%
+    );
     border-radius: 3px;
     transition: width 0.5s cubic-bezier(0.19, 1, 0.22, 1);
   }
@@ -740,11 +740,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family:
-      "Pretendard",
-      -apple-system,
-      BlinkMacSystemFont,
-      system-ui,
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui,
       sans-serif;
   }
 }
@@ -763,7 +759,6 @@
    ============================================ */
 
 @keyframes pulse {
-
   0%,
   100% {
     transform: scale(1);
@@ -813,7 +808,6 @@
 
 /* Node breathing animation - subtle "alive" feel */
 @keyframes breathe {
-
   0%,
   100% {
     transform: scale(1);
@@ -850,7 +844,6 @@
 
 /* Glow pulse for highlighted nodes */
 @keyframes glowPulse {
-
   0%,
   100% {
     opacity: 0.4;
@@ -1011,29 +1004,29 @@
 }
 
 /* Tab content animation */
-[data-state="active"]>.tab-content-animate {
+[data-state="active"] > .tab-content-animate {
   animation: fadeInUp 0.2s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 /* Hover lift effect */
 .hover-lift {
-  transition:
-    transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
+  transition: transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
     box-shadow 0.2s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow:
-    0 8px 20px -4px rgba(0, 0, 0, 0.08),
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.08),
     0 4px 8px -2px rgba(0, 0, 0, 0.04);
 }
 
 /* Editorial Card */
 .editorial-card {
-  background: linear-gradient(135deg,
-      hsl(var(--card)) 0%,
-      hsl(var(--background)) 100%);
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card)) 0%,
+    hsl(var(--background)) 100%
+  );
   border: 1px solid hsl(var(--border));
   border-radius: 0.75rem;
   transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
@@ -1091,9 +1084,11 @@
 .magazine-image-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top,
-      hsl(var(--foreground) / 0.6) 0%,
-      transparent 40%);
+  background: linear-gradient(
+    to top,
+    hsl(var(--foreground) / 0.6) 0%,
+    transparent 40%
+  );
   pointer-events: none;
 }
 
@@ -1187,9 +1182,11 @@
 
 .editorial-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg,
-      hsl(var(--primary)) 0%,
-      hsl(var(--primary) / 0.7) 100%);
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--primary) / 0.7) 100%
+  );
   border-radius: 3px;
   transition: width 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }

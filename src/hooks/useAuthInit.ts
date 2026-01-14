@@ -30,22 +30,17 @@ export function useAuthInit() {
         // 3. 쿠키가 유효하면 바로 사용자 정보 조회 (자동 로그인)
         const userResponse = await authService.getMe();
         setUser(userResponse.data);
-      } catch {
-        // 4. 401 에러 시 refresh 시도
-        try {
-          await authService.refresh();
-          const userResponse = await authService.getMe();
-          setUser(userResponse.data);
-        } catch (error) {
-          // 400 에러(쿠키 없음)인 경우 즉시 중단하고 초기화 완료 처리
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if ((error as any).response?.status === 400) {
-            console.log("[AuthInit] No refresh token (400). Stopping init.");
-            logout();
-            setIsInitializing(false);
-            return;
-          }
+      } catch (error) {
+        // 4. 인증 실패 처리
+        // 이미 API 인터셉터에서 refresh를 시도했으나 실패한 경우입니다.
 
+        // 400 에러(쿠키 없음)인 경우 로깅만 하고 종료
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((error as any).response?.status === 400) {
+          console.log("[AuthInit] No token (400). Stopping init.");
+        } else {
+          // 그 외 오류(401 등)는 로그아웃 처리
+          console.log("[AuthInit] Auth failed. Logging out.");
           logout();
         }
       } finally {
@@ -58,4 +53,3 @@ export function useAuthInit() {
 
   return isInitializing;
 }
-

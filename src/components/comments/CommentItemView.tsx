@@ -74,57 +74,75 @@ export const CommentItemView = memo(({
     const replies = remoteReplies || [];
 
     return (
-        <div className={cn('py-4', isReply && 'ml-8 mt-2')}>
-            <div className="flex items-start gap-3">
-                <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.author?.profileImageUrl} />
-                    <AvatarFallback>{comment.author?.nickname?.charAt(0) || 'U'}</AvatarFallback>
+        <div className={cn('py-4 group', isReply && 'ml-12 mt-2')}>
+            <div className="flex items-start gap-4">
+                <Avatar className={cn("h-10 w-10 ring-2 ring-white shadow-sm transition-transform group-hover:scale-105", isReply && "h-8 w-8")}>
+                    <AvatarImage src={comment.author?.profileImageUrl} className="object-cover" />
+                    <AvatarFallback className="bg-mocha-100 text-mocha-700">
+                        {comment.author?.nickname?.charAt(0) || 'U'}
+                    </AvatarFallback>
                 </Avatar>
+
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-sm">{comment.author?.nickname || '익명'}</span>
-                        <span className="text-xs opacity-50">{getRelativeTime(comment.createdAt)}</span>
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-espresso-900">{comment.author?.nickname || '익명'}</span>
+                            <span className="text-[11px] text-stone-400 font-medium">{getRelativeTime(comment.createdAt)}</span>
+                        </div>
                     </div>
-                    <p className="text-sm whitespace-pre-wrap break-words">{comment.content}</p>
+
+                    <p className="text-[14.5px] leading-relaxed text-espresso-900/90 whitespace-pre-wrap break-words font-body">
+                        {comment.content}
+                    </p>
 
                     {/* 액션 버튼 */}
-                    <div className="flex items-center gap-4 mt-2">
+                    <div className="flex items-center gap-5 mt-3">
                         <button
                             onClick={() => onToggleLike(comment.id)}
                             className={cn(
-                                'flex items-center gap-1 text-xs transition-colors',
-                                comment.isLiked ? 'text-red-500' : 'opacity-50 hover:opacity-100'
+                                'flex items-center gap-1.5 text-xs font-semibold transition-all hover:scale-105',
+                                comment.isLiked ? 'text-red-500' : 'text-stone-400 hover:text-stone-600'
                             )}
                         >
-                            <Heart className={cn('h-4 w-4', comment.isLiked && 'fill-current')} />
+                            <Heart className={cn('h-4 w-4 transition-all', comment.isLiked && 'fill-current animate-in zoom-in-50')} />
                             <span>{comment.likeCount}</span>
                         </button>
+
                         {!isReply && (
                             <button
                                 onClick={() => onSetReplyTo(replyToId === comment.id ? null : comment.id)}
-                                className="text-xs opacity-50 hover:opacity-100"
+                                className="text-xs font-semibold text-stone-400 hover:text-mocha-500 transition-colors"
                             >
-                                답글
+                                답글 달기
                             </button>
                         )}
                     </div>
 
                     {/* 대댓글 입력 */}
                     {replyToId === comment.id && (
-                        <div className="mt-3 flex gap-2">
+                        <div className="mt-4 p-4 rounded-xl bg-cloud-50 border border-mocha-100 animate-in slide-in-from-top-2 duration-300">
                             <Textarea
                                 value={replyContent}
                                 onChange={(e) => onReplyContentChange(e.target.value)}
-                                placeholder="답글을 입력하세요..."
-                                className="min-h-[60px] text-sm"
+                                placeholder="생각을 공유해주세요..."
+                                className="min-h-[80px] text-sm bg-white border-stone-200 resize-none focus:ring-mocha-400"
                                 autoFocus
                             />
-                            <div className="flex flex-col gap-1">
-                                <Button size="sm" onClick={() => onSubmitReply(comment.id)}>
-                                    등록
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={() => onSetReplyTo(null)}>
+                            <div className="flex justify-end gap-2 mt-3">
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => onSetReplyTo(null)}
+                                    className="text-stone-500"
+                                >
                                     취소
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    onClick={() => onSubmitReply(comment.id)}
+                                    className="bg-mocha-500 hover:bg-mocha-600 text-white shadow-sm"
+                                >
+                                    등록하기
                                 </Button>
                             </div>
                         </div>
@@ -132,7 +150,10 @@ export const CommentItemView = memo(({
 
                     {/* 대댓글 목록 (재귀 렌더링) */}
                     {replies.length > 0 && (
-                        <div className={cn('border-l-2 mt-2', dividerClass)}>
+                        <div className="mt-4 space-y-2 relative">
+                            {/* 계층 구조 연계선 */}
+                            <div className="absolute left-[-26px] top-0 bottom-4 w-[2px] bg-mocha-100 rounded-full" />
+
                             {replies.map((reply) => (
                                 <CommentItemView
                                     key={reply.id}

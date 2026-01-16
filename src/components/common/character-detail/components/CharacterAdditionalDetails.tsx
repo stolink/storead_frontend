@@ -69,7 +69,7 @@ export function CharacterAdditionalDetails({
     });
   }
 
-  const hasMotivation = character.motivation;
+  const hasMotivation = !!character.motivation;
   const hasMood =
     character.currentMood &&
     (character.currentMood.emotion || character.currentMood.trigger);
@@ -108,22 +108,17 @@ export function CharacterAdditionalDetails({
                 현재 상태
               </span>
             </div>
-            {character.currentMood!.intensity > 0 && (
-              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100">
-                강도 {character.currentMood!.intensity}/5
-              </span>
-            )}
           </div>
-          <div className="space-y-1.5">
-            {character.currentMood!.emotion && (
+          <div className="space-y-3">
+            {character.currentMood?.emotion && (
               <p className="text-lg font-semibold text-stone-900 font-serif">
-                {character.currentMood!.emotion}
+                {character.currentMood.emotion}
               </p>
             )}
-            {character.currentMood!.trigger && (
+            {character.currentMood?.trigger && (
               <p className="text-sm text-stone-500">
                 <span className="text-stone-400">원인:</span>{" "}
-                {character.currentMood!.trigger}
+                {character.currentMood.trigger}
               </p>
             )}
           </div>

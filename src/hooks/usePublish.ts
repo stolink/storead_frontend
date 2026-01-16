@@ -42,12 +42,14 @@ export const usePublish = () => {
       const { data } = await api.post("/community/publish", request);
       return data.data;
     },
-    onSuccess: (_result, variables) => {
+    onSuccess: (result, variables) => {
       // Draft 캐시 제거
       queryClient.removeQueries({ queryKey: ["draft", variables.draftId] });
-      // 작품 목록 갱신 (새 Work가 생성되었을 수 있음)
+      // 작품 정보 및 챕터 목록 갱신
       queryClient.invalidateQueries({ queryKey: ["myWorks"] });
       queryClient.invalidateQueries({ queryKey: ["discoveryWorks"] });
+      queryClient.invalidateQueries({ queryKey: ["work", result.workId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["workChapters", result.workId], exact: true });
     },
   });
 };

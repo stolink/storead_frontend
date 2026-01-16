@@ -22,7 +22,7 @@ interface UseZoomReturn {
 export function useZoom(
   svgRef: React.RefObject<SVGSVGElement | null>,
   gRef: React.RefObject<SVGGElement | null>,
-  options: UseZoomOptions = {}
+  options: UseZoomOptions = {},
 ): UseZoomReturn {
   const { onZoomChange } = options;
 
@@ -54,7 +54,7 @@ export function useZoom(
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([ZOOM_CONFIG.min, ZOOM_CONFIG.max])
-      .filter((event: any) => {
+      .filter((event) => {
         // Prevent zoom/pan if interacting with a node
         if (
           event.target instanceof Element &&
@@ -79,7 +79,6 @@ export function useZoom(
         latestStateRef.current = newState;
 
         // 항상 RAF 스로틀링 적용 (성능 최적화 및 일관된 부드러움)
-        // Transition 중에도 React 상태 업데이트를 스로틀링하여 메인 스레드 부하 감소
         if (rafIdRef.current === null) {
           rafIdRef.current = requestAnimationFrame(() => {
             setZoomState({ ...latestStateRef.current });
@@ -159,8 +158,6 @@ export function useZoom(
         const width = svg.clientWidth || svg.getBoundingClientRect().width;
         const height = svg.clientHeight || svg.getBoundingClientRect().height;
 
-        // Calculate translation to center the point (x, y)
-        // transform = translate(cx, cy) * scale(k) * translate(-x, -y)
         const t = d3.zoomIdentity
           .translate(width / 2, height / 2)
           .scale(targetScale)
@@ -178,7 +175,7 @@ export function useZoom(
           });
       });
     },
-    [svgRef]
+    [svgRef],
   );
 
   return {

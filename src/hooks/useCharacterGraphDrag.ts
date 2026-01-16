@@ -25,7 +25,7 @@ export function useDrag(options: UseDragOptions) {
       _event: d3.D3DragEvent<SVGGElement, CharacterNode, CharacterNode>,
       d: CharacterNode
     ) => {
-      // 시뮬레이션 활성화 (드래그한 노드만 이동 - alphaTarget으로 부하 제어)
+      // 시뮬레이션 활성화
       if (simulation) {
         simulation.alphaTarget(ANIMATION.reheatStrength).restart();
       }
@@ -38,7 +38,7 @@ export function useDrag(options: UseDragOptions) {
     [onDragStart, simulation]
   );
 
-  // 드래그 중 - 최소한의 작업만
+  // 드래그 중
   const handleDrag = useCallback(
     (
       event: d3.D3DragEvent<SVGGElement, CharacterNode, CharacterNode>,
@@ -58,23 +58,31 @@ export function useDrag(options: UseDragOptions) {
     ) => {
       isDraggingRef.current = false;
 
-      // 시뮬레이션 천천히 멈춤 (alphaTarget 0으로 설정)
+      // 시뮬레이션 천천히 멈춤
       if (simulation) {
         simulation.alphaTarget(0);
       }
 
-      // 드래그 종료 후 위치 해제 (자유 이동)
-      d.fx = null;
-      d.fy = null;
+      // 드래그 종료 후 위치 고정 (Pinning) 유지
       onDragEnd?.(d);
     },
     [onDragEnd, simulation]
   );
 
-  // D3 drag behavior 생성
-  // AI Review suggests useRef, but accessing ref.current in render triggers strict ESLint rules.
-  // useState(() => ...) guarantees single initialization and is safe for render access.
-  // The instance is stable, and listeners are updated in useEffect.
+  /**
+   * 노드 고정 해제 (Double Click 용)
+   */
+  const handleUnpin = useCallback(
+    (d: CharacterNode) => {
+      d.fx = undefined;
+      d.fy = undefined;
+      if (simulation) {
+        simulation.alpha(0.3).restart();
+      }
+    },
+    [simulation]
+  );
+
   const [dragBehavior] = useState(() =>
     d3.drag<SVGGElement, CharacterNode, unknown>()
   );
@@ -88,5 +96,6 @@ export function useDrag(options: UseDragOptions) {
 
   return {
     dragBehavior,
+    handleUnpin,
   };
 }

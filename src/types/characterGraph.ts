@@ -1,9 +1,21 @@
 import type * as d3 from "d3";
-import type { CharacterRole, RelationType } from "./character";
+import type { CharacterRole } from "./character";
 
 // =====================================================
 // 📊 캐릭터 그래프 (D3.js Force Simulation) 타입
 // =====================================================
+
+/**
+ * UI에서 사용하는 확장된 관계 타입 (Backend RelationType + UI Specifics)
+ */
+export type UIRelationType =
+  | "friendly"
+  | "hostile"
+  | "romantic"
+  | "family"
+  | "neutral"
+  | "complex";
+
 
 /**
  * D3 시뮬레이션용 노드 타입
@@ -22,8 +34,8 @@ export interface CharacterNode extends d3.SimulationNodeDatum {
   y?: number;
   vx?: number;
   vy?: number;
-  fx?: number | null;
-  fy?: number | null;
+  fx?: number;
+  fy?: number;
 }
 
 /**
@@ -31,32 +43,18 @@ export interface CharacterNode extends d3.SimulationNodeDatum {
  * CharacterRelation에서 변환됨
  */
 export interface RelationshipLink extends d3.SimulationLinkDatum<CharacterNode> {
-  id: string; // 생성: `${source}-${target}`
+  id: string;
   source: string | CharacterNode;
   target: string | CharacterNode;
-  type: RelationType; // from relation_type
+  type: UIRelationType;
   strength: number;
-  label?: string; // Legacy alias for description
   description?: string;
-  bidirectional?: boolean;
-  evolvedFrom?: RelationType;
-  since?: string;
-  // New fields from schema
   publicStance?: string;
   privateFeeling?: string;
-  /** Curve factor for multiple links between same nodes (-1 to 1) */
+  revealedInChapter?: number;
   curvature?: number;
-  /** BFS depth from protagonist for flow animation delay */
   flowDepth?: number;
-  // Legacy history field
-  history?: {
-    eventId: string;
-    title: string;
-    chapter?: string;
-    type: RelationType;
-    reason?: string;
-    date?: string;
-  }[];
+  [key: string]: unknown;
 }
 
 /**
@@ -76,7 +74,7 @@ export interface CharacterGraphProps {
   onNodeClick?: (node: CharacterNode) => void;
   onLinkClick?: (link: RelationshipLink) => void;
   selectedNodeId?: string | null;
-  relationTypeFilter?: RelationType | "all";
+  relationTypeFilter?: string | "all";
   className?: string;
 }
 

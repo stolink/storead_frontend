@@ -14,7 +14,7 @@
 작품 탐색, 챕터 읽기, 댓글, 좋아요, 북마크, 별점, 결제(크레딧) 기능을 제공하는 독자 중심 플랫폼
 연동 프로젝트: StoLink (작가용 집필 도구)
 
-**기술 스택**: React 18.3.0, TypeScript 5.7, Zustand 5.0, TanStack Query 5.90, Tailwind CSS 4.1
+**기술 스택**: React 19.0, TypeScript 5.7, Zustand 5.0, TanStack Query 5.90, Tailwind CSS 4.1
 **백엔드**: Spring Boot (storead_spring), PostgreSQL
 **결제**: TossPayments SDK
 

@@ -74,7 +74,6 @@ export interface Chapter {
   title: string;
   content: string;
   chapterNumber: number;
-  status: "DRAFT" | "PUBLISHED" | "SCHEDULED"; // 상태 추가
   viewCount: number;
   ratingSum: number; // 역정규화: 별점 합계
   ratingCount: number; // 역정규화: 별점 개수
@@ -99,6 +98,7 @@ export interface Comment {
   userId: string;
   parentId: string | null; // 대댓글일 경우 부모 ID
   content: string;
+  relationId?: string; // 관계 ID (link.id)
   likeCount: number;
   createdAt: string;
   updatedAt: string;
@@ -176,9 +176,10 @@ export interface CreateChapterRequest {
 }
 
 export interface CreateCommentRequest {
-  chapterId: number; // 챕터 ID 필수
+  chapterId?: string; // 챕터 ID (훅에서 주입 가능하므로 선택사항으로 변경)
   content: string;
   parentId?: string; // 대댓글인 경우
+  relationId?: string; // 특정 관계에 대한 댓글인 경우
 }
 
 export interface RatingRequest {

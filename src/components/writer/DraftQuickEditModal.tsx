@@ -4,6 +4,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,9 @@ export function DraftQuickEditModal({
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>항목 수정</DialogTitle>
+                    <DialogDescription className="sr-only">
+                        배포할 항목의 제목과 내용을 수정합니다.
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">

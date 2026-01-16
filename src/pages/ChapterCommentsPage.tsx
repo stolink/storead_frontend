@@ -68,7 +68,7 @@ export const ChapterCommentsPage = () => {
         if (!newComment.trim() || !isAuthenticated || !id) return;
         try {
             await createComment.mutateAsync({
-                chapterId: parseInt(id),
+                chapterId: id || '',
                 content: newComment.trim(),
             });
             setNewComment('');

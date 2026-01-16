@@ -19,11 +19,18 @@ export function TiledBackground({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext("webgl2", { alpha: false });
+    const gl = canvas.getContext("webgl2", {
+      alpha: false, // Ensure the canvas is opaque to prevent underlying content from showing through
+      preserveDrawingBuffer: false,
+    });
     if (!gl) {
       console.error("[TiledBackground] WebGL2 not supported");
       return;
     }
+
+    // Set fallback color while loading (cloud-50: #F1F0EC)
+    gl.clearColor(0.945, 0.941, 0.925, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
     let isDestroyed = false;
 
@@ -157,7 +164,7 @@ export function TiledBackground({
           0,
           0,
           targetWidth,
-          targetHeight,
+          targetHeight
         );
 
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -169,7 +176,7 @@ export function TiledBackground({
           gl.RGBA,
           gl.RGBA,
           gl.UNSIGNED_BYTE,
-          offscreen,
+          offscreen
         );
       } else {
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -179,7 +186,7 @@ export function TiledBackground({
           gl.RGBA,
           gl.RGBA,
           gl.UNSIGNED_BYTE,
-          image,
+          image
         );
       }
 
@@ -188,7 +195,7 @@ export function TiledBackground({
       gl.texParameteri(
         gl.TEXTURE_2D,
         gl.TEXTURE_MIN_FILTER,
-        gl.LINEAR_MIPMAP_LINEAR,
+        gl.LINEAR_MIPMAP_LINEAR
       );
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 

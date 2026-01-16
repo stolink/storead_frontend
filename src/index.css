@@ -7,9 +7,8 @@
 
 /* CSS Variables for Design System - Using HSL to match tailwind.config.ts */
 @theme inline {
-  --font-sans:
-    "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-heading: "Pretendard", sans-serif;
   --font-body: "Pretendard", sans-serif;
 
@@ -20,6 +19,12 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-mocha-500: #A47764;
+  --color-mocha-400: #BD9B8D;
+  --color-mocha-900: #3D302A;
+  --color-paper: #FDFBF8;
+  --color-card: #F1F0EC;
 }
 
 @layer base {
@@ -437,15 +442,13 @@
 
   /* Hover lift effect */
   .hover-lift {
-    transition:
-      transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
+    transition: transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
       box-shadow 0.2s cubic-bezier(0.19, 1, 0.22, 1);
   }
 
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow:
-      0 8px 20px -4px rgba(0, 0, 0, 0.08),
+    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.08),
       0 4px 8px -2px rgba(0, 0, 0, 0.04);
   }
 
@@ -737,11 +740,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family:
-      "Pretendard",
-      -apple-system,
-      BlinkMacSystemFont,
-      system-ui,
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui,
       sans-serif;
   }
 }
@@ -1011,15 +1010,13 @@
 
 /* Hover lift effect */
 .hover-lift {
-  transition:
-    transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
+  transition: transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
     box-shadow 0.2s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow:
-    0 8px 20px -4px rgba(0, 0, 0, 0.08),
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.08),
     0 4px 8px -2px rgba(0, 0, 0, 0.04);
 }
 
@@ -1300,4 +1297,35 @@
   font-size: 0.875rem;
   color: hsl(var(--muted-foreground));
   max-width: 280px;
+}
+
+/* ============================================
+   Style Isolation & Reset for CharacterGraph
+   ============================================ */
+
+.stolink-graph-container.reset-css {
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.stolink-graph-container.reset-css *,
+.stolink-graph-container.reset-css *::before,
+.stolink-graph-container.reset-css *::after {
+  box-sizing: inherit;
+}
+
+/* Ensure SVG elements don't inherit weird transforms or borders from global themes */
+.stolink-graph-container svg {
+  display: block;
+  overflow: visible;
+}
+
+.stolink-graph-container g,
+.stolink-graph-container circle,
+.stolink-graph-container path,
+.stolink-graph-container line {
+  vector-effect: non-scaling-stroke;
 }

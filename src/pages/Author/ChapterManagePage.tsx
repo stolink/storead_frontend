@@ -33,7 +33,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import type { Chapter } from '@/types';
 
 export const ChapterManagePage = () => {
@@ -132,7 +131,6 @@ export const ChapterManagePage = () => {
                                     <TableRow className="bg-zinc-50/50 hover:bg-zinc-50/50">
                                         <TableHead className="w-20 text-center font-medium text-zinc-500">번호</TableHead>
                                         <TableHead className="font-medium text-zinc-500">회차 제목</TableHead>
-                                        <TableHead className="w-32 text-center font-medium text-zinc-500">상태</TableHead>
                                         <TableHead className="w-32 text-center font-medium text-zinc-500">등록일</TableHead>
                                         <TableHead className="w-24 text-right font-medium text-zinc-500">작업</TableHead>
                                     </TableRow>
@@ -147,17 +145,6 @@ export const ChapterManagePage = () => {
                                                 </TableCell>
                                                 <TableCell className="font-medium text-zinc-900 dark:text-zinc-100">
                                                     {chapter.title}
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className={`font-normal ${chapter.status === 'PUBLISHED'
-                                                            ? 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
-                                                            : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
-                                                            }`}
-                                                    >
-                                                        {chapter.status === 'PUBLISHED' ? '발행' : '임시저장'}
-                                                    </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-center text-zinc-500 text-sm">
                                                     {formatDate(chapter.createdAt)}

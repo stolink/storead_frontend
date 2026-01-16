@@ -74,7 +74,6 @@ export interface Chapter {
   title: string;
   content: string;
   chapterNumber: number;
-  status: "DRAFT" | "PUBLISHED" | "SCHEDULED"; // 상태 추가
   viewCount: number;
   ratingSum: number; // 역정규화: 별점 합계
   ratingCount: number; // 역정규화: 별점 개수

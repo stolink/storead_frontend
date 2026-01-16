@@ -63,7 +63,7 @@ export interface CanvasGraphRef {
 
 const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
     ({ characters, links: linksProp, onNodeClick, onLinkClick, className, chapterId, showSearch = true, graphSnapshot }, ref) => {
-        const graphRef = useRef<ForceGraphMethods>();
+        const graphRef = useRef<ForceGraphMethods>(null);
         const containerRef = useRef<HTMLDivElement>(null);
         const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
         const nodeCharacterMapRef = useRef<Map<string, Character>>(new Map());

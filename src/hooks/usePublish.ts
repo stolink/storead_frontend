@@ -48,8 +48,8 @@ export const usePublish = () => {
       // 작품 정보 및 챕터 목록 갱신
       queryClient.invalidateQueries({ queryKey: ["myWorks"] });
       queryClient.invalidateQueries({ queryKey: ["discoveryWorks"] });
-      queryClient.invalidateQueries({ queryKey: ["work", result.workId] });
-      queryClient.invalidateQueries({ queryKey: ["workChapters", result.workId] });
+      queryClient.invalidateQueries({ queryKey: ["work", result.workId], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["workChapters", result.workId], exact: true });
     },
   });
 };

@@ -87,7 +87,7 @@ const SYNOPSIS_MAX_LENGTH = 2000;
 // === 다중 Draft 일괄 게시 컴포넌트 ===
 interface BatchPublishViewProps {
   drafts: Draft[];
-  onComplete: () => void;
+  onComplete: (workId?: string) => void;
 }
 
 function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
@@ -100,6 +100,7 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
   const [publishedIds, setPublishedIds] = useState<Set<string>>(new Set());
   const [errorMessages, setErrorMessages] = useState<Map<string, string>>(new Map());
   const [currentPublishingId, setCurrentPublishingId] = useState<string | null>(null);
+  const [lastWorkId, setLastWorkId] = useState<string | null>(null);
 
   // UI 상태
   const [showOnlyErrors, setShowOnlyErrors] = useState(false);
@@ -127,11 +128,12 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
     });
 
     try {
-      await publishMutation.mutateAsync({
+      const result = await publishMutation.mutateAsync({
         draftId: draft.id,
         title: draft.title || draft.workTitle || "제목 없음",
       });
       setPublishedIds((prev) => new Set([...prev, draft.id]));
+      if (result.workId) setLastWorkId(result.workId);
     } catch (error: any) {
       console.error("게시 실패:", draft.id, error);
       const msg = error?.response?.data?.message || error?.message || "알 수 없는 에러";
@@ -192,11 +194,11 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
   useEffect(() => {
     if (progress.total > 0 && progress.completed === progress.total) {
       const timer = setTimeout(() => {
-        onComplete();
+        onComplete(lastWorkId || undefined);
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [progress.completed, progress.total, onComplete]);
+  }, [progress.completed, progress.total, onComplete, lastWorkId]);
 
   // 필터링된 목록
   const filteredDrafts = useMemo(() => {
@@ -799,8 +801,12 @@ export const WritePage = () => {
   }, [isAuthenticated, openAuthModal, draftId, draftIds, isBatchMode]);
 
   // 완료 핸들러 (useCallback으로 래핑하여 BatchPublishView의 useEffect 의존성 안정화)
-  const handleBatchComplete = useCallback(() => {
-    navigate("/");
+  const handleBatchComplete = useCallback((workId?: string) => {
+    if (workId) {
+      navigate(`/author/works/${workId}/chapters`);
+    } else {
+      navigate("/");
+    }
   }, [navigate]);
 
   // === 에러/로딩 상태 처리 ===

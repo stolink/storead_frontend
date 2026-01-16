@@ -4,7 +4,24 @@
 
 /**
  * 외부 에디터 서버 URL
- * 현재 로컬 개발 환경(stolink_frontend) URL을 가리킴
- * 추후 배포 시 실제 운영 URL로 변경 필요
+ * 호스트명에 따라 배포 환경(Dev/Release) 또는 로컬 환경 주소를 동적으로 결정합니다.
  */
-export const EXTERNAL_EDITOR_URL = 'http://localhost:5173';
+const getEditorUrl = () => {
+    if (typeof window === 'undefined') return 'http://localhost:5173';
+
+    const hostname = window.location.hostname;
+
+    // 배포 환경 체크
+    if (hostname.includes('dev.stolink.link')) {
+        return 'https://dev.stolink.link';
+    }
+
+    if (hostname.includes('stolink.link')) {
+        return 'https://stolink.link';
+    }
+
+    // 기본 로컬 환경
+    return import.meta.env.VITE_STOLINK_URL || 'http://localhost:5173';
+};
+
+export const EXTERNAL_EDITOR_URL = getEditorUrl();

@@ -33,7 +33,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import type { Chapter } from '@/types';
 
 export const ChapterManagePage = () => {

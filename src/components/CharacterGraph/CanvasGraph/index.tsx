@@ -112,13 +112,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
 
     // Animation Phase State (Triggers re-render for flow effect)
     const [animationPhase, setAnimationPhase] = useState(0);
-    const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-    const [hoveredLink, setHoveredLink] = useState<{
-      link: RelationshipLink;
-      coords: { x: number; y: number };
-    } | null>(null);
-    const [_mousePos, setMousePos] = useState({ x: 0, y: 0 }); // Mouse tracking for accurate tooltip positioning
-    const mousePosRef = useRef({ x: 0, y: 0 }); // Ref로 추가 추적 (리렌더 방지)
+    // [FIX] Unused variables removed
 
     // Filter State
     const [relationTypeFilter, setRelationTypeFilter] = useState<
@@ -156,6 +150,8 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       const animate = (currentTime: number) => {
         if (currentTime - lastTime >= frameInterval) {
           setAnimationPhase((prev) => (prev + 0.015) % 1); // Slow smooth flow
+          // [FIX] Force redraw when simulation is idle
+          // graphRef.current?.d3ReheatSimulation(); // Removed invalid refresh()
           lastTime = currentTime;
         }
         frameId = requestAnimationFrame(animate);
@@ -385,8 +381,10 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
 
           // Sort by Priority
           typesArray.sort((a, b) => {
-            const pA = RELATION_PRIORITY[a as any] ?? 99;
-            const pB = RELATION_PRIORITY[b as any] ?? 99;
+            const pA =
+              RELATION_PRIORITY[a as keyof typeof RELATION_PRIORITY] ?? 99;
+            const pB =
+              RELATION_PRIORITY[b as keyof typeof RELATION_PRIORITY] ?? 99;
             return pA - pB;
           });
 
@@ -401,7 +399,9 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
             flowDepth: base.flowDepth ?? -1,
             isSuperEdge: true,
             originalLinks: group,
-            visualPattern: isMixed ? "braided" : "parallel",
+            visualPattern: (isMixed ? "braided" : "parallel") as
+              | "braided"
+              | "parallel",
             bidirectional: isBidirectional,
           };
           finalLinks.push(superEdge);
@@ -439,7 +439,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       // Charge Force (Repulsion)
       const chargeForce = fg.d3Force(
         "charge",
-      ) as d3.ForceManyBody<CharacterNode>;
+      ) as unknown as d3.ForceManyBody<CharacterNode>;
       if (chargeForce) {
         chargeForce
           .strength(FORCE_CONFIG.charge)
@@ -448,7 +448,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       }
 
       // Link Force
-      const linkForce = fg.d3Force("link") as d3.ForceLink<
+      const linkForce = fg.d3Force("link") as unknown as d3.ForceLink<
         CharacterNode,
         RelationshipLink
       >;
@@ -486,7 +486,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
 
             if (
               configKey === "enemy" ||
-              configKey === "rival" ||
+              // configKey === "rival" || // Removed dead code (rival maps to enemy)
               configKey === "betrayed"
             ) {
               return baseDistance * (1 + (strengthVal - 1) * 0.1);
@@ -525,7 +525,9 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       }
 
       // Center Force
-      const centerForce = fg.d3Force("center") as d3.ForceCenter<CharacterNode>;
+      const centerForce = fg.d3Force(
+        "center",
+      ) as unknown as d3.ForceCenter<CharacterNode>;
       if (centerForce) {
         centerForce.strength(FORCE_CONFIG.centerStrength);
       }
@@ -543,7 +545,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
                 : NODE_SIZES.default;
             return size / 2 + FORCE_CONFIG.collisionPadding;
           })
-          .strength(FORCE_CONFIG.collisionStrength),
+          .strength(FORCE_CONFIG.collisionStrength) as any,
       );
 
       // Reheat
@@ -719,7 +721,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           showLogicCheck,
         });
       },
-      [highlightLinks, showTension, showLogicCheck],
+      [highlightLinks, showTension, showLogicCheck, animationPhase],
     );
 
     const drawGroupClouds = useCallback(

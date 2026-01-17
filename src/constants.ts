@@ -7,6 +7,10 @@
  * 호스트명에 따라 배포 환경(Dev/Release) 또는 로컬 환경 주소를 동적으로 결정합니다.
  */
 const ENV_CONFIGS = [
+    // storead 도메인에서 stolink로 이동
+    { host: 'dev.storead.link', url: 'https://dev.stolink.link' },
+    { host: 'storead.link', url: 'https://stolink.link' },
+    // stolink 도메인에서 동일 환경으로 이동
     { host: 'dev.stolink.link', url: 'https://dev.stolink.link' },
     { host: 'stolink.link', url: 'https://stolink.link' },
 ];

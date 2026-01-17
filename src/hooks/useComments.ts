@@ -60,7 +60,9 @@ export const useComments = (chapterId: string, relationId?: string, sort: string
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
-    enabled: !!chapterId && !!relationId, // [FIX] relationId가 있을 때만 쿼리 실행
+    // [FIX] chapterId만 있으면 쿼리 실행 (relationId는 선택적)
+    // ChapterCommentsPage는 relationId 없이 일반 챕터 댓글을 조회함
+    enabled: !!chapterId,
   });
 };
 
@@ -103,9 +105,9 @@ export const useCreateComment = (chapterId: string, relationId?: string) => {
       return data;
     },
     onSuccess: () => {
-      // [FIX] 모든 정렬 상태(latest, likes)의 캐시를 무효화
+      // [FIX] 해당 챕터의 모든 댓글 캐시를 무효화 (relationId, sort 무관)
       queryClient.invalidateQueries({
-        queryKey: ["comments", chapterId, relationId],
+        queryKey: ["comments", chapterId],
         exact: false
       });
     },
@@ -135,9 +137,9 @@ export const useCreateReply = (chapterId: string, relationId?: string) => {
       return data;
     },
     onSuccess: () => {
-      // [FIX] 모든 정렬 상태의 캐시를 무효화
+      // [FIX] 해당 챕터의 모든 댓글 캐시를 무효화 (relationId, sort 무관)
       queryClient.invalidateQueries({
-        queryKey: ["comments", chapterId, relationId],
+        queryKey: ["comments", chapterId],
         exact: false
       });
     },
@@ -176,7 +178,8 @@ const updateCommentInCache = (
  */
 export const useToggleCommentLike = (chapterId: string, relationId?: string, sort: string = 'latest') => {
   const queryClient = useQueryClient();
-  const commentQueryKey = ["comments", chapterId, relationId, sort];
+  // [FIX] queryKey를 useComments와 일관되게 유지 (relationId는 String으로 변환)
+  const commentQueryKey = ["comments", String(chapterId), String(relationId || ''), sort];
 
   return useMutation({
     mutationFn: async (commentId: string) => {

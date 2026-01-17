@@ -256,10 +256,9 @@ export const useCategoryWorks = (
                 order: params?.order || 'desc'
             };
 
-            // 다중 장르 처리 (comma separated)
-            if (genreId.includes(',')) {
-                queryParams.genres = genreId;
-            } else {
+            // 'ALL'이 아닌 경우에만 genres 파라미터 추가
+            // 'ALL'인 경우 genres를 생략하여 전체 작품 조회
+            if (genreId.toUpperCase() !== 'ALL') {
                 queryParams.genres = genreId;
             }
 

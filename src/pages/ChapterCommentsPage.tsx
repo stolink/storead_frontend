@@ -37,10 +37,12 @@ export const ChapterCommentsPage = () => {
     // 데이터 페칭
     const { data: chapter } = usePublicChapter(id || '');
     const { data: work } = usePublicWork(chapter?.workId || '');
-    const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useComments(id || '');
+    // sortBy를 API에 전달하여 서버사이드 정렬 적용
+    const apiSort = sortBy === 'popular' ? 'likes' : 'latest';
+    const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useComments(id || '', undefined, apiSort);
     const createComment = useCreateComment(id || '');
     const createReply = useCreateReply(id || '');
-    const toggleLike = useToggleCommentLike(id || '');
+    const toggleLike = useToggleCommentLike(id || '', undefined, apiSort);
 
     // 댓글 평탄화 및 정렬
     // 댓글 평탄화 및 정렬

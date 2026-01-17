@@ -8,11 +8,10 @@
  * - 무한 스크롤
  * - 뷰 모드 (그리드/리스트)
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCategoryWorks } from '@/hooks/useDiscovery';
 import { BookCard } from '@/components/home/BookCard';
-import { Button } from '@/components/ui/button';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { LayoutGrid, List as ListIcon, Loader2, ChevronDown, Star, MessageSquare } from 'lucide-react';
 import type { Work } from '@/types';
@@ -20,6 +19,12 @@ import type { Work } from '@/types';
 // 장르 매핑 및 서브장르 정의
 // Genre Enum: FANTASY, ROMANCE, ROMANCE_FANTASY, TRADITIONAL_FANTASY, MARTIAL_ARTS, MODERN_FANTASY, MYSTERY, THRILLER, SF, DRAMA, COMEDY, HORROR, OTHER
 const GENRE_GROUPS: Record<string, { label: string, tabs: { label: string, value: string }[] }> = {
+    'ALL': {
+        label: '전체',
+        tabs: [
+            { label: '전체', value: 'ALL' }
+        ]
+    },
     'FANTASY': {
         label: '판타지',
         tabs: [
@@ -65,6 +70,19 @@ export const CategoryPage = () => {
         (searchParams.get('sort') as any) || 'latest'
     );
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+    const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+    // 드롭다운 외부 클릭 시 닫기
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
+                setSortDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // 무한 스크롤 옵저버
     const { containerRef, isVisible } = useIntersectionObserver();
@@ -131,12 +149,14 @@ export const CategoryPage = () => {
                             </p>
                         </div>
 
+{/* Follow Genre 버튼 - 백엔드 API 구현 후 활성화
                         <Button
                             variant="outline"
                             className="rounded-full border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-100 dark:hover:text-zinc-900 transition-all font-bold"
                         >
                             + Follow Genre
                         </Button>
+                        */}
                     </div>
 
                     {/* 서브 장르 탭 */}
@@ -180,17 +200,37 @@ export const CategoryPage = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {/* 정렬 드롭다운 */}
-                        <div className="relative group">
-                            <button className="flex items-center text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:text-mocha-600 transition-colors uppercase tracking-wide">
+                        {/* 정렬 드롭다운 - 클릭 방식 */}
+                        <div className="relative" ref={sortDropdownRef}>
+                            <button
+                                onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+                                className="flex items-center text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:text-mocha-600 transition-colors uppercase tracking-wide"
+                            >
                                 {sortBy === 'latest' ? 'Newest' : sortBy === 'popular' ? 'Popular' : 'Rating'}
-                                <ChevronDown className="w-4 h-4 ml-1" />
+                                <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${sortDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
-                            <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-zinc-100 dark:border-zinc-800 hidden group-hover:block z-30 overflow-hidden ring-1 ring-black/5">
-                                <button onClick={() => setSortBy('popular')} className="block w-full text-left px-4 py-3 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">Popular</button>
-                                <button onClick={() => setSortBy('latest')} className="block w-full text-left px-4 py-3 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">Newest</button>
-                                <button onClick={() => setSortBy('rating')} className="block w-full text-left px-4 py-3 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">Rating</button>
-                            </div>
+                            {sortDropdownOpen && (
+                                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-zinc-100 dark:border-zinc-800 z-30 overflow-hidden ring-1 ring-black/5">
+                                    <button
+                                        onClick={() => { setSortBy('popular'); setSortDropdownOpen(false); }}
+                                        className={`block w-full text-left px-4 py-3 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors ${sortBy === 'popular' ? 'bg-zinc-50 dark:bg-zinc-800 text-mocha-600' : ''}`}
+                                    >
+                                        Popular
+                                    </button>
+                                    <button
+                                        onClick={() => { setSortBy('latest'); setSortDropdownOpen(false); }}
+                                        className={`block w-full text-left px-4 py-3 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors ${sortBy === 'latest' ? 'bg-zinc-50 dark:bg-zinc-800 text-mocha-600' : ''}`}
+                                    >
+                                        Newest
+                                    </button>
+                                    <button
+                                        onClick={() => { setSortBy('rating'); setSortDropdownOpen(false); }}
+                                        className={`block w-full text-left px-4 py-3 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors ${sortBy === 'rating' ? 'bg-zinc-50 dark:bg-zinc-800 text-mocha-600' : ''}`}
+                                    >
+                                        Rating
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* 뷰 모드 토글 */}

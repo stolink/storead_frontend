@@ -44,13 +44,16 @@ export const useUpdateProfile = () => {
   return useMutation({
     mutationFn: async (params: UpdateProfileParams) => {
       const { data } = await api.patch("/auth/me", params);
-      return data as User;
+      // 백엔드 응답 형식에 따라 data.data 또는 data 반환
+      return (data.data || data) as User;
     },
     onSuccess: (updatedUser) => {
       // 캐시 업데이트
       queryClient.setQueryData(["me"], updatedUser);
       // Zustand 스토어도 업데이트
       updateUser(updatedUser);
+      // me 쿼리 무효화하여 최신 데이터 다시 페칭
+      queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
 };

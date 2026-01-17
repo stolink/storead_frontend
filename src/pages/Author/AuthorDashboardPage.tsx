@@ -63,16 +63,25 @@ export const AuthorDashboardPage = () => {
 
     // 삭제 확인 모달
     const [deleteTarget, setDeleteTarget] = useState<Work | null>(null);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const handleDelete = async () => {
         if (!deleteTarget) return;
+        setDeleteError(null);
 
         try {
             await deleteWork.mutateAsync(deleteTarget.id);
             setDeleteTarget(null);
         } catch (err) {
             console.error('작품 삭제 실패:', err);
+            setDeleteError('작품 삭제에 실패했습니다. 다시 시도해주세요.');
         }
+    };
+
+    // 모달 닫힐 때 에러 초기화
+    const handleCloseModal = () => {
+        setDeleteTarget(null);
+        setDeleteError(null);
     };
 
     if (isLoading) {
@@ -216,7 +225,7 @@ export const AuthorDashboardPage = () => {
             </main>
 
             {/* 삭제 확인 모달 */}
-            <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+            <AlertDialog open={!!deleteTarget} onOpenChange={handleCloseModal}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>작품을 삭제하시겠습니까?</AlertDialogTitle>
@@ -225,11 +234,19 @@ export const AuthorDashboardPage = () => {
                             이 작업은 되돌릴 수 없습니다.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    {deleteError && (
+                        <div className="text-sm text-red-600 bg-red-50 dark:bg-red-950/30 p-3 rounded-lg">
+                            {deleteError}
+                        </div>
+                    )}
                     <AlertDialogFooter>
-                        <AlertDialogCancel>취소</AlertDialogCancel>
+                        <AlertDialogCancel disabled={deleteWork.isPending}>
+                            취소
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
-                            className="bg-red-600 hover:bg-red-700"
+                            disabled={deleteWork.isPending}
+                            className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {deleteWork.isPending ? '삭제 중...' : '삭제'}
                         </AlertDialogAction>

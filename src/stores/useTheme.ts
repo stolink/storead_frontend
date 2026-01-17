@@ -62,6 +62,20 @@ export const previewBgClasses: Record<Theme, string> = {
 };
 
 /**
+ * HTML 요소에 dark 클래스 토글 (Tailwind dark mode 지원)
+ */
+const updateHtmlDarkClass = (theme: Theme) => {
+    if (typeof document !== 'undefined') {
+        const html = document.documentElement;
+        if (theme === 'dark') {
+            html.classList.add('dark');
+        } else {
+            html.classList.remove('dark');
+        }
+    }
+};
+
+/**
  * 전역 테마 스토어
  * localStorage에 저장되어 새로고침 후에도 유지됨
  */
@@ -69,10 +83,19 @@ export const useThemeStore = create<ThemeState>()(
     persist(
         (set) => ({
             theme: 'light',
-            setTheme: (theme) => set({ theme }),
+            setTheme: (theme) => {
+                updateHtmlDarkClass(theme);
+                set({ theme });
+            },
         }),
         {
             name: 'storead-theme',
+            onRehydrateStorage: () => (state) => {
+                // 저장된 테마 로드 시 dark 클래스 적용
+                if (state?.theme) {
+                    updateHtmlDarkClass(state.theme);
+                }
+            },
         }
     )
 );

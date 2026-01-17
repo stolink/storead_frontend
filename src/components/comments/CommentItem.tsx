@@ -22,6 +22,7 @@ import {
   useDeleteComment,
 } from "@/hooks/useComments";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { getRelativeTime } from "@/utils/date";
 
 interface CommentItemProps {
   /** 댓글 데이터 */
@@ -89,51 +90,6 @@ export const CommentItem = ({
       deleteComment.mutate(comment.id);
     }
   }, [comment.id, deleteComment]);
-
-  // 상대적 시간 계산
-  const getRelativeTime = (date: string) => {
-    if (!date) return "";
-
-    // 1. 공백을 T로 치환 (SQL 포맷 대응: YYYY-MM-DD HH:mm:ss -> YYYY-MM-DDTHH:mm:ss)
-    let stdDate = date.replace(" ", "T");
-
-    // 2. Z가 없고, +기호(오프셋)도 없으면 Z 추가 (UTC로 간주)
-    // 예: 2024-01-01T10:00:00 -> 2024-01-01T10:00:00Z
-    if (!stdDate.endsWith("Z") && !stdDate.includes("+")) {
-      stdDate += "Z";
-    }
-
-    const commentDate = new Date(stdDate);
-    const now = new Date();
-
-    // 유효하지 않은 날짜인 경우 원본 문자열로 폴백 시도 (최후의 수단)
-    if (isNaN(commentDate.getTime())) {
-      try {
-        const fallbackDate = new Date(date);
-        if (!isNaN(fallbackDate.getTime())) {
-          return fallbackDate.toLocaleDateString("ko-KR");
-        }
-      } catch {
-        return date;
-      }
-      return date;
-    }
-
-    const diffMs = now.getTime() - commentDate.getTime();
-
-    // 미래 시간이면 "방금 전" (클라이언트 시간 오차 허용)
-    if (diffMs < 0) return "방금 전";
-
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return "방금 전";
-    if (diffMins < 60) return `${diffMins}분 전`;
-    if (diffHours < 24) return `${diffHours}시간 전`;
-    if (diffDays < 7) return `${diffDays}일 전`;
-    return commentDate.toLocaleDateString("ko-KR");
-  };
 
   return (
     <div

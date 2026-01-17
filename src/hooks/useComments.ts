@@ -11,6 +11,21 @@ import {
 import api from "@/api/client";
 import type { Comment, PaginatedResponse, CreateCommentRequest } from "@/types";
 
+// Query Key Factory
+export const commentKeys = {
+  all: ["comments"] as const,
+  lists: () => [...commentKeys.all, "list"] as const,
+  list: (chapterId: string, relationId: string = "", sort: string = "latest") =>
+    [
+      ...commentKeys.lists(),
+      String(chapterId),
+      String(relationId),
+      sort,
+    ] as const,
+  replies: (commentId: string) =>
+    [...commentKeys.all, "replies", commentId] as const,
+};
+
 /**
  * 챕터 댓글 목록 조회 (무한 스크롤)
  * GET /api/chapters/{chapterId}/comments
@@ -20,9 +35,8 @@ export const useComments = (
   relationId?: string,
   sort: string = "latest",
 ) => {
-  // [FIX] relationId가 있을 때만 쿼리 실행하여 로딩 무한 표시 방지
   return useInfiniteQuery<PaginatedResponse<Comment>>({
-    queryKey: ["comments", String(chapterId), String(relationId || ""), sort],
+    queryKey: commentKeys.list(chapterId, relationId, sort),
     queryFn: async ({ pageParam }) => {
       const cid = String(chapterId);
       const { data } = await api.get(`/chapters/${cid}/comments`, {
@@ -37,8 +51,7 @@ export const useComments = (
       const responseData = data.data || data;
       const rawComments = responseData.comments || responseData.data || [];
 
-      // DTO Mapping: 백엔드는 userNickname/userAvatarUrl 필드를 평탄하게 보내지만,
-      // 프론트엔드 UI(RelationshipCommentList)는 author 객체를 기대합니다.
+      // DTO Mapping
       const mappedComments = rawComments.map(
         (
           c: Comment & {
@@ -56,14 +69,8 @@ export const useComments = (
         }),
       );
 
-      // [Safety] 현재 백엔드 응답 DTO에 relationId 필드가 누락되어 있어
-      // 클라이언트 사이드 필터링을 일시적으로 비활성화합니다.
-      // 백엔드 API가 쿼리 파라미터(relationId)로 이미 필터링을 수행한다면 안전합니다.
-      // 그렇지 않다면 모든 챕터 댓글이 노출되지만, 아예 보이지 않는 것보다는 낫습니다.
-      const filteredComments = mappedComments;
-
       return {
-        data: Array.isArray(filteredComments) ? filteredComments : [],
+        data: Array.isArray(mappedComments) ? mappedComments : [],
         hasMore: responseData.pagination?.hasNext || false,
         nextCursor: responseData.pagination?.nextCursor,
       };
@@ -71,8 +78,6 @@ export const useComments = (
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
-    // [FIX] chapterId만 있으면 쿼리 실행 (relationId는 선택적)
-    // ChapterCommentsPage는 relationId 없이 일반 챕터 댓글을 조회함
     enabled: !!chapterId,
   });
 };
@@ -83,10 +88,9 @@ export const useComments = (
  */
 export const useReplies = (commentId: string, isOpen: boolean) => {
   return useQuery<Comment[]>({
-    queryKey: ["replies", commentId],
+    queryKey: commentKeys.replies(commentId),
     queryFn: async () => {
       const { data } = await api.get(`/comments/${commentId}/replies`);
-      // console.log('[DEBUG] Replies API Response:', data);
       const responseData = data.data || data;
       return responseData || [];
     },
@@ -108,7 +112,6 @@ export const useCreateComment = (chapterId: string, relationId?: string) => {
         relationId,
         ...payload,
       };
-      // Ensure chapterId is present (API requirement)
       if (!fullPayload.chapterId) {
         throw new Error("chapterId is required");
       }
@@ -119,9 +122,11 @@ export const useCreateComment = (chapterId: string, relationId?: string) => {
       return data;
     },
     onSuccess: () => {
-      // [FIX] 해당 챕터의 모든 댓글 캐시를 무효화 (relationId, sort 무관)
+      // 해당 챕터의 모든 댓글 캐시를 무효화
+      // commentKeys.lists() -> ["comments", "list"]
+      // invalidateQueries({ queryKey: ["comments", "list", chapterId] })
       queryClient.invalidateQueries({
-        queryKey: ["comments", chapterId],
+        queryKey: [...commentKeys.lists(), String(chapterId)],
         exact: false,
       });
     },
@@ -146,19 +151,19 @@ export const useCreateReply = (chapterId: string, relationId?: string) => {
       const { data } = await api.post(`/comments/${parentId}/replies`, {
         content,
         chapterId,
-        relationId, // 대댓글에도 관계 ID 포함하여 격리 강화
+        relationId,
       });
       return data;
     },
     onSuccess: (_, variables) => {
-      // [FIX] 대댓글 목록 캐시 무효화 (즉시 반영)
+      // 대댓글 목록 캐시 무효화
       queryClient.invalidateQueries({
-        queryKey: ["replies", variables.parentId],
+        queryKey: commentKeys.replies(variables.parentId),
       });
 
       // 해당 챕터의 댓글 캐시도 무효화 (답글 수 업데이트 등)
       queryClient.invalidateQueries({
-        queryKey: ["comments", chapterId],
+        queryKey: [...commentKeys.lists(), String(chapterId)],
         exact: false,
       });
     },
@@ -194,8 +199,6 @@ const updateCommentInCache = (
 /**
  * 댓글 좋아요 토글 (낙관적 업데이트)
  * POST /api/comments/{id}/like
- *
- * @param chapterId - 현재 챕터 ID (상태 오염 방지를 위해 특정 챕터만 업데이트)
  */
 export const useToggleCommentLike = (
   chapterId: string,
@@ -203,12 +206,7 @@ export const useToggleCommentLike = (
   sort: string = "latest",
 ) => {
   const queryClient = useQueryClient();
-  const rootQueryKey = [
-    "comments",
-    String(chapterId),
-    String(relationId || ""),
-    sort,
-  ];
+  const listQueryKey = commentKeys.list(chapterId, relationId, sort);
 
   return useMutation({
     mutationFn: async ({
@@ -228,19 +226,17 @@ export const useToggleCommentLike = (
       };
     },
     onMutate: async ({ commentId }) => {
-      // 1. Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({
-        queryKey: ["comments", String(chapterId)],
-      });
+      // 1. Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: listQueryKey });
 
-      // 2. Snapshot the previous value (for rollback)
-      const previousRootData = queryClient.getQueryData(rootQueryKey);
+      // 2. Snapshot the previous value
+      const previousData = queryClient.getQueryData(listQueryKey);
 
-      // 3. Optimistic Update: Update ALL relevant caches (Root Only)
-      queryClient.setQueriesData<{
+      // 3. Optimistic Update
+      queryClient.setQueryData<{
         pages: PaginatedResponse<Comment>[];
         pageParams: unknown[];
-      }>({ queryKey: ["comments", String(chapterId)] }, (oldData) => {
+      }>(listQueryKey, (oldData) => {
         if (!oldData) return oldData;
         const target = findCommentInPages(oldData, commentId);
         if (!target) return oldData;
@@ -253,33 +249,33 @@ export const useToggleCommentLike = (
         return updateCommentInCache(oldData, commentId, newLiked, newCount);
       });
 
-      return { previousRootData, rootQueryKey };
+      return { previousData, listQueryKey };
     },
-    onSuccess: (data) => {
-      // 4. Server Response Update: Update ALL relevant caches with authoritative data
-      queryClient.setQueriesData<{
-        pages: PaginatedResponse<Comment>[];
-        pageParams: unknown[];
-      }>({ queryKey: ["comments", String(chapterId)] }, (oldData) =>
-        updateCommentInCache(
-          oldData,
-          data.commentId,
-          data.isLiked,
-          data.likeCount,
-        ),
-      );
-    },
-    onError: (_error, _variables, context) => {
-      // On error, easiest is to invalidate to re-sync
-      queryClient.invalidateQueries({
-        queryKey: ["comments", String(chapterId)],
-      });
-      if (context?.previousRootData) {
-        queryClient.setQueryData(
-          context.rootQueryKey,
-          context.previousRootData,
+    onSuccess: (data, _, context) => {
+      // 4. Server Response Update
+      if (context?.listQueryKey) {
+        queryClient.setQueryData<{
+          pages: PaginatedResponse<Comment>[];
+          pageParams: unknown[];
+        }>(context.listQueryKey, (oldData) =>
+          updateCommentInCache(
+            oldData,
+            data.commentId,
+            data.isLiked,
+            data.likeCount,
+          ),
         );
       }
+
+      // Safety: Invalidate to ensure consistency
+      queryClient.invalidateQueries({ queryKey: context?.listQueryKey });
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(context.listQueryKey, context.previousData);
+      }
+      // Re-fetch on error
+      queryClient.invalidateQueries({ queryKey: context?.listQueryKey });
     },
   });
 };
@@ -308,7 +304,7 @@ export const useDeleteComment = () => {
       await api.delete(`/comments/${commentId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["comments"] });
+      queryClient.invalidateQueries({ queryKey: commentKeys.all });
     },
   });
 };

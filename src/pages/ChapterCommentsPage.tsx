@@ -257,6 +257,7 @@ export const ChapterCommentsPage = () => {
                 onSetReplyTo={handleSetReplyTo}
                 onReplyContentChange={handleReplyContentChange}
                 onSubmitReply={handleSubmitReply}
+                theme={theme}
               />
             ))
           )}

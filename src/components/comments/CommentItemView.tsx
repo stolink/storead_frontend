@@ -32,6 +32,8 @@ interface CommentItemViewProps {
   onReplyContentChange: (content: string) => void;
   /** 답글 제출 핸들러 */
   onSubmitReply: (parentId: string) => void;
+  /** 현재 테마 */
+  theme: string;
 }
 
 /**
@@ -75,7 +77,25 @@ export const CommentItemView = memo(
     onSetReplyTo,
     onReplyContentChange,
     onSubmitReply,
+    theme,
   }: CommentItemViewProps) => {
+    // 테마별 입력창 스타일 정의
+    const getThemeInputStyle = (currentTheme: string) => {
+      switch (currentTheme) {
+        case "dark":
+          return "bg-mocha-800 text-mocha-50 border-mocha-700 placeholder:text-mocha-300";
+        case "sepia":
+          return "bg-[#F4ECD8] text-amber-900 border-amber-200 placeholder:text-amber-900/40";
+        case "ivory":
+          return "bg-[#F5F5DC] text-[#5D4E37] border-amber-200 placeholder:text-[#5D4E37]/40";
+        case "light":
+        default:
+          return "bg-white text-zinc-900 border-stone-200 placeholder:text-stone-400";
+      }
+    };
+
+    const inputStyle = getThemeInputStyle(theme);
+
     // 대댓글 데이터 페칭
     // 백엔드의 getComments는 최상위 댓글만 반환하므로, 대댓글은 별도로 가져와야 함
     const { data: remoteReplies } = useReplies(
@@ -154,12 +174,26 @@ export const CommentItemView = memo(
 
             {/* 대댓글 입력 */}
             {replyToId === comment.id && (
-              <div className="mt-4 p-4 rounded-xl bg-cloud-50 border border-mocha-100 dark:bg-zinc-900 dark:border-zinc-700 animate-in slide-in-from-top-2 duration-300">
+              <div
+                className={cn(
+                  "mt-4 p-4 rounded-xl border animate-in slide-in-from-top-2 duration-300",
+                  theme === "dark"
+                    ? "bg-mocha-900 border-mocha-700"
+                    : theme === "sepia"
+                      ? "bg-amber-100/50 border-amber-200"
+                      : theme === "ivory"
+                        ? "bg-[#FFFFF0] border-amber-200"
+                        : "bg-cloud-50 border-mocha-100",
+                )}
+              >
                 <Textarea
                   value={replyContent}
                   onChange={(e) => onReplyContentChange(e.target.value)}
                   placeholder="생각을 공유해주세요..."
-                  className="min-h-[80px] text-sm bg-white border-stone-200 resize-none focus:ring-mocha-400 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                  className={cn(
+                    "min-h-[80px] text-sm resize-none focus:ring-mocha-400",
+                    inputStyle,
+                  )}
                   autoFocus
                 />
                 <div className="flex justify-end gap-2 mt-3">
@@ -201,6 +235,7 @@ export const CommentItemView = memo(
                     onSetReplyTo={onSetReplyTo}
                     onReplyContentChange={onReplyContentChange}
                     onSubmitReply={onSubmitReply}
+                    theme={theme}
                   />
                 ))}
               </div>

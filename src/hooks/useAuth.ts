@@ -18,7 +18,14 @@ export const useMe = () => {
     queryKey: ["me"],
     queryFn: async () => {
       const { data } = await api.get("/auth/me");
-      return data;
+      const user = data.data || data;
+
+      // [Fix] 백엔드 필드명 불일치(avatarUrl vs profileImageUrl) 대응
+      // 기존 사진이 사라지는 문제 방지
+      if (!user.profileImageUrl && user.avatarUrl) {
+        user.profileImageUrl = user.avatarUrl;
+      }
+      return user;
     },
     // 로그인 상태일 때만 요청
     enabled: isAuthenticated,
@@ -43,9 +50,22 @@ export const useUpdateProfile = () => {
 
   return useMutation({
     mutationFn: async (params: UpdateProfileParams) => {
-      const { data } = await api.patch("/auth/me", params);
+      // [Fix] 백엔드가 avatarUrl을 기대할 수 있으므로 두 필드 모두 전송
+      const payload = {
+        ...params,
+        avatarUrl: params.profileImageUrl,
+      };
+
+      const { data } = await api.patch("/auth/me", payload);
       // 백엔드 응답 형식에 따라 data.data 또는 data 반환
-      return (data.data || data) as User;
+      const updatedUser = (data.data || data) as User;
+
+      // 응답 데이터도 정규화
+      if (!updatedUser.profileImageUrl && (updatedUser as any).avatarUrl) {
+        updatedUser.profileImageUrl = (updatedUser as any).avatarUrl;
+      }
+
+      return updatedUser;
     },
     onSuccess: (updatedUser) => {
       // 캐시 업데이트

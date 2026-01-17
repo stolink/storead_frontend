@@ -16,14 +16,7 @@ import {
   useToggleCommentLike,
 } from "@/hooks/useComments";
 import { useAuthStore } from "@/stores/useAuthStore";
-import {
-  themeClasses,
-  headerThemeClasses,
-  backgroundThemeClasses,
-  cardThemeClasses,
-  dividerThemeClasses,
-  type Theme,
-} from "@/stores/useTheme";
+import { type Theme } from "@/stores/useTheme";
 import { cn } from "@/lib/utils";
 
 type SortBy = "latest" | "popular";

@@ -63,8 +63,9 @@ export const previewBgClasses: Record<Theme, string> = {
 
 /**
  * HTML 요소에 dark 클래스 토글 (Tailwind dark mode 지원)
+ * 현재 미사용이지만 향후 다크모드 전역 적용 시 사용 예정
  */
-const updateHtmlDarkClass = (theme: Theme) => {
+const _updateHtmlDarkClass = (theme: Theme) => {
   if (typeof document !== "undefined") {
     const html = document.documentElement;
     if (theme === "dark") {
@@ -74,6 +75,9 @@ const updateHtmlDarkClass = (theme: Theme) => {
     }
   }
 };
+
+// 다크모드 전역 적용 시 setTheme 내에서 _updateHtmlDarkClass(theme) 호출
+void _updateHtmlDarkClass;
 
 /**
  * 전역 테마 스토어

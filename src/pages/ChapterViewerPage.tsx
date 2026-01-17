@@ -103,14 +103,54 @@ export const ChapterViewerPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   // 뷰어 전용 테마 상태 (전역 테마와 분리)
-  const [theme, setThemeState] = useState<Theme>(
-    () => (localStorage.getItem("viewer_theme") as Theme) || "light",
-  );
+  const [theme, setThemeState] = useState<Theme>(() => {
+    const stored = localStorage.getItem("viewer_theme") as Theme;
+    if (stored) return stored;
+
+    // 시스템 설정 감지 (저장된 설정이 없을 경우)
+    if (
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    ) {
+      return "dark";
+    }
+    return "light";
+  });
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem("viewer_theme", newTheme);
   };
+
+  // [Sync] 다른 탭에서 테마 변경 시 동기화 & 시스템 설정 변경 감지
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "viewer_theme" && e.newValue) {
+        setThemeState(e.newValue as Theme);
+      }
+    };
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemChange = (e: MediaQueryListEvent) => {
+      // 사용자가 명시적으로 설정을 변경하지 않은 경우에만 시스템 설정을 따름 (선택적)
+      // 여기서는 현재 로컬스토리지에 값이 없으면 따라가도록 하거나,
+      // 혹은 항상 시스템 변경을 반영할지 결정해야 함.
+      // 사용자 경험상 "설정 안함" 상태가 명시적이지 않으므로,
+      // 로컬스토리지 값이 없을 때만 반응하거나,
+      // 이미 로컬스토리지에 값이 있으면 무시하는 것이 일반적임.
+      if (!localStorage.getItem("viewer_theme")) {
+        setThemeState(e.matches ? "dark" : "light");
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    mediaQuery.addEventListener("change", handleSystemChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      mediaQuery.removeEventListener("change", handleSystemChange);
+    };
+  }, []);
 
   // 뷰어 설정 상태 (기존 네이밍 유지)
   const [viewMode, setViewMode] = useState<ViewMode>("scroll");

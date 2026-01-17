@@ -37,6 +37,7 @@ interface CanvasGraphProps {
   onNodeClick?: (character: Character) => void;
   onLinkClick?: (link: RelationshipLink | null) => void;
   selectedLink?: RelationshipLink | null;
+  onReady?: () => void; // [NEW] Notification when graph is visually ready
   width?: number;
   height?: number;
   className?: string;
@@ -66,6 +67,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       chapterId,
       showSearch = true,
       graphSnapshot,
+      onReady, // [RESTORED]
     },
     ref,
   ) => {
@@ -112,7 +114,6 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
 
     // Animation Phase State (Triggers re-render for flow effect)
     const [animationPhase, setAnimationPhase] = useState(0);
-    // [FIX] Unused variables removed
 
     // Filter State
     const [relationTypeFilter, setRelationTypeFilter] = useState<
@@ -140,18 +141,16 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       data: any | null;
     }>({ show: false, x: 0, y: 0, data: null });
 
-    // Animation Loop (Maintain constant effect flow)
+    // Animation Loop using requestAnimationFrame to update state
     useEffect(() => {
       let frameId: number;
       let lastTime = 0;
-      const targetFPS = 24; // Limit FPS for performance (flow doesn't need 60fps)
+      const targetFPS = 24;
       const frameInterval = 1000 / targetFPS;
 
       const animate = (currentTime: number) => {
         if (currentTime - lastTime >= frameInterval) {
-          setAnimationPhase((prev) => (prev + 0.015) % 1); // Slow smooth flow
-          // [FIX] Force redraw when simulation is idle
-          // graphRef.current?.d3ReheatSimulation(); // Removed invalid refresh()
+          setAnimationPhase((prev) => (prev + 0.015) % 1);
           lastTime = currentTime;
         }
         frameId = requestAnimationFrame(animate);
@@ -554,6 +553,30 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Initial Zoom to Fit & Dramatic Entry
+    useEffect(() => {
+      // Wait for graph to settle slightly
+      const timer = setTimeout(() => {
+        if (graphRef.current) {
+          // [Fix] Instant zoom (0ms) to padding 150.
+          // This ensures the graph starts at the desired "zoomed out" scale immediately without transition.
+          graphRef.current.zoomToFit(0, 200);
+
+          // Fade in after positioning is set (Double rAF to ensure canvas paint)
+          // Fade in after positioning is set (Double rAF to ensure canvas paint)
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (graphRef.current) {
+                // [Failsafe] Ensure zoom is applied right before showing
+                graphRef.current.zoomToFit(0, 150);
+              }
+              if (onReady) onReady(); // [FIX] Notify parent that graph is ready
+            });
+          });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }, [initialNodes]);
     // === Interaction Handlers ===
     const handleEngineStop = useCallback(() => {
       // Do nothing - keep physics alive or just let it settle without freezing

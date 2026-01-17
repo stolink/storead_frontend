@@ -101,12 +101,18 @@ export const RankingPage = () => {
                     <>
                         {/* Top 3 Hero Section */}
                         {top3.length > 0 && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 items-end">
+                            <div className={`grid gap-6 mb-16 items-end ${
+                                top3.length === 1
+                                    ? 'grid-cols-1 max-w-md mx-auto'
+                                    : top3.length === 2
+                                        ? 'grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto'
+                                        : 'grid-cols-1 md:grid-cols-3'
+                            }`}>
                                 {/* 2nd Place */}
                                 {top3[1] && <TopRankCard work={top3[1]} rank={2} />}
 
                                 {/* 1st Place (Center, Largest) */}
-                                {top3[0] && <TopRankCard work={top3[0]} rank={1} isMain />}
+                                {top3[0] && <TopRankCard work={top3[0]} rank={1} isMain={top3.length >= 3} />}
 
                                 {/* 3rd Place */}
                                 {top3[2] && <TopRankCard work={top3[2]} rank={3} />}

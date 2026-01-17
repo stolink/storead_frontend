@@ -16,7 +16,6 @@ export type UIRelationType =
   | "neutral"
   | "complex";
 
-
 /**
  * D3 시뮬레이션용 노드 타입
  * Character._id를 id로 사용
@@ -54,6 +53,12 @@ export interface RelationshipLink extends d3.SimulationLinkDatum<CharacterNode> 
   revealedInChapter?: number;
   curvature?: number;
   flowDepth?: number;
+  // Super Edge Logic
+  visualPattern?: "braided" | "parallel" | "standard";
+  relationTypes?: UIRelationType[];
+  isSuperEdge?: boolean;
+  bidirectional?: boolean;
+  originalLinks?: RelationshipLink[];
   [key: string]: unknown;
 }
 

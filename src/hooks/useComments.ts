@@ -11,14 +11,32 @@ import {
 import api from "@/api/client";
 import type { Comment, PaginatedResponse, CreateCommentRequest } from "@/types";
 
+// Query Key Factory
+export const commentKeys = {
+  all: ["comments"] as const,
+  lists: () => [...commentKeys.all, "list"] as const,
+  list: (chapterId: string, relationId: string = "", sort: string = "latest") =>
+    [
+      ...commentKeys.lists(),
+      String(chapterId),
+      String(relationId),
+      sort,
+    ] as const,
+  replies: (commentId: string) =>
+    [...commentKeys.all, "replies", commentId] as const,
+};
+
 /**
  * 챕터 댓글 목록 조회 (무한 스크롤)
  * GET /api/chapters/{chapterId}/comments
  */
-export const useComments = (chapterId: string, relationId?: string, sort: string = 'latest') => {
-  // [FIX] relationId가 있을 때만 쿼리 실행하여 로딩 무한 표시 방지
+export const useComments = (
+  chapterId: string,
+  relationId?: string,
+  sort: string = "latest",
+) => {
   return useInfiniteQuery<PaginatedResponse<Comment>>({
-    queryKey: ["comments", String(chapterId), String(relationId || ''), sort],
+    queryKey: commentKeys.list(chapterId, relationId, sort),
     queryFn: async ({ pageParam }) => {
       const cid = String(chapterId);
       const { data } = await api.get(`/chapters/${cid}/comments`, {
@@ -26,33 +44,33 @@ export const useComments = (chapterId: string, relationId?: string, sort: string
           relationId,
           sort,
           cursor: pageParam,
-          page: typeof pageParam === 'number' ? pageParam : 0
+          page: typeof pageParam === "number" ? pageParam : 0,
         },
       });
       // 백엔드 응답 구조: { code, status, data: { comments: [...], pagination: {...} } }
       const responseData = data.data || data;
       const rawComments = responseData.comments || responseData.data || [];
 
-      // DTO Mapping: 백엔드는 userNickname/userAvatarUrl 필드를 평탄하게 보내지만,
-      // 프론트엔드 UI(RelationshipCommentList)는 author 객체를 기대합니다.
-      const mappedComments = rawComments.map((c: Comment & { userId?: string; userNickname?: string; userAvatarUrl?: string }) => ({
-        ...c,
-        author: c.author || {
-          id: c.userId,
-          nickname: c.userNickname,
-          profileImageUrl: c.userAvatarUrl,
-        }
-      }));
-
-
-      // [Safety] 현재 백엔드 응답 DTO에 relationId 필드가 누락되어 있어 
-      // 클라이언트 사이드 필터링을 일시적으로 비활성화합니다.
-      // 백엔드 API가 쿼리 파라미터(relationId)로 이미 필터링을 수행한다면 안전합니다.
-      // 그렇지 않다면 모든 챕터 댓글이 노출되지만, 아예 보이지 않는 것보다는 낫습니다.
-      const filteredComments = mappedComments;
+      // DTO Mapping
+      const mappedComments = rawComments.map(
+        (
+          c: Comment & {
+            userId?: string;
+            userNickname?: string;
+            userAvatarUrl?: string;
+          },
+        ) => ({
+          ...c,
+          author: c.author || {
+            id: c.userId,
+            nickname: c.userNickname,
+            profileImageUrl: c.userAvatarUrl,
+          },
+        }),
+      );
 
       return {
-        data: Array.isArray(filteredComments) ? filteredComments : [],
+        data: Array.isArray(mappedComments) ? mappedComments : [],
         hasMore: responseData.pagination?.hasNext || false,
         nextCursor: responseData.pagination?.nextCursor,
       };
@@ -60,7 +78,7 @@ export const useComments = (chapterId: string, relationId?: string, sort: string
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
-    enabled: !!chapterId && !!relationId, // [FIX] relationId가 있을 때만 쿼리 실행
+    enabled: !!chapterId,
   });
 };
 
@@ -70,10 +88,9 @@ export const useComments = (chapterId: string, relationId?: string, sort: string
  */
 export const useReplies = (commentId: string, isOpen: boolean) => {
   return useQuery<Comment[]>({
-    queryKey: ["replies", commentId],
+    queryKey: commentKeys.replies(commentId),
     queryFn: async () => {
       const { data } = await api.get(`/comments/${commentId}/replies`);
-      // console.log('[DEBUG] Replies API Response:', data);
       const responseData = data.data || data;
       return responseData || [];
     },
@@ -95,18 +112,22 @@ export const useCreateComment = (chapterId: string, relationId?: string) => {
         relationId,
         ...payload,
       };
-      // Ensure chapterId is present (API requirement)
       if (!fullPayload.chapterId) {
         throw new Error("chapterId is required");
       }
-      const { data } = await api.post(`/chapters/${fullPayload.chapterId}/comments`, fullPayload);
+      const { data } = await api.post(
+        `/chapters/${fullPayload.chapterId}/comments`,
+        fullPayload,
+      );
       return data;
     },
     onSuccess: () => {
-      // [FIX] 모든 정렬 상태(latest, likes)의 캐시를 무효화
+      // 해당 챕터의 모든 댓글 캐시를 무효화
+      // commentKeys.lists() -> ["comments", "list"]
+      // invalidateQueries({ queryKey: ["comments", "list", chapterId] })
       queryClient.invalidateQueries({
-        queryKey: ["comments", chapterId, relationId],
-        exact: false
+        queryKey: [...commentKeys.lists(), String(chapterId)],
+        exact: false,
       });
     },
   });
@@ -130,25 +151,32 @@ export const useCreateReply = (chapterId: string, relationId?: string) => {
       const { data } = await api.post(`/comments/${parentId}/replies`, {
         content,
         chapterId,
-        relationId, // 대댓글에도 관계 ID 포함하여 격리 강화
+        relationId,
       });
       return data;
     },
-    onSuccess: () => {
-      // [FIX] 모든 정렬 상태의 캐시를 무효화
+    onSuccess: (_, variables) => {
+      // 대댓글 목록 캐시 무효화
       queryClient.invalidateQueries({
-        queryKey: ["comments", chapterId, relationId],
-        exact: false
+        queryKey: commentKeys.replies(variables.parentId),
+      });
+
+      // 해당 챕터의 댓글 캐시도 무효화 (답글 수 업데이트 등)
+      queryClient.invalidateQueries({
+        queryKey: [...commentKeys.lists(), String(chapterId)],
+        exact: false,
       });
     },
   });
 };
 
 const updateCommentInCache = (
-  oldData: { pages: PaginatedResponse<Comment>[]; pageParams: unknown[] } | undefined,
+  oldData:
+    | { pages: PaginatedResponse<Comment>[]; pageParams: unknown[] }
+    | undefined,
   commentId: string,
   newIsLiked: boolean,
-  newLikeCount: number
+  newLikeCount: number,
 ) => {
   if (!oldData) return oldData;
   return {
@@ -158,11 +186,11 @@ const updateCommentInCache = (
       data: page.data.map((comment) =>
         comment.id === commentId
           ? {
-            ...comment,
-            isLiked: newIsLiked,
-            likeCount: Math.max(0, newLikeCount),
-          }
-          : comment
+              ...comment,
+              isLiked: newIsLiked,
+              likeCount: Math.max(0, newLikeCount),
+            }
+          : comment,
       ),
     })),
   } as typeof oldData;
@@ -171,67 +199,97 @@ const updateCommentInCache = (
 /**
  * 댓글 좋아요 토글 (낙관적 업데이트)
  * POST /api/comments/{id}/like
- * 
- * @param chapterId - 현재 챕터 ID (상태 오염 방지를 위해 특정 챕터만 업데이트)
  */
-export const useToggleCommentLike = (chapterId: string, relationId?: string, sort: string = 'latest') => {
+export const useToggleCommentLike = (
+  chapterId: string,
+  relationId?: string,
+  sort: string = "latest",
+) => {
   const queryClient = useQueryClient();
-  const commentQueryKey = ["comments", chapterId, relationId, sort];
+  const listQueryKey = commentKeys.list(chapterId, relationId, sort);
 
   return useMutation({
-    mutationFn: async (commentId: string) => {
+    mutationFn: async ({
+      commentId,
+      parentId,
+    }: {
+      commentId: string;
+      parentId?: string | null;
+    }) => {
       const { data } = await api.post(`/comments/${commentId}/like`);
       const responseData = data.data || data;
       return {
         commentId,
+        parentId,
         isLiked: responseData.isLiked,
         likeCount: responseData.likeCount,
       };
     },
-    onMutate: async (commentId) => {
-      await queryClient.cancelQueries({ queryKey: commentQueryKey });
-      const previousData = queryClient.getQueryData<{ pages: PaginatedResponse<Comment>[]; pageParams: unknown[] }>(
-        commentQueryKey
-      );
+    onMutate: async ({ commentId }) => {
+      // 1. Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: listQueryKey });
 
-      queryClient.setQueryData<{ pages: PaginatedResponse<Comment>[]; pageParams: unknown[] }>(
-        commentQueryKey,
-        (oldData) => {
-          if (!oldData) return oldData;
+      // 2. Snapshot the previous value
+      const previousData = queryClient.getQueryData(listQueryKey);
 
-          let targetComment: Comment | undefined;
-          for (const page of oldData.pages) {
-            targetComment = page.data.find(c => c.id === commentId);
-            if (targetComment) break;
-          }
+      // 3. Optimistic Update
+      queryClient.setQueryData<{
+        pages: PaginatedResponse<Comment>[];
+        pageParams: unknown[];
+      }>(listQueryKey, (oldData) => {
+        if (!oldData) return oldData;
+        const target = findCommentInPages(oldData, commentId);
+        if (!target) return oldData;
 
-          if (!targetComment) return oldData;
+        const newLiked = !target.isLiked;
+        const newCount = target.isLiked
+          ? target.likeCount - 1
+          : target.likeCount + 1;
 
-          return updateCommentInCache(
+        return updateCommentInCache(oldData, commentId, newLiked, newCount);
+      });
+
+      return { previousData, listQueryKey };
+    },
+    onSuccess: (data, _, context) => {
+      // 4. Server Response Update
+      if (context?.listQueryKey) {
+        queryClient.setQueryData<{
+          pages: PaginatedResponse<Comment>[];
+          pageParams: unknown[];
+        }>(context.listQueryKey, (oldData) =>
+          updateCommentInCache(
             oldData,
-            commentId,
-            !targetComment.isLiked,
-            targetComment.isLiked ? targetComment.likeCount - 1 : targetComment.likeCount + 1
-          );
-        }
-      );
-
-      return { previousData };
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData<{ pages: PaginatedResponse<Comment>[]; pageParams: unknown[] }>(
-        commentQueryKey,
-        (oldData) => updateCommentInCache(oldData, data.commentId, data.isLiked, data.likeCount)
-      );
-    },
-    onError: (_error, _commentId, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData(commentQueryKey, context.previousData);
+            data.commentId,
+            data.isLiked,
+            data.likeCount,
+          ),
+        );
       }
+
+      // Safety: Invalidate to ensure consistency
+      queryClient.invalidateQueries({ queryKey: context?.listQueryKey });
     },
-    onSettled: () => {
+    onError: (_error, _variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(context.listQueryKey, context.previousData);
+      }
+      // Re-fetch on error
+      queryClient.invalidateQueries({ queryKey: context?.listQueryKey });
     },
   });
+};
+
+// Helper to find comment in paginated data
+const findCommentInPages = (
+  data: { pages: PaginatedResponse<Comment>[] },
+  commentId: string,
+) => {
+  for (const page of data.pages) {
+    const comment = page.data.find((c) => c.id === commentId);
+    if (comment) return comment;
+  }
+  return null;
 };
 
 /**
@@ -246,7 +304,7 @@ export const useDeleteComment = () => {
       await api.delete(`/comments/${commentId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["comments"] });
+      queryClient.invalidateQueries({ queryKey: commentKeys.all });
     },
   });
 };

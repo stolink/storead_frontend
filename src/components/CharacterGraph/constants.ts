@@ -30,8 +30,20 @@ export function toUIRelationType(type: string): UIRelationType {
     coworker: "neutral",
     classmate: "friendly",
   };
+
   return mapping[normalized] || "neutral";
 }
+
+// 관계 타입별 우선순위 (시각적 지배력)
+// 낮을수록 우선순위 높음 (1 = Top Priority)
+export const RELATION_PRIORITY: Record<UIRelationType, number> = {
+  hostile: 1,
+  romantic: 2,
+  family: 3,
+  friendly: 4,
+  complex: 5,
+  neutral: 6,
+};
 
 export const MOCHA_COLORS = {
   500: "#8B7355", // Primary (Warm Brown)
@@ -193,19 +205,19 @@ export const MAX_CURVE_OFFSET = 60; // 곡선 제어점 최대 오프셋 (px)
 
 export const FORCE_CONFIG = {
   // 노드 간 반발력 (최적화: 거리 제한으로 연산 감소)
-  // Balanced repulsion (enough to separate, but not explode)
-  charge: -2500,
-  chargeDistanceMin: 100,
-  chargeDistanceMax: 4000,
+  // 완화된 척력: 노드들이 적당히 분리되면서도 너무 흩어지지 않음
+  charge: -1200, // -2500→-1200: 척력 대폭 완화
+  chargeDistanceMin: 80, // 100→80: 최소 거리 축소
+  chargeDistanceMax: 2500, // 4000→2500: 최대 영향 거리 축소
 
   // 링크 설정 (소프트 스프링)
   // Default breathing room
-  linkDistance: 150,
-  linkStrength: 0.3,
+  linkDistance: 160, // 150→160: 기본 거리 약간 증가
+  linkStrength: 0.35, // 0.3→0.35: 스프링 약간 강화
 
   // 센터링 (부드럽게)
-  centerStrength: 0.05, // Restored to stolink's 0.05 for better balance
-  positionStrength: 0.01,
+  centerStrength: 0.08, // 0.05→0.08: 중앙 집결력 강화
+  positionStrength: 0.02, // 0.01→0.02: 위치 유지력 강화
 
   // 충돌
   collisionPadding: 60,
@@ -213,34 +225,59 @@ export const FORCE_CONFIG = {
 
   // Dynamic Link Forces (Relationship-based)
   // STRATEGY:
-  // Friendly = Short & Rigid (Clump together)
-  // Hostile = Long & Strong (Force apart)
+  // Friendly = Moderate distance, soft spring (gentle clustering)
+  // Hostile = Moderate distance, weak spring (mild separation)
+  // Goal: Prevent extreme clumping or scattering
   dynamic: {
-    friendly: {
-      distance: 80, // Very Short (Tight cluster)
-      strength: 0.9, // Almost rigid
+    ally: {
+      distance: 140, // 80→140: 뭉침 방지
+      strength: 0.4, // 0.9→0.4: 스프링 완화
     },
-    hostile: {
-      distance: 1000, // Long separation
-      strength: 0.6, // Strong enough to fight triangle inequality
+    mentor: {
+      distance: 150, // 90→150
+      strength: 0.35, // 0.8→0.35
     },
-    neutral: {
-      distance: 200,
-      strength: 0.3,
+    protects: {
+      distance: 130, // 70→130
+      strength: 0.4, // 0.9→0.4
     },
     family: {
-      distance: 60, // Extremely close
-      strength: 0.95,
+      distance: 120, // 60→120: 가족도 약간 거리 유지
+      strength: 0.5, // 0.95→0.5
     },
     romantic: {
-      distance: 50, // Intimate
-      strength: 0.95,
+      distance: 110, // 50→110: 로맨스도 적절한 거리
+      strength: 0.5, // 0.95→0.5
+    },
+    knows: {
+      distance: 180, // 220→180: 약간 가깝게
+      strength: 0.25, // 0.2→0.25
+    },
+    neutral: {
+      distance: 170, // 200→170
+      strength: 0.3,
+    },
+    rival: {
+      distance: 160, // 180→160: 라이벌은 가까이
+      strength: 0.35, // 0.4→0.35
+    },
+    enemy: {
+      distance: 200, // 300→200: 적도 너무 멀지 않게
+      strength: 0.25, // 0.15→0.25: 스프링 강화로 위치 안정
+    },
+    betrayed: {
+      distance: 190, // 250→190
+      strength: 0.25, // 0.2→0.25
+    },
+    complex: {
+      distance: 150,
+      strength: 0.35, // 0.5→0.35
     },
   },
 
   // 수렴 (더 빠른 안정화)
-  alphaDecay: 0.05, // Faster decay to prevent jitter (0.022 -> 0.05 - Stolink Parity)
-  alphaMin: 0.001, // Stop sooner (Stolink Parity)
+  alphaDecay: 0.022,
+  alphaMin: 0.001,
   velocityDecay: 0.6,
 } as const;
 
@@ -293,29 +330,40 @@ export const ANIMATION = {
 // =====================================================
 
 export const RELATION_ANGLES: Record<string, number> = {
-  friendly: 90, // 위 (Emerald)
-  romantic: 150, // 10시 (Pink)
-  family: 210, // 7시 (Blue)
-  hostile: 0, // 오른쪽 (Red)
-  neutral: 270, // 아래 (Gray)
-  complex: 45, // 1시 (Violet)
+  ally: 90, // UP
+  mentor: 45, // UP-RIGHT
+  protects: 135, // UP-LEFT
+  family: 210, // BOTTOM-LEFT (Firm)
+  romantic: 150,
+  knows: 270,
+  neutral: 270,
+  rival: 30, // Slight aggression
+  enemy: 0, // RIGHT (Opposing?) - Actually D3 force doesn't use angle directly usually, but for positioning
+  betrayed: 330,
+  complex: 45,
 };
 
 export const SEMANTIC_FORCE_CONFIG = {
   // 관계별 가중치 (양수: 인력, 음수: 척력)
+  // 값을 완화하여 극단적 뭉침/흩어짐 방지
   relationWeights: {
-    friendly: 1.5,
-    romantic: 2.0,
-    family: 1.2,
-    hostile: -2.0,
-    neutral: 0.5,
-    complex: 0.3,
+    ally: 0.6, // 1.5→0.6: 인력 대폭 완화
+    protects: 0.7, // 1.8→0.7
+    mentor: 0.6, // 1.6→0.6
+    family: 0.5, // 1.2→0.5
+    romantic: 0.8, // 2.0→0.8: 로맨스도 완화
+    knows: 0.2, // 0.3→0.2
+    neutral: 0.3, // 0.5→0.3
+    rival: -0.1, // -0.2→-0.1: 척력 완화
+    enemy: -0.3, // -0.8→-0.3: 적대 척력 대폭 완화
+    betrayed: -0.2, // -0.5→-0.2
+    complex: 0.2, // 0.3→0.2
   } as Record<string, number>,
-  defaultRepulsion: -1.0,
-  strengthMultiplier: 0.2,
-  attractionDistance: 40,
-  repulsionDistance: 100,
-  interGroupDistance: 1200, // 그룹 간 기본 거리
+  defaultRepulsion: -0.5, // -1.0→-0.5: 기본 척력 완화
+  strengthMultiplier: 0.1, // 0.2→0.1: 강도 배율 감소
+  attractionDistance: 25, // 40→25: 인력 거리 효과 감소
+  repulsionDistance: 50, // 100→50: 척력 거리 효과 대폭 감소
+  interGroupDistance: 800, // 1200→800: 그룹 간 거리 축소
 };
 
 // =====================================================

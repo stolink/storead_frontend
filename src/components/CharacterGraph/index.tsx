@@ -1,13 +1,5 @@
-import {
-  useMemo,
-  memo,
-  useRef,
-} from "react";
-import type {
-  CharacterNode,
-  RelationshipLink,
-  Character,
-} from "@/types";
+import { useMemo, memo, useRef } from "react";
+import type { CharacterNode, RelationshipLink, Character } from "@/types";
 import type { GraphSnapshotDTO } from "@/adapters/graphSnapshotAdapter";
 
 // Components
@@ -29,6 +21,7 @@ interface CharacterGraphProps {
   chapterId?: string;
   /** graphSnapshot (stolink에서 전달된 심층 분석 데이터 포함) */
   graphSnapshot?: GraphSnapshotDTO | null;
+  onReady?: () => void; // [NEW] Notification when graph is visually ready
 }
 
 export const CharacterGraph = memo(function CharacterGraph({
@@ -41,6 +34,7 @@ export const CharacterGraph = memo(function CharacterGraph({
   showSearch = true,
   chapterId,
   graphSnapshot,
+  onReady,
 }: CharacterGraphProps) {
   const canvasRef = useRef<CanvasGraphRef>(null);
 
@@ -48,20 +42,28 @@ export const CharacterGraph = memo(function CharacterGraph({
   // CanvasGraph expects Character[] but currently nodes are passed as characters prop.
   // We need to ensure the structure matches what CanvasGraph expects.
   const mappedCharacters = useMemo(() => {
-    return characters.map(node => ({
-      _id: node.id,
-      imageUrl: node.imageUrl,
-      role: node.role,
-      status: node.status,
-      profile: {
-        name: node.name,
-        // Add other nested profile fields if necessary
-      }
-    } as unknown as Character));
+    return characters.map(
+      (node) =>
+        ({
+          _id: node.id,
+          imageUrl: node.imageUrl,
+          role: node.role,
+          status: node.status,
+          profile: {
+            name: node.name,
+            // Add other nested profile fields if necessary
+          },
+        }) as unknown as Character,
+    );
   }, [characters]);
 
   return (
-    <div className={cn("w-full h-full relative overflow-hidden bg-cloud-50", className)}>
+    <div
+      className={cn(
+        "w-full h-full relative overflow-hidden bg-cloud-50",
+        className,
+      )}
+    >
       <CanvasGraph
         ref={canvasRef}
         characters={mappedCharacters}
@@ -72,6 +74,7 @@ export const CharacterGraph = memo(function CharacterGraph({
         chapterId={chapterId}
         showSearch={showSearch}
         graphSnapshot={graphSnapshot}
+        onReady={onReady}
         className="w-full h-full"
       />
 

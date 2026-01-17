@@ -36,7 +36,7 @@ import { useSaveBookmark } from "@/hooks/useBookmark";
 import { useChapterRating, useSubmitRating } from "@/hooks/useRating";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
-import { useThemeStore, type Theme } from "@/stores/useTheme";
+import { type Theme } from "@/stores/useTheme";
 import { cn } from "@/lib/utils";
 import { RatingModal } from "@/components/rating/RatingModal";
 import { adaptGraphSnapshot } from "@/adapters/graphSnapshotAdapter";
@@ -58,9 +58,9 @@ const getThemeStyle = (theme: Theme) => {
       hover: "hover:bg-zinc-100",
     },
     dark: {
-      container: "bg-espresso-900 text-white",
+      container: "bg-mocha-900 text-white",
       text: "text-white",
-      bg: "bg-espresso-900",
+      bg: "bg-mocha-900",
       columnRule: "rgba(255, 255, 255, 0.1)",
       hover: "hover:bg-zinc-800",
     },
@@ -102,7 +102,55 @@ export const ChapterViewerPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-  const { theme, setTheme } = useThemeStore();
+  // 뷰어 전용 테마 상태 (전역 테마와 분리)
+  const [theme, setThemeState] = useState<Theme>(() => {
+    const stored = localStorage.getItem("viewer_theme") as Theme;
+    if (stored) return stored;
+
+    // 시스템 설정 감지 (저장된 설정이 없을 경우)
+    if (
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    ) {
+      return "dark";
+    }
+    return "light";
+  });
+
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
+    localStorage.setItem("viewer_theme", newTheme);
+  };
+
+  // [Sync] 다른 탭에서 테마 변경 시 동기화 & 시스템 설정 변경 감지
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "viewer_theme" && e.newValue) {
+        setThemeState(e.newValue as Theme);
+      }
+    };
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemChange = (e: MediaQueryListEvent) => {
+      // 사용자가 명시적으로 설정을 변경하지 않은 경우에만 시스템 설정을 따름 (선택적)
+      // 여기서는 현재 로컬스토리지에 값이 없으면 따라가도록 하거나,
+      // 혹은 항상 시스템 변경을 반영할지 결정해야 함.
+      // 사용자 경험상 "설정 안함" 상태가 명시적이지 않으므로,
+      // 로컬스토리지 값이 없을 때만 반응하거나,
+      // 이미 로컬스토리지에 값이 있으면 무시하는 것이 일반적임.
+      if (!localStorage.getItem("viewer_theme")) {
+        setThemeState(e.matches ? "dark" : "light");
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    mediaQuery.addEventListener("change", handleSystemChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      mediaQuery.removeEventListener("change", handleSystemChange);
+    };
+  }, []);
 
   // 뷰어 설정 상태 (기존 네이밍 유지)
   const [viewMode, setViewMode] = useState<ViewMode>("scroll");
@@ -194,7 +242,7 @@ export const ChapterViewerPage = () => {
 
   // 현재/이전/다음 챕터 찾기 (기존 로직 유지)
   const sortedChapters = chapters?.sort(
-    (a, b) => a.chapterNumber - b.chapterNumber
+    (a, b) => a.chapterNumber - b.chapterNumber,
   );
   const currentIndex = sortedChapters?.findIndex((c) => c.id === id) ?? -1;
   const prevChapter =
@@ -207,11 +255,11 @@ export const ChapterViewerPage = () => {
   // cleanContent에서 페이지 모드용 콘텐츠 분할 (HTML 태그 제거된 콘텐츠 기반)
   const rawContent = useMemo(
     () => stripHeaderTags(chapter?.content || ""),
-    [chapter?.content]
+    [chapter?.content],
   );
   const contentPages = useMemo(
     () => rawContent.split("\n\n").filter(Boolean),
-    [rawContent]
+    [rawContent],
   );
   // 2단 레이아웃: 한 페이지에 2개의 문단 표시
   const totalPages = Math.max(1, Math.ceil(contentPages.length / 2));
@@ -271,7 +319,7 @@ export const ChapterViewerPage = () => {
       <div
         className={cn(
           "min-h-screen flex items-center justify-center",
-          styles.container
+          styles.container,
         )}
       >
         <div className="animate-spin h-8 w-8 border-4 border-mocha-500 border-t-transparent rounded-full" />
@@ -284,7 +332,7 @@ export const ChapterViewerPage = () => {
       <div
         className={cn(
           "min-h-screen flex items-center justify-center",
-          styles.container
+          styles.container,
         )}
       >
         <p className={styles.text}>챕터를 찾을 수 없습니다.</p>
@@ -296,7 +344,9 @@ export const ChapterViewerPage = () => {
     <div
       className={cn(
         "min-h-screen transition-colors duration-300",
-        styles.container
+        // 테마가 dark일 때만 dark 클래스 적용 (Tailwind 다크모드 활성화)
+        theme === "dark" && "dark",
+        styles.container,
       )}
     >
       {/* ====== 미니멀 상단 헤더 ====== */}
@@ -304,7 +354,7 @@ export const ChapterViewerPage = () => {
         className={cn(
           "fixed top-0 left-0 right-0 z-40 backdrop-blur-sm",
           styles.bg,
-          "bg-opacity-80"
+          "bg-opacity-80",
         )}
       >
         <div className="flex items-center justify-between px-3 h-12">
@@ -316,7 +366,7 @@ export const ChapterViewerPage = () => {
               className={cn(
                 "p-2 rounded-full transition-colors",
                 styles.hover,
-                styles.text
+                styles.text,
               )}
               title="홈으로 이동"
             >
@@ -330,7 +380,7 @@ export const ChapterViewerPage = () => {
               className={cn(
                 "p-2 rounded-full transition-colors",
                 styles.hover,
-                styles.text
+                styles.text,
               )}
               title="작품으로 이동"
             >
@@ -342,7 +392,7 @@ export const ChapterViewerPage = () => {
               className={cn(
                 "p-2 rounded-full transition-colors",
                 styles.hover,
-                styles.text
+                styles.text,
               )}
             >
               <Menu className="h-4 w-4" />
@@ -351,7 +401,7 @@ export const ChapterViewerPage = () => {
             <span
               className={cn(
                 "text-sm truncate max-w-[200px] md:max-w-md",
-                styles.text
+                styles.text,
               )}
             >
               <span className="opacity-50">{chapter.chapterNumber}화</span>
@@ -368,7 +418,7 @@ export const ChapterViewerPage = () => {
                 "p-2 rounded-full transition-colors",
                 viewMode === "page"
                   ? "bg-mocha-500 text-paper"
-                  : cn(styles.hover, styles.text)
+                  : cn(styles.hover, styles.text),
               )}
               title="책 모드"
             >
@@ -380,7 +430,7 @@ export const ChapterViewerPage = () => {
                 "p-2 rounded-full transition-colors",
                 viewMode === "scroll"
                   ? "bg-mocha-500 text-paper"
-                  : cn(styles.hover, styles.text)
+                  : cn(styles.hover, styles.text),
               )}
               title="스크롤 모드"
             >
@@ -393,7 +443,7 @@ export const ChapterViewerPage = () => {
               className={cn(
                 "p-2 rounded-full transition-colors flex items-center gap-1",
                 styles.hover,
-                styles.text
+                styles.text,
               )}
               title="별점"
             >
@@ -402,7 +452,7 @@ export const ChapterViewerPage = () => {
                   "h-4 w-4",
                   ratingData?.myRating
                     ? "fill-yellow-400 text-yellow-400"
-                    : "text-current"
+                    : "text-current",
                 )}
               />
               {ratingData && ratingData.ratingCount > 0 && (
@@ -418,7 +468,7 @@ export const ChapterViewerPage = () => {
               className={cn(
                 "p-2 rounded-full transition-colors relative",
                 styles.hover,
-                styles.text
+                styles.text,
               )}
             >
               <MessageCircle className="h-4 w-4" />
@@ -435,7 +485,7 @@ export const ChapterViewerPage = () => {
                 "p-2 rounded-full transition-colors",
                 prevChapter
                   ? cn(styles.hover, styles.text)
-                  : "opacity-30 cursor-not-allowed"
+                  : "opacity-30 cursor-not-allowed",
               )}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -449,7 +499,7 @@ export const ChapterViewerPage = () => {
                 "p-2 rounded-full transition-colors",
                 nextChapter
                   ? cn(styles.hover, styles.text)
-                  : "opacity-30 cursor-not-allowed"
+                  : "opacity-30 cursor-not-allowed",
               )}
             >
               <ChevronRight className="h-4 w-4" />
@@ -474,7 +524,7 @@ export const ChapterViewerPage = () => {
           <article
             className={cn(
               "max-w-2xl mx-auto px-8 py-12 font-serif",
-              styles.text
+              styles.text,
             )}
             style={{
               fontSize: `${fontSize}px`,
@@ -498,7 +548,7 @@ export const ChapterViewerPage = () => {
                     currentPage > 0 || prevChapter
                       ? styles.hover
                       : "cursor-default",
-                    "opacity-0 hover:opacity-100"
+                    "opacity-0 hover:opacity-100",
                   )}
                 >
                   <ChevronLeft className="w-8 h-8 opacity-30" />
@@ -513,7 +563,7 @@ export const ChapterViewerPage = () => {
                     currentPage < totalPages - 1 || nextChapter
                       ? styles.hover
                       : "cursor-default",
-                    "opacity-0 hover:opacity-100"
+                    "opacity-0 hover:opacity-100",
                   )}
                 >
                   <ChevronRight className="w-8 h-8 opacity-30" />
@@ -525,7 +575,7 @@ export const ChapterViewerPage = () => {
             <div
               className={cn(
                 "flex-1 px-8 md:px-16 py-8 font-serif overflow-hidden relative z-10 pointer-events-none",
-                styles.text
+                styles.text,
               )}
               style={{
                 fontSize: `${fontSize}px`,
@@ -538,7 +588,7 @@ export const ChapterViewerPage = () => {
                   className="overflow-hidden"
                   dangerouslySetInnerHTML={{
                     __html: DOMPurify.sanitize(
-                      formatContent(contentPages[currentPage * 2] || "")
+                      formatContent(contentPages[currentPage * 2] || ""),
                     ),
                   }}
                 />
@@ -551,14 +601,16 @@ export const ChapterViewerPage = () => {
                   }}
                 >
                   {/* 마지막 페이지이고 다음 챕터가 있으면 다음화 카드 표시 */}
-                  {isLastPage && nextChapter && !contentPages[currentPage * 2 + 1] ? (
+                  {isLastPage &&
+                  nextChapter &&
+                  !contentPages[currentPage * 2 + 1] ? (
                     <button
                       onClick={() => navigate(`/chapters/${nextChapter.id}`)}
                       className={cn(
                         "w-full h-full flex flex-col items-center justify-center gap-4",
                         "rounded-xl border-2 border-dashed transition-all pointer-events-auto",
                         "border-mocha-400 hover:border-mocha-500 hover:bg-mocha-400/10",
-                        styles.text
+                        styles.text,
                       )}
                     >
                       <ChevronRight className="w-12 h-12 text-mocha-500" />
@@ -575,7 +627,9 @@ export const ChapterViewerPage = () => {
                     <div
                       dangerouslySetInnerHTML={{
                         __html: DOMPurify.sanitize(
-                          formatContent(contentPages[currentPage * 2 + 1] || "")
+                          formatContent(
+                            contentPages[currentPage * 2 + 1] || "",
+                          ),
                         ),
                       }}
                     />
@@ -600,7 +654,7 @@ export const ChapterViewerPage = () => {
               onClick={() => navigate(`/chapters/${nextChapter.id}`)}
               className={cn(
                 "w-full py-4 text-center opacity-50 hover:opacity-100 transition-opacity",
-                styles.text
+                styles.text,
               )}
             >
               <span className="text-sm">다음 화에서 계속...</span>
@@ -620,23 +674,29 @@ export const ChapterViewerPage = () => {
           <Settings className="w-5 h-5" />
         </Button>
 
-        {/* 설정 팝업 - 사진 2 스타일 */}
+        {/* 설정 팝업 - 테마 기반 스타일 적용 */}
         {showSettings && (
-          <div className="absolute bottom-16 right-0 w-72 rounded-2xl shadow-2xl border p-5 bg-paper border-mocha-400 text-ink">
+          <div
+            className={cn(
+              "absolute bottom-16 right-0 w-72 rounded-2xl shadow-2xl border p-5 transition-colors duration-300",
+              styles.bg,
+              styles.text,
+              theme === "light" ? "border-mocha-400" : "border-zinc-700",
+            )}
+          >
             <div className="space-y-5">
               {/* 관계도 보기 버튼 */}
               <button
                 onClick={() => {
                   console.log("[DEBUG] 관계도 버튼 클릭됨");
-                  console.log(
-                    "[DEBUG] showGraphModal 상태 변경 전:",
-                    showGraphModal
-                  );
-                  console.log("[DEBUG] graphData:", graphData);
                   setShowGraphModal(true);
-                  console.log("[DEBUG] showGraphModal 상태 변경 후: true");
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-mocha-400 text-ink rounded-xl hover:bg-mocha-400/10 transition-colors"
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-colors",
+                  theme === "dark"
+                    ? "border-zinc-600 hover:bg-zinc-800 text-zinc-200"
+                    : "border-mocha-400 text-ink hover:bg-mocha-400/10",
+                )}
               >
                 <Network className="w-4 h-4" />
                 <span className="text-sm font-medium">관계도 보기</span>
@@ -644,36 +704,81 @@ export const ChapterViewerPage = () => {
 
               {/* 글자 크기 */}
               <div>
-                <label className="text-xs text-mocha-700 mb-2 block">
+                <label
+                  className={cn("text-xs mb-2 block opacity-70", styles.text)}
+                >
                   글자 크기
                 </label>
-                <div className="flex items-center justify-between border border-mocha-400 rounded-lg">
+                <div
+                  className={cn(
+                    "flex items-center justify-between border rounded-lg",
+                    theme === "dark" ? "border-zinc-600" : "border-mocha-400",
+                  )}
+                >
                   <button
                     onClick={() => setFontSize(Math.max(12, fontSize - 2))}
-                    className="p-3 hover:bg-mocha-400/10 rounded-l-lg transition-colors"
+                    className={cn(
+                      "p-3 rounded-l-lg transition-colors",
+                      theme === "dark"
+                        ? "hover:bg-zinc-800 text-zinc-200"
+                        : "hover:bg-mocha-400/10 text-ink",
+                    )}
                   >
-                    <Minus className="w-4 h-4 text-ink" />
+                    <Minus className="w-4 h-4" />
                   </button>
-                  <span className="text-sm font-medium text-ink">{fontSize}px</span>
+                  <span className={cn("text-sm font-medium", styles.text)}>
+                    {fontSize}px
+                  </span>
                   <button
                     onClick={() => setFontSize(Math.min(28, fontSize + 2))}
-                    className="p-3 hover:bg-mocha-400/10 rounded-r-lg transition-colors"
+                    className={cn(
+                      "p-3 rounded-r-lg transition-colors",
+                      theme === "dark"
+                        ? "hover:bg-zinc-800 text-zinc-200"
+                        : "hover:bg-mocha-400/10 text-ink",
+                    )}
                   >
-                    <Plus className="w-4 h-4 text-ink" />
+                    <Plus className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
               {/* 테마 - 사진 1 스타일: 테두리로 선택 표시 */}
               <div>
-                <label className="text-xs text-ink mb-2 block">테마</label>
+                <label
+                  className={cn("text-xs mb-2 block opacity-70", styles.text)}
+                >
+                  테마
+                </label>
                 <div className="grid grid-cols-4 gap-2">
-                  {([
-                    { key: "light", label: "화이트", bg: "bg-white", border: "border-ink" },
-                    { key: "dark", label: "다크", bg: "bg-espresso-900", border: "border-mocha-400" },
-                    { key: "sepia", label: "세피아", bg: "bg-amber-50", border: "border-amber-400" },
-                    { key: "ivory", label: "아이보리", bg: "bg-[#FFFFF0]", border: "border-amber-200" },
-                  ] as const).map((t) => (
+                  {(
+                    [
+                      {
+                        key: "light",
+                        label: "화이트",
+                        bg: "bg-white",
+                        border: "border-ink",
+                      },
+                      {
+                        key: "dark",
+                        label: "다크",
+                        bg: "bg-mocha-900",
+                        border: "border-mocha-400",
+                      },
+                      {
+                        key: "sepia",
+                        label: "세피아",
+                        bg: "bg-amber-50",
+                        border: "border-amber-400",
+                      },
+                      {
+                        key: "ivory",
+                        label: "아이보리",
+                        bg: "bg-[#FFFFF0]",
+                        border: "border-amber-200",
+                      },
+                    ] as const
+                  ).map((t) => (
                     <button
                       key={t.key}
                       onClick={() => setTheme(t.key)}
@@ -684,11 +789,15 @@ export const ChapterViewerPage = () => {
                           "w-10 h-10 rounded-lg border-2 transition-all",
                           t.bg,
                           theme === t.key
-                            ? `${t.border} ring-2 ring-mocha-400 ring-offset-1`
-                            : "border-mocha-400/30"
+                            ? `border-mocha-500 ring-2 ring-mocha-400 ring-offset-1`
+                            : "border-transparent shadow-sm",
                         )}
                       />
-                      <span className="text-[10px] text-ink">{t.label}</span>
+                      <span
+                        className={cn("text-[10px] opacity-80", styles.text)}
+                      >
+                        {t.label}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -696,7 +805,11 @@ export const ChapterViewerPage = () => {
 
               {/* 줄 간격 - 테두리 선택 스타일 */}
               <div>
-                <label className="text-xs text-mocha-700 mb-2 block">줄 간격</label>
+                <label
+                  className={cn("text-xs mb-2 block opacity-70", styles.text)}
+                >
+                  줄 간격
+                </label>
                 <div className="grid grid-cols-3 gap-2">
                   {([1.5, 1.8, 2] as LineHeight[]).map((lh) => (
                     <button
@@ -706,7 +819,11 @@ export const ChapterViewerPage = () => {
                         "py-2 text-sm rounded-lg transition-all font-medium border-2",
                         lineHeight === lh
                           ? "border-mocha-500 bg-mocha-500 text-paper"
-                          : "border-mocha-400 text-ink hover:bg-mocha-400/10"
+                          : cn(
+                              theme === "dark"
+                                ? "border-zinc-600 text-zinc-300 hover:bg-zinc-800"
+                                : "border-mocha-400 text-ink hover:bg-mocha-400/10",
+                            ),
                       )}
                     >
                       {lh}
@@ -717,7 +834,9 @@ export const ChapterViewerPage = () => {
 
               {/* 뷰어 모드 - 테두리 선택 스타일 */}
               <div>
-                <label className="text-xs text-mocha-700 mb-2 block">
+                <label
+                  className={cn("text-xs mb-2 block opacity-70", styles.text)}
+                >
                   뷰어 모드
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -727,7 +846,11 @@ export const ChapterViewerPage = () => {
                       "py-2 text-sm rounded-lg transition-all font-medium border-2",
                       viewMode === "scroll"
                         ? "border-mocha-500 bg-mocha-500 text-paper"
-                        : "border-mocha-400 text-ink hover:bg-mocha-400/10"
+                        : cn(
+                            theme === "dark"
+                              ? "border-zinc-600 text-zinc-300 hover:bg-zinc-800"
+                              : "border-mocha-400 text-ink hover:bg-mocha-400/10",
+                          ),
                     )}
                   >
                     스크롤
@@ -738,7 +861,11 @@ export const ChapterViewerPage = () => {
                       "py-2 text-sm rounded-lg transition-all font-medium border-2",
                       viewMode === "page"
                         ? "border-mocha-500 bg-mocha-500 text-paper"
-                        : "border-mocha-400 text-ink hover:bg-mocha-400/10"
+                        : cn(
+                            theme === "dark"
+                              ? "border-zinc-600 text-zinc-300 hover:bg-zinc-800"
+                              : "border-mocha-400 text-ink hover:bg-mocha-400/10",
+                          ),
                     )}
                   >
                     페이지

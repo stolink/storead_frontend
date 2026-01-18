@@ -37,6 +37,9 @@ export const exportChapterSchema = z
         chapterTitle: z.string().min(1, '챕터 제목을 입력하세요'),
         chapterNumber: z.number().min(1, '1 이상의 회차 번호를 입력하세요'),
         content: z.string().min(1, '내용이 없습니다'),
+        // 유료화 설정
+        accessType: z.enum(['FREE', 'PAID']).default('FREE'),
+        price: z.number().min(0).default(0),
     })
     .refine(
         (data) => {
@@ -48,10 +51,15 @@ export const exportChapterSchema = z
             if (data.isNewWork && !data.newWork) {
                 return false;
             }
+            // 유료 설정 시 가격 필수 (0원 이상)
+            if (data.accessType === 'PAID' && data.price < 100) {
+                return false; // 최소 100 크레딧
+            }
             return true;
         },
         {
-            message: '작품 정보를 올바르게 입력하세요',
+            message: '입력 정보를 확인하세요 (유료 챕터는 최소 100C 이상이어야 합니다)',
+            path: ['price'], // 에러 표시 위치
         }
     );
 
@@ -121,6 +129,8 @@ export const useCreateChapter = () => {
                 title: string;
                 content: string;
                 chapterNumber: number;
+                accessType: 'FREE' | 'PAID';
+                price: number;
             };
         }) => {
             const { data } = await api.post(`/works/${workId}/chapters`, chapterData);
@@ -161,6 +171,8 @@ export const useExportChapter = () => {
                 title: formData.chapterTitle,
                 content: formData.content,
                 chapterNumber: formData.chapterNumber,
+                accessType: formData.accessType,
+                price: formData.price,
             },
         });
 

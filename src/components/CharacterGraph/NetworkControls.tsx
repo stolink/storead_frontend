@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Layers,
-  ChevronDown,
-} from "lucide-react";
+import { Layers, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -29,11 +26,6 @@ interface NetworkControlsProps {
   onShowMainOnlyChange?: (enabled: boolean) => void;
   enableGrouping?: boolean;
   onGroupingChange?: (enabled: boolean) => void;
-  // Insights Props
-  showTension?: boolean;
-  onToggleTension?: (val: boolean) => void;
-  showLogicCheck?: boolean;
-  onToggleLogicCheck?: (val: boolean) => void;
 }
 
 /**
@@ -48,11 +40,6 @@ export function NetworkControls({
   onShowMainOnlyChange,
   enableGrouping = false,
   onGroupingChange,
-  // Insights
-  showTension = false,
-  onToggleTension,
-  showLogicCheck = false,
-  onToggleLogicCheck,
 }: NetworkControlsProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -66,7 +53,7 @@ export function NetworkControls({
   return (
     <>
       {/* 좌측 컨트롤 패널 */}
-      <div className="bg-cloud-50/80 backdrop-blur-md border border-mocha-100/50 rounded-xl overflow-hidden shadow-lg">
+      <div className="bg-paper/80 backdrop-blur-md border border-mocha-100/50 rounded-xl overflow-hidden shadow-lg">
         {/* 헤더 - 토글 가능 */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
@@ -109,7 +96,7 @@ export function NetworkControls({
                         className={cn(
                           "w-full justify-between gap-1 h-8 text-xs bg-white/50 hover:bg-white border-mocha-100",
                           relationTypeFilter !== "all" &&
-                          "border-mocha-300 bg-mocha-50"
+                            "border-mocha-300 bg-mocha-50",
                         )}
                       >
                         <span className="flex items-center gap-1.5">
@@ -129,7 +116,10 @@ export function NetworkControls({
                         <ChevronDown className="h-3 w-3 text-mocha-400" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-40 bg-white/95 backdrop-blur-lg border-mocha-100">
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-40 bg-white/95 backdrop-blur-lg border-mocha-100"
+                    >
                       <DropdownMenuRadioGroup
                         value={relationTypeFilter}
                         onValueChange={(v) =>
@@ -231,32 +221,7 @@ export function NetworkControls({
 
       {/* 우측 상단 Insights Panel Toggle (기능 비활성화 상태) */}
       <div className="absolute right-3 top-3 z-20 flex gap-2">
-        {onToggleTension && (
-          <Button
-            variant={showTension ? "destructive" : "outline"}
-            size="sm"
-            className={cn(
-              "h-8 text-[10px] gap-1.5 shadow-sm bg-white/50 backdrop-blur-sm border-mocha-100",
-              showTension && "bg-red-500/10 border-red-200 text-red-600 hover:bg-red-50"
-            )}
-            onClick={() => onToggleTension(!showTension)}
-          >
-            🔥 Tension
-          </Button>
-        )}
-        {onToggleLogicCheck && (
-          <Button
-            variant={showLogicCheck ? "default" : "outline"}
-            size="sm"
-            className={cn(
-              "h-8 text-[10px] gap-1.5 shadow-sm bg-white/50 backdrop-blur-sm border-mocha-100",
-              showLogicCheck && "bg-amber-500/10 border-amber-200 text-amber-700 hover:bg-amber-50"
-            )}
-            onClick={() => onToggleLogicCheck(!showLogicCheck)}
-          >
-            ⚠️ Logic
-          </Button>
-        )}
+        {/* Buttons removed for presentation clarity */}
       </div>
     </>
   );

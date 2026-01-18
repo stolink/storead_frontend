@@ -2,14 +2,15 @@
  * 댓글 아이템 뷰 컴포넌트 (ChapterCommentsPage 전용)
  * 렌더 함수 외부에 분리하여 포커스 유실 문제 해결
  */
-import { memo } from "react";
-import { Heart } from "lucide-react";
+import { memo, useCallback } from "react";
+import { Heart, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { Comment } from "@/types";
-import { useReplies } from "@/hooks/useComments";
+import { useReplies, useDeleteComment } from "@/hooks/useComments";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 interface CommentItemViewProps {
   /** 댓글 데이터 */
@@ -104,6 +105,17 @@ export const CommentItemView = memo(
     );
     const replies = remoteReplies || [];
 
+    const { user } = useAuthStore();
+    const isAuthor = user?.id === comment.userId;
+
+    const deleteComment = useDeleteComment();
+
+    const handleDelete = useCallback(() => {
+      if (window.confirm("댓글을 삭제하시겠습니까?")) {
+        deleteComment.mutate(comment.id);
+      }
+    }, [comment.id, deleteComment]);
+
     return (
       <div className={cn("py-4 group", isReply && "ml-12 mt-2")}>
         <div className="flex items-start gap-4">
@@ -169,6 +181,17 @@ export const CommentItemView = memo(
                 >
                   답글 달기
                 </button>
+              )}
+              {isAuthor && (
+                <div className="flex items-center gap-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={handleDelete}
+                    className="flex items-center gap-1 text-[11px] font-bold text-stone-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    삭제
+                  </button>
+                </div>
               )}
             </div>
 

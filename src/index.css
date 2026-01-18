@@ -7,8 +7,9 @@
 
 /* CSS Variables for Design System - Using HSL to match tailwind.config.ts */
 @theme inline {
-  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans:
+    "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   --font-heading: "Pretendard", sans-serif;
   --font-body: "Pretendard", sans-serif;
 
@@ -20,11 +21,24 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  --color-mocha-500: #A47764;
-  --color-mocha-400: #BD9B8D;
-  --color-mocha-900: #3D302A;
-  --color-paper: #FDFBF8;
-  --color-card: #F1F0EC;
+  /* StoLink Theme Colors */
+  --color-mocha-50: #f9f6f4;
+  --color-mocha-100: #efe8e4;
+  --color-mocha-200: #dfcfc6;
+  --color-mocha-300: #cbb2a6;
+  --color-mocha-400: #bd9b8d;
+  --color-mocha-500: #a47764;
+  --color-mocha-600: #8f6150;
+  --color-mocha-700: #7d5a4b;
+  --color-mocha-800: #68483d;
+  --color-mocha-900: #3d302a;
+  --color-mocha-950: #29201c;
+
+  --color-espresso-900: #3d302a;
+
+  --color-ink: #3d302a;
+  --color-paper: #fdfbf8;
+  --color-card: #f1f0ec;
 }
 
 @layer base {
@@ -442,13 +456,15 @@
 
   /* Hover lift effect */
   .hover-lift {
-    transition: transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
+    transition:
+      transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
       box-shadow 0.2s cubic-bezier(0.19, 1, 0.22, 1);
   }
 
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.08),
+    box-shadow:
+      0 8px 20px -4px rgba(0, 0, 0, 0.08),
       0 4px 8px -2px rgba(0, 0, 0, 0.04);
   }
 
@@ -740,7 +756,11 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui,
+    font-family:
+      "Pretendard",
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
       sans-serif;
   }
 }
@@ -1010,13 +1030,15 @@
 
 /* Hover lift effect */
 .hover-lift {
-  transition: transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
+  transition:
+    transform 0.2s cubic-bezier(0.19, 1, 0.22, 1),
     box-shadow 0.2s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.08),
+  box-shadow:
+    0 8px 20px -4px rgba(0, 0, 0, 0.08),
     0 4px 8px -2px rgba(0, 0, 0, 0.04);
 }
 
@@ -1328,4 +1350,472 @@
 .stolink-graph-container path,
 .stolink-graph-container line {
   vector-effect: non-scaling-stroke;
+}
+
+/* ============================================
+   Glassmorphism Design System
+   ============================================ */
+
+/* Base Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Warm Glass - Cloud Dancer tinted */
+.glass-warm {
+  background: rgba(241, 240, 236, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Glass Card - with subtle gradient and inner shadow */
+.glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(241, 240, 236, 0.6) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.6),
+    0 8px 32px -8px rgba(61, 48, 42, 0.12);
+}
+
+/* Glass Card Elevated - more pronounced shadow */
+.glass-card-elevated {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(241, 240, 236, 0.7) 100%
+  );
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.7),
+    0 12px 48px -12px rgba(61, 48, 42, 0.18),
+    0 4px 16px -4px rgba(61, 48, 42, 0.08);
+}
+
+/* Dark Mode Glass */
+.glass-dark {
+  background: rgba(61, 48, 42, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    0 8px 32px -8px rgba(0, 0, 0, 0.3);
+}
+
+.dark .glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(61, 48, 42, 0.7) 0%,
+    rgba(41, 32, 28, 0.6) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.03),
+    0 8px 32px -8px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================
+   Grain Texture Overlay
+   ============================================ */
+
+.grain-overlay {
+  position: relative;
+}
+
+.grain-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/textures/grain.svg");
+  background-repeat: repeat;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.grain-overlay-strong::after {
+  opacity: 0.06;
+}
+
+/* ============================================
+   Spotlight Effect (Mouse following glow)
+   ============================================ */
+
+.spotlight-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.spotlight-effect::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(164, 119, 100, 0.08),
+    transparent 40%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 1;
+}
+
+.spotlight-effect:hover::before {
+  opacity: 1;
+}
+
+/* Sage colored spotlight for reader platform */
+.spotlight-effect-sage::before {
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(122, 152, 120, 0.1),
+    transparent 40%
+  );
+}
+
+/* ============================================
+   Staggered Animations
+   ============================================ */
+
+/* CSS animation keyframes for stagger */
+@keyframes staggerFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes staggerScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes staggerSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger children animation delays */
+.stagger-children > * {
+  opacity: 0;
+  animation: staggerFadeUp 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.stagger-children > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.stagger-children > *:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.stagger-children > *:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.stagger-children > *:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.stagger-children > *:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.stagger-children > *:nth-child(6) {
+  animation-delay: 0.3s;
+}
+.stagger-children > *:nth-child(7) {
+  animation-delay: 0.35s;
+}
+.stagger-children > *:nth-child(8) {
+  animation-delay: 0.4s;
+}
+.stagger-children > *:nth-child(9) {
+  animation-delay: 0.45s;
+}
+.stagger-children > *:nth-child(10) {
+  animation-delay: 0.5s;
+}
+.stagger-children > *:nth-child(11) {
+  animation-delay: 0.55s;
+}
+.stagger-children > *:nth-child(12) {
+  animation-delay: 0.6s;
+}
+
+/* Instant stagger animation trigger class */
+.animate-stagger > * {
+  animation-play-state: running;
+}
+
+/* ============================================
+   Card Glow Effects
+   ============================================ */
+
+.glow-mocha {
+  box-shadow: 0 0 20px rgba(164, 119, 100, 0.3);
+}
+
+.glow-sage {
+  box-shadow: 0 0 20px rgba(95, 125, 95, 0.3);
+}
+
+.glow-gold {
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+}
+
+/* Hover glow effect */
+.hover-glow {
+  transition: box-shadow 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 8px 30px -8px rgba(164, 119, 100, 0.35);
+}
+
+/* ============================================
+   Warm & Soft Typography Enhancements
+   ============================================ */
+
+.text-warm-gradient {
+  background: linear-gradient(135deg, #a47764 0%, #7d5a4b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-sage-gradient {
+  background: linear-gradient(135deg, #5f7d5f 0%, #3e4c3e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   Fluid Bento Grid System
+   ============================================ */
+
+.bento-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Mobile: 2 columns */
+@media (max-width: 767px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .bento-hero {
+    grid-column: 1 / -1;
+  }
+  .bento-featured {
+    grid-column: span 2;
+  }
+}
+
+/* Tablet: 3 columns */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .bento-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .bento-hero {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+  .bento-featured {
+    grid-column: span 2;
+  }
+}
+
+/* Desktop: 4 columns */
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .bento-hero {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+  .bento-featured {
+    grid-column: span 2;
+  }
+}
+
+/* Bento item base styles */
+.bento-item {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  transition:
+    transform 0.3s cubic-bezier(0.19, 1, 0.22, 1),
+    box-shadow 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.bento-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(61, 48, 42, 0.2);
+}
+
+/* ============================================
+   Page Transition Animations
+   ============================================ */
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pageExit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+.page-transition-enter {
+  animation: pageEnter 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.page-transition-exit {
+  animation: pageExit 0.3s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+/* ============================================
+   Scroll-triggered reveal animations
+   ============================================ */
+
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 0.6s cubic-bezier(0.19, 1, 0.22, 1),
+    transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================
+   Floating Animation for Empty States
+   ============================================ */
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ============================================
+   Button Glow Effect
+   ============================================ */
+
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    135deg,
+    rgba(164, 119, 100, 0.4),
+    rgba(189, 155, 141, 0.2)
+  );
+  border-radius: inherit;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+  filter: blur(8px);
+}
+
+.btn-glow:hover::after {
+  opacity: 1;
+}
+
+/* ============================================
+   Premium Density UI Overrides
+   ============================================ */
+
+.grain-overlay {
+  position: relative;
+}
+
+.grain-overlay::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+}
+
+.glass-warm {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-bottom: 1px solid rgba(164, 119, 100, 0.1);
+}
+
+.dark .glass-warm {
+  background: rgba(20, 20, 20, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Dense Grid Scrollbar Hide */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

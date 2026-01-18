@@ -64,6 +64,8 @@ export interface Work {
   isLiked?: boolean;
   likeCount?: number;
   isInLibrary?: boolean;
+  // 캐릭터 관계도 (stolink에서 배포 시 저장)
+  characterGraphData?: GraphSnapshotDTO;
 }
 
 // === Chapters (챕터/회차) ===
@@ -159,6 +161,12 @@ export interface PaginatedResponse<T> {
   data: T[];
   nextCursor?: string;
   hasMore: boolean;
+  pagination?: {
+    total: number;
+    page: number;
+    size: number;
+    hasNext: boolean;
+  };
 }
 
 // === API Request Types ===

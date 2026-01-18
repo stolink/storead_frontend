@@ -2,18 +2,32 @@
  * 공개 홈 페이지
  * 추천 캐러셀 + 개인화 추천 섹션 + 작품 그리드 + 실시간 순위
  */
-import { useSearchParams } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
-import { FeaturedCarousel } from '@/components/home/FeaturedCarousel';
-import { ContentGrid } from '@/components/home/ContentGrid';
-import { BookCard } from '@/components/home/BookCard';
-import { RankingList } from '@/components/home/RankingList';
-import { ContinueReadingSection } from '@/components/home/ContinueReadingSection';
-import { WorkGridSection } from '@/components/home/WorkGridSection';
-import { PersonalizedRecommendationSection } from '@/components/home/PersonalizedRecommendationSection';
-import { useDiscoveryWorks, useSearchWorks, useRankings } from '@/hooks/useDiscovery';
-import { useThemeStore, backgroundThemeClasses } from '@/stores/useTheme';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useState } from "react";
+import { useSearchParams, Link } from "react-router-dom";
+import { FeaturedCarousel } from "@/components/home/FeaturedCarousel";
+import { ContentGrid } from "@/components/home/ContentGrid";
+import { TrendKeywordBar } from "@/components/home/TrendKeywordBar";
+
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  RankingList,
+  RankingListSkeleton,
+} from "@/components/home/RankingList";
+import { ContinueReadingSection } from "@/components/home/ContinueReadingSection";
+
+import { DenseThemeSection } from "@/components/home/DenseThemeSection";
+import { ScrollableSection } from "@/components/home/ScrollableSection";
+import { Sparkles, TrendingUp, Zap } from "lucide-react";
+
+import { PersonalizedRecommendationSection } from "@/components/home/PersonalizedRecommendationSection";
+import {
+  useDiscoveryWorks,
+  useSearchWorks,
+  useRankings,
+} from "@/hooks/useDiscovery";
+import { useInfiniteDiscoveryWorks } from "@/hooks/useInfiniteDiscovery";
+import { useThemeStore, backgroundThemeClasses } from "@/stores/useTheme";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 /**
  * 홈 페이지 컴포넌트
@@ -24,18 +38,88 @@ import { useAuthStore } from '@/stores/useAuthStore';
  */
 export const HomePage = () => {
   const [searchParams] = useSearchParams();
-  const searchQuery = searchParams.get('search') || '';
+  const searchQuery = searchParams.get("search") || "";
   const { theme } = useThemeStore();
   const { isAuthenticated } = useAuthStore();
 
   // 검색어가 있으면 검색 결과, 없으면 전체 작품
   // 30초마다 자동 갱신 (refetchInterval: 30000ms)
-  const { data: discoveryData, isLoading: discoveryLoading } = useDiscoveryWorks();
-  const { data: searchData, isLoading: searchLoading } = useSearchWorks(searchQuery);
+  const { data: discoveryData, isLoading: discoveryLoading } =
+    useDiscoveryWorks();
+  const { data: searchData, isLoading: searchLoading } =
+    useSearchWorks(searchQuery);
 
-  // 실시간 인기 순위용 데이터 (likeCount DESC 정렬, 30초마다 자동 갱신)
-  const { data: rankingData } = useRankings('REALTIME');
-  const rankingWorks = rankingData?.data || [];
+  const [accessType, setAccessType] = useState<string>("");
+
+  // 0. 인기 콘텐츠 (Weekly Best) - Infinite Scroll
+  const {
+    data: infiniteBestData,
+    fetchNextPage: fetchBestNextPage,
+    hasNextPage: hasBestNextPage,
+    isFetchingNextPage: isFetchingBestNextPage,
+  } = useInfiniteDiscoveryWorks({
+    sort: "popular",
+    size: 10,
+    accessType,
+  });
+  const bestWorks = infiniteBestData?.pages.flatMap((page) => page.data) || [];
+
+  // 1. 실시간 급상승 (Realtime Rankings)
+  const { data: rankingData } = useRankings("REALTIME");
+  const risingWorks = rankingData?.data || [];
+
+  // Tab State for Rising Section
+  const [activeRisingTab, setActiveRisingTab] = useState("rising");
+
+  // 1-a. 신작 (New)
+  const { data: newWorksData } = useDiscoveryWorks({
+    sort: "latest",
+    limit: 12,
+  });
+  const newWorks = newWorksData?.data || [];
+
+  // 1-b. 완결 (Completed)
+  const { data: completedWorksData } = useDiscoveryWorks({
+    status: "COMPLETED",
+    sort: "popular",
+    limit: 12,
+  });
+  const completedWorks = completedWorksData?.data || [];
+
+  // 1-c. 이벤트 (Event) - 임시로 무료 인기작 매핑
+  const { data: eventWorksData } = useDiscoveryWorks({
+    accessType: "FREE",
+    sort: "popular",
+    limit: 12,
+  });
+  const eventWorks = eventWorksData?.data || [];
+
+  // Determine works to display in Rising Section
+  let risingSectionWorks = risingWorks;
+  if (activeRisingTab === "new") {
+    risingSectionWorks = newWorks;
+  } else if (activeRisingTab === "completed") {
+    risingSectionWorks = completedWorks;
+  } else if (activeRisingTab === "event") {
+    risingSectionWorks = eventWorks;
+  }
+  // 'event' tab could be handled here or left empty/default
+
+  // 2. 판타지 인기작 (Popular Fantasy)
+  const { data: fantasyData } = useDiscoveryWorks({
+    genre: "FANTASY",
+    sort: "popular",
+    limit: 12,
+  });
+  const fantasyWorks = fantasyData?.data || [];
+
+  // 3. 로맨스 최신작 (Latest Romance)
+  const { data: romanceData } = useDiscoveryWorks({
+    genre: "ROMANCE",
+    sort: "latest", // or 'popular' if preferred
+    limit: 12,
+  });
+  const romanceWorks = romanceData?.data || [];
 
   const isSearching = searchQuery.length > 0;
   // 데모 데이터 구조: { data: Work[], hasMore: boolean }
@@ -43,14 +127,17 @@ export const HomePage = () => {
   const isLoading = isSearching ? searchLoading : discoveryLoading;
 
   // 테마별 텍스트 색상
-  const textColorClass = theme === 'light'
-    ? 'text-zinc-900'
-    : theme === 'dark'
-      ? 'text-zinc-100'
-      : 'text-amber-900';
+  const textColorClass =
+    theme === "light"
+      ? "text-zinc-900"
+      : theme === "dark"
+        ? "text-zinc-100"
+        : "text-amber-900";
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${backgroundThemeClasses[theme]}`}>
+    <div
+      className={`min-h-screen transition-colors duration-300 ${backgroundThemeClasses[theme]} grain-overlay`}
+    >
       {/* 검색 결과 표시 */}
       {isSearching && (
         <div className={`container mx-auto px-6 py-4 ${textColorClass}`}>
@@ -60,10 +147,25 @@ export const HomePage = () => {
         </div>
       )}
 
-      {/* 로딩 상태 */}
+      {/* 로딩 상태 - Skeleton UI 적용 */}
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <div className="animate-spin h-8 w-8 border-4 border-mocha-500 border-t-transparent rounded-full" />
+        <div className="container mx-auto px-6 py-8 space-y-12">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[500px]">
+            <div className="lg:col-span-3 h-full">
+              <Skeleton className="w-full h-full rounded-2xl" />
+            </div>
+            <div className="lg:col-span-1 h-full">
+              <RankingListSkeleton />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="aspect-[3/4] rounded-xl" />
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
         <>
@@ -79,25 +181,33 @@ export const HomePage = () => {
               </div>
             </div>
           )}
-
           {/* 상단 히어로 섹션 (캐러셀 + 실시간 순위) */}
           {!isSearching && works && works.length > 0 && (
-            <div className="container mx-auto px-6 py-8">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[500px]">
-                {/* 메인 배너 (3칸) */}
-                <div className="lg:col-span-3 h-full">
-                  <FeaturedCarousel works={works.slice(0, 5)} />
-                </div>
+            <>
+              <div className="container mx-auto px-6 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[500px]">
+                  {/* 메인 배너 (3칸) */}
+                  <div className="lg:col-span-3 h-full">
+                    <FeaturedCarousel works={works.slice(0, 5)} />
+                  </div>
 
-                {/* 실시간 순위 (1칸) */}
-                <div className="lg:col-span-1 h-full overflow-hidden flex flex-col">
-                  {/* limit=5로 제한 및 더보기 링크 - 백엔드 랭킹 API 사용 */}
-                  <RankingList works={rankingWorks} title="실시간 인기 순위" limit={5} moreLink="/ranking" />
+                  {/* 실시간 순위 (1칸) */}
+                  <div className="lg:col-span-1 h-full overflow-hidden flex flex-col">
+                    {/* limit=5로 제한 및 더보기 링크 - 백엔드 랭킹 API 사용 */}
+                    <RankingList
+                      works={risingWorks}
+                      title="실시간 인기 순위"
+                      limit={5}
+                      moreLink="/ranking"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
 
+              {/* 트렌드 키워드 바 */}
+              <TrendKeywordBar />
+            </>
+          )}
           {/* 개인화 추천 섹션 - 로그인한 사용자에게만 표시, 검색 중이 아닐 때만 */}
           {isAuthenticated && !isSearching && (
             <div className="container mx-auto px-6">
@@ -108,54 +218,88 @@ export const HomePage = () => {
               <PersonalizedRecommendationSection />
             </div>
           )}
-
-          {/* 인기 콘텐츠 (고정 그리드 6개) */}
+          {/* 인기 콘텐츠 (Weekly Best) - Scrollable Section */}
           {!isSearching && (
-            <div className="container mx-auto px-6 py-8">
-              {/* 인기 작품 헤더 - 타이틀 옆 > 스타일 */}
-              <div className="flex items-center gap-2 mb-6">
-                <Link
-                  to="/category/ALL?sort=popular"
-                  className="group flex items-center gap-1 cursor-pointer"
-                >
-                  <h2 className="text-2xl font-bold font-heading text-zinc-900 dark:text-zinc-100 group-hover:text-mocha-600 transition-colors">
-                    인기 작품
-                  </h2>
-                  <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-mocha-600 transition-colors" />
-                </Link>
+            <div className="space-y-4">
+              <div className="container mx-auto px-6 flex items-center justify-between">
+                <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl w-fit">
+                  {[
+                    { label: "전체", value: "" },
+                    { label: "무료 인기", value: "FREE" },
+                    { label: "유료 인기", value: "PAID" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.value}
+                      onClick={() => setAccessType(tab.value)}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                        accessType === tab.value
+                          ? "bg-white dark:bg-zinc-700 text-espresso-900 dark:text-white shadow-sm"
+                          : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-
-              {/* 6개 그리드 */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {(works ? works.slice(0, 6) : Array(6).fill(null)).map((work, idx) => (
-                  work ? (
-                    <div key={work.id}>
-                      <BookCard work={work} />
-                    </div>
-                  ) : (
-                    <div key={idx} className="aspect-[2/3] bg-zinc-100 rounded-lg animate-pulse" />
-                  )
-                ))}
-              </div>
+              <ScrollableSection
+                title="Weekly Best"
+                works={bestWorks}
+                moreLink={`/category/ALL?sort=popular${accessType ? `&access=${accessType}` : ""}`}
+                onEndReached={() => {
+                  if (hasBestNextPage) fetchBestNextPage();
+                }}
+                hasNextPage={hasBestNextPage}
+                isFetchingNextPage={isFetchingBestNextPage}
+              />
             </div>
           )}
-
-          {/* 장르별 섹션 (그리드) */}
+          {/* Dense Discovery Section */}
           {!isSearching && (
-            <div className="pb-12 space-y-8">
-              <WorkGridSection title="판타지 소설" genre="FANTASY" limit={6} moreLink="/category/FANTASY" />
-              <WorkGridSection title="로맨스 소설" genre="ROMANCE" limit={6} moreLink="/category/ROMANCE" />
-              <WorkGridSection title="무협 소설" genre="MARTIAL_ARTS" limit={6} moreLink="/category/MARTIAL_ARTS" />
+            <div className="container mx-auto px-6 py-4 space-y-16 pb-20">
+              {/* 1. Discovery Tabs Grid - 실시간 급상승 데이터 연결 */}
+              <DenseThemeSection
+                title="실시간 급상승"
+                subtitle="지금 독자들이 가장 많이 찾는 작품들을 확인하세요."
+                icon={<TrendingUp className="w-5 h-5" />}
+                works={risingSectionWorks}
+                tabs={[
+                  { id: "rising", label: "⚡️ 급상승" },
+                  { id: "new", label: "✨ 신작" },
+                  { id: "event", label: "🎁 이벤트" },
+                  { id: "completed", label: "📚 완결" },
+                ]}
+                onTabChange={setActiveRisingTab}
+                viewAllLink="/ranking"
+                maxItems={12}
+                className="pt-0"
+              />
+
+              {/* 2. Personalized Theme Grid - 판타지 인기작 연결 */}
+              <DenseThemeSection
+                title="취향 저격 판타지"
+                subtitle="#먼치킨 #성장형 #사이다"
+                icon={<Sparkles className="w-5 h-5" />}
+                works={fantasyWorks}
+                maxItems={6}
+                viewAllLink="/category/FANTASY"
+              />
+
+              {/* 3. Another Theme Grid - 로맨스 최신작 연결 */}
+              <DenseThemeSection
+                title="오늘의 로맨스 픽"
+                subtitle="달달함이 필요한 시간"
+                icon={<Zap className="w-5 h-5" />}
+                works={romanceWorks}
+                maxItems={6}
+                viewAllLink="/category/ROMANCE"
+              />
             </div>
           )}
-
           {/* 검색 결과일 때만 ContentGrid 표시 */}
           {isSearching && (
             <div className="container mx-auto px-6 py-8">
-              <ContentGrid
-                works={works || []}
-                title="검색 결과"
-              />
+              <ContentGrid works={works || []} title="검색 결과" />
             </div>
           )}
         </>
@@ -165,17 +309,26 @@ export const HomePage = () => {
 };
 
 // 카테고리 링크 컴포넌트
-import { Link } from 'react-router-dom';
-function CategoryLink({ label, path, isActive }: { label: string, path: string, isActive?: boolean }) {
+// 카테고리 링크 컴포넌트
+function CategoryLink({
+  label,
+  path,
+  isActive,
+}: {
+  label: string;
+  path: string;
+  isActive?: boolean;
+}) {
   return (
     <Link
       to={path}
-      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${isActive
-        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' // 홈은 활성 상태 스타일 (데모용)
-        : path === window.location.pathname // 실제 활성 상태 체크는 useLocation 필요하지만 여기선 간단히
-          ? 'bg-zinc-900 text-white'
-          : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
-        }`}
+      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+        isActive
+          ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" // 홈은 활성 상태 스타일 (데모용)
+          : path === window.location.pathname // 실제 활성 상태 체크는 useLocation 필요하지만 여기선 간단히
+            ? "bg-zinc-900 text-white"
+            : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+      }`}
     >
       {label}
     </Link>

@@ -301,7 +301,11 @@ export const ChapterCommentsPage = () => {
                 styles.border,
                 styles.text,
               )}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmitComment()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                  handleSubmitComment();
+                }
+              }}
             />
             <Button
               size="icon"

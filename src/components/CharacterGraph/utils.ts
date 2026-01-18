@@ -2,6 +2,7 @@ import type { Character, RelationshipLink } from "@/types";
 import {
   RELATION_PALETTE,
   RELATION_TO_META_CATEGORY,
+  parseRelationType,
   type UIRelationType,
 } from "./constants";
 
@@ -23,46 +24,8 @@ export function generateLinksFromCharacters(
   const links: RelationshipLink[] = [];
   const linkSet = new Set<string>();
 
-  // 관계 타입 문자열에서 RelationType 추출 (새 스키마의 relationType 값 매핑)
-  const getRelationType = (relType: string): UIRelationType => {
-    const normalized = relType?.toLowerCase() || "";
-    // 특수 관계 (Specific)
-    if (
-      normalized.includes("romantic") ||
-      normalized.includes("love") ||
-      normalized.includes("lover")
-    ) {
-      return "romantic";
-    }
-    if (
-      normalized.includes("family") ||
-      normalized.includes("kin") ||
-      normalized.includes("brother") ||
-      normalized.includes("sister") ||
-      normalized.includes("parent") ||
-      normalized.includes("mentor") ||
-      normalized.includes("teacher") ||
-      normalized.includes("student") ||
-      normalized.includes("master")
-    ) {
-      return "friendly";
-    }
-
-    // 갈등 관계
-    if (normalized.includes("rival")) {
-      return "hostile";
-    }
-    if (
-      normalized.includes("hostile") ||
-      normalized.includes("enemy") ||
-      normalized.includes("antagonist")
-    ) {
-      return "hostile";
-    }
-
-    // 나머지는 우호/협력 관계
-    return "friendly";
-  };
+  // parseRelationType 공통 함수 사용 (constants.ts)
+  // 이 함수는 adaptGraphSnapshot.ts와 동일한 매핑 로직을 사용하여 일관성 보장
 
   characters.forEach((sourceChar) => {
     const relationships = sourceChar.relations?.graph;
@@ -85,7 +48,8 @@ export function generateLinksFromCharacters(
         if (linkSet.has(linkKey)) return;
         linkSet.add(linkKey);
 
-        const relType = getRelationType(rel.type);
+        // 공통 파싱 함수 사용
+        const relType = parseRelationType(rel.type);
 
         links.push({
           id: `link-${sId}-${tId}`,

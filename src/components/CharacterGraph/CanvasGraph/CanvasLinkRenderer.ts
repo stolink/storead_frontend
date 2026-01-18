@@ -8,15 +8,7 @@ import tinycolor from "tinycolor2";
  * LinkRenderer.tsx의 7계층 렌더링 로직을 Canvas API로 구현
  */
 export function drawLink(options: LinkRenderOptions): void {
-  const {
-    ctx,
-    link,
-    state,
-    animationPhase,
-    changeType,
-    showTension = false,
-    showLogicCheck = false,
-  } = options;
+  const { ctx, link, state, animationPhase, changeType } = options;
 
   const source = link.source as CharacterNode;
   const target = link.target as CharacterNode;
@@ -64,7 +56,7 @@ export function drawLink(options: LinkRenderOptions): void {
   const dashArray: number[] = (() => {
     if (changeType === "collapse") return [4, 6];
     if (changeType === "new") return [];
-    if (link.type === "hostile") {
+    if (link.type === "enemy" || link.type === "rival" || link.type === "betrayed") {
       return [6 + link.strength, 4 + (10 - link.strength) / 2];
     }
     return [];
@@ -85,16 +77,6 @@ export function drawLink(options: LinkRenderOptions): void {
 
   const isActive = isHighlighted && !isDimmed;
   const showFlow = changeType !== "collapse";
-
-  // AI Insights Detection
-  const isTense =
-    showTension &&
-    ((link.type as string) === "hostile" ||
-      (link.type as string) === "ENEMY") &&
-    link.strength >= 7;
-
-  const isContradictory =
-    showLogicCheck && (link.logicCheck as any)?.isContradictory;
 
   // === Layer 2: 깊은 그림자 (입체감) ===
   ctx.save();
@@ -118,39 +100,6 @@ export function drawLink(options: LinkRenderOptions): void {
     ctx.lineCap = "round";
     ctx.shadowColor = primaryColor;
     ctx.shadowBlur = 6;
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    ctx.quadraticCurveTo(controlX, controlY, tx, ty);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  // === Tension Heatmap Overlay (활성 상태에서만 적용 - 성능 최적화) ===
-  if (isTense && !isDimmed && isActive) {
-    ctx.save();
-    ctx.strokeStyle = "#EF4444";
-    ctx.lineWidth = strokeWidth + 10;
-    ctx.globalAlpha = 0.4;
-    ctx.lineCap = "round";
-    ctx.shadowColor = "#EF4444";
-    ctx.shadowBlur = 12;
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    ctx.quadraticCurveTo(controlX, controlY, tx, ty);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  // === Logic Check Contradiction Overlay (활성 상태에서만 적용 - 성능 최적화) ===
-  if (isContradictory && !isDimmed && isActive) {
-    ctx.save();
-    ctx.strokeStyle = "#C49545";
-    ctx.lineWidth = strokeWidth + 4;
-    ctx.globalAlpha = 0.9;
-    ctx.lineCap = "round";
-    ctx.setLineDash([4, 4]);
-    ctx.shadowColor = "#C49545";
-    ctx.shadowBlur = 4;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
     ctx.quadraticCurveTo(controlX, controlY, tx, ty);

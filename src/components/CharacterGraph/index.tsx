@@ -45,14 +45,8 @@ export const CharacterGraph = memo(function CharacterGraph({
     return characters.map(
       (node) =>
         ({
+          ...node,
           _id: node.id,
-          imageUrl: node.imageUrl,
-          role: node.role,
-          status: node.status,
-          profile: {
-            name: node.name,
-            // Add other nested profile fields if necessary
-          },
         }) as unknown as Character,
     );
   }, [characters]);
@@ -60,7 +54,7 @@ export const CharacterGraph = memo(function CharacterGraph({
   return (
     <div
       className={cn(
-        "w-full h-full relative overflow-hidden bg-cloud-50",
+        "w-full h-full relative overflow-hidden bg-mocha-50",
         className,
       )}
     >
@@ -87,19 +81,19 @@ export const CharacterGraph = memo(function CharacterGraph({
       <div className="absolute bottom-6 right-6 z-20 flex flex-col gap-2">
         <button
           onClick={() => canvasRef.current?.zoomIn()}
-          className="p-2 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-full shadow-sm hover:shadow-md hover:bg-white text-stone-600 transition-all font-bold w-10 h-10 flex items-center justify-center"
+          className="p-2 bg-paper/90 backdrop-blur-md border border-mocha-200/50 rounded-full shadow-sm hover:shadow-md hover:bg-white text-mocha-700 transition-all font-bold w-10 h-10 flex items-center justify-center"
         >
           +
         </button>
         <button
           onClick={() => canvasRef.current?.zoomOut()}
-          className="p-2 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-full shadow-sm hover:shadow-md hover:bg-white text-stone-600 transition-all font-bold w-10 h-10 flex items-center justify-center"
+          className="p-2 bg-paper/90 backdrop-blur-md border border-mocha-200/50 rounded-full shadow-sm hover:shadow-md hover:bg-white text-mocha-700 transition-all font-bold w-10 h-10 flex items-center justify-center"
         >
           -
         </button>
         <button
           onClick={() => canvasRef.current?.resetZoom()}
-          className="px-3 py-2 bg-white/90 backdrop-blur-sm border border-stone-200 rounded-full shadow-sm hover:shadow-md hover:bg-white text-stone-600 text-xs font-bold transition-all h-10"
+          className="px-3 py-2 bg-paper/90 backdrop-blur-md border border-mocha-200/50 rounded-full shadow-sm hover:shadow-md hover:bg-white text-mocha-700 text-xs font-bold transition-all h-10"
         >
           Reset
         </button>

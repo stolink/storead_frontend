@@ -251,6 +251,85 @@ export const ExportChapterForm = ({
                         </div>
                     </div>
 
+                    <hr className="border-zinc-200 dark:border-zinc-700" />
+
+                    {/* 유료화 설정 섹션 */}
+                    <div className="space-y-4">
+                        <h3 className="font-semibold flex items-center gap-2">
+                            유료화 설정
+                            <span className="text-xs font-normal text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">Optional</span>
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-3">
+                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">공개 방식</label>
+                                <div className="flex gap-3">
+                                    <label className={`flex-1 cursor-pointer border rounded-xl p-4 transition-all ${
+                                        watch('accessType') === 'FREE' 
+                                            ? 'border-mocha-500 bg-mocha-50 dark:bg-mocha-900/20 ring-1 ring-mocha-500' 
+                                            : 'border-zinc-200 hover:border-zinc-300 dark:border-zinc-700'
+                                    }`}>
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="radio"
+                                                {...register('accessType')}
+                                                value="FREE"
+                                                className="w-4 h-4 text-mocha-600 focus:ring-mocha-500"
+                                            />
+                                            <div>
+                                                <span className="block font-bold text-sm">무료 공개</span>
+                                                <span className="text-xs text-zinc-500">모든 독자가 자유롭게 열람합니다.</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    
+                                    <label className={`flex-1 cursor-pointer border rounded-xl p-4 transition-all ${
+                                        watch('accessType') === 'PAID' 
+                                            ? 'border-mocha-500 bg-mocha-50 dark:bg-mocha-900/20 ring-1 ring-mocha-500' 
+                                            : 'border-zinc-200 hover:border-zinc-300 dark:border-zinc-700'
+                                    }`}>
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="radio"
+                                                {...register('accessType')}
+                                                value="PAID"
+                                                className="w-4 h-4 text-mocha-600 focus:ring-mocha-500"
+                                            />
+                                            <div>
+                                                <span className="block font-bold text-sm">유료 판매</span>
+                                                <span className="text-xs text-zinc-500">크레딧으로 구매해야 열람합니다.</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {watch('accessType') === 'PAID' && (
+                                <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+                                    <label className="block text-sm font-medium mb-1 text-mocha-600 dark:text-mocha-400">판매 가격 (Credit)</label>
+                                    <div className="relative">
+                                        <Input
+                                            type="number"
+                                            step={100}
+                                            {...register('price', { valueAsNumber: true })}
+                                            placeholder="100"
+                                            className="pl-9 font-bold text-lg"
+                                        />
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">C</span>
+                                    </div>
+                                    <p className="text-xs text-zinc-500 mt-1.5 ml-1">
+                                        * 최소 100C 부터 설정 가능합니다. (100C = 100원)
+                                    </p>
+                                    {errors.price && (
+                                        <p className="text-sm text-red-500 mt-1 font-medium bg-red-50 p-2 rounded-lg">
+                                            {errors.price.message}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* 액션 버튼 */}
                     <div className="flex justify-end gap-3">
                         {onCancel && (

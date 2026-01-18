@@ -121,10 +121,6 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
     >("all");
     const [showMainOnly, setShowMainOnly] = useState(false);
 
-    // Insights State
-    const [showTension, setShowTension] = useState(false);
-    const [showLogicCheck, setShowLogicCheck] = useState(false);
-
     // Modal State
     const [deepAnalysisData, setDeepAnalysisData] = useState<{
       source: CharacterNode;
@@ -638,7 +634,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
         }
         setSelectedNodeId(node.id);
         graphRef.current?.centerAt(node.x, node.y, 400);
-        graphRef.current?.zoom(2.5, 400);
+        graphRef.current?.zoom(1.25, 400);
       },
       [], // [FIX] 의존성 배열 비움 - Ref 사용으로 안정적 참조 유지
     );
@@ -723,10 +719,9 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           globalScale,
           state: { isSelected, isHighlighted, isDimmed, isHovered },
           imageCache,
-          showLogicCheck,
         });
       },
-      [highlightNodes, selectedNodeId, hoverNode, imageCache, showLogicCheck],
+      [highlightNodes, selectedNodeId, hoverNode, imageCache],
     );
 
     const linkCanvasObject = useCallback(
@@ -740,11 +735,9 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           globalScale,
           state: { isSelected: false, isHighlighted, isDimmed },
           animationPhase,
-          showTension,
-          showLogicCheck,
         });
       },
-      [highlightLinks, showTension, showLogicCheck, animationPhase],
+      [highlightLinks, animationPhase],
     );
 
     const drawGroupClouds = useCallback(
@@ -907,10 +900,6 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           onFilterChange={setRelationTypeFilter}
           showMainOnly={showMainOnly}
           onShowMainOnlyChange={setShowMainOnly}
-          showTension={showTension}
-          onToggleTension={setShowTension}
-          showLogicCheck={showLogicCheck}
-          onToggleLogicCheck={setShowLogicCheck}
         />
 
         {showSearch && (

@@ -6,13 +6,19 @@ import type { CharacterRole } from "./character";
 // =====================================================
 
 /**
- * UI에서 사용하는 확장된 관계 타입 (Backend RelationType + UI Specifics)
+ * UI에서 사용하는 확장된 관계 타입 (StoLink와 동일)
+ * ally, enemy, rival 등 세분화된 타입을 지원
  */
 export type UIRelationType =
-  | "friendly"
-  | "hostile"
-  | "romantic"
+  | "ally"
+  | "enemy"
+  | "rival"
   | "family"
+  | "betrayed"
+  | "knows"
+  | "protects"
+  | "mentor"
+  | "romantic"
   | "neutral"
   | "complex";
 
@@ -41,7 +47,8 @@ export interface CharacterNode extends d3.SimulationNodeDatum {
  * D3 시뮬레이션용 링크 타입
  * CharacterRelation에서 변환됨
  */
-export interface RelationshipLink extends d3.SimulationLinkDatum<CharacterNode> {
+export interface RelationshipLink
+  extends d3.SimulationLinkDatum<CharacterNode> {
   id: string;
   source: string | CharacterNode;
   target: string | CharacterNode;
@@ -90,4 +97,31 @@ export interface ZoomState {
   scale: number;
   x: number;
   y: number;
+}
+
+// =====================================================
+// 🎬 고도화 기능용 타입 추가
+// =====================================================
+
+export interface TimelineState {
+  currentChapter: number;
+  totalChapters: number;
+  isPlaying: boolean;
+}
+
+export interface RelationshipInsights {
+  friendlyCount: number;
+  hostileCount: number;
+  romanticCount: number;
+  familyCount: number;
+  topConnectedCharacterId: string;
+  tensionHotspots: string[]; // 갈등이 많은 캐릭터 ID들
+}
+
+export interface RelationshipEvent {
+  id: string;
+  chapterNumber: number;
+  summary: string;
+  emotionDelta: number; // -5 ~ +5
+  timestamp: string;
 }

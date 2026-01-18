@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { SearchBar } from "@/components/home/SearchBar";
+import { useCredits } from "@/hooks/useCredits";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ export function Header() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuthStore();
   const { openAuthModal } = useAuthModalStore();
+  const { credits } = useCredits();
 
   // 내 작품(작가 대시보드)으로 변경, 내 서재 유지
   const navItems = [
@@ -37,7 +39,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-mocha-100/50 glass-warm transition-all duration-300">
       <div className="container mx-auto flex h-16 items-center px-4 max-w-7xl">
         {/* Logo Area - 클릭 시 홈으로 이동 */}
         <Link
@@ -84,12 +86,14 @@ export function Header() {
                   size="sm"
                   className="h-10 w-10 rounded-full hover:bg-mocha-50 shadow-md hover:shadow-lg transition-all p-0 border-transparent bg-white"
                 >
-                  <Avatar className="h-9 w-9 cursor-pointer border-2 border-white shadow-sm">
+                  <Avatar className="h-9 w-9 cursor-pointer border-2 border-white/50 shadow-sm transition-transform hover:scale-105">
                     <AvatarImage
-                      src={user?.profileImageUrl}
+                      src={
+                        user?.profileImageUrl || "/avatars/default-avatar.png"
+                      }
                       className="object-cover"
                     />
-                    <AvatarFallback className="bg-mocha-500 text-white flex items-center justify-center">
+                    <AvatarFallback className="bg-gradient-to-br from-mocha-400 to-mocha-600 text-white flex items-center justify-center">
                       <User className="h-4.5 w-4.5 text-white" />
                     </AvatarFallback>
                   </Avatar>
@@ -112,6 +116,18 @@ export function Header() {
                         {user?.email || "user@storead.com"}
                       </p>
                     </div>
+                  </div>
+                  {/* 크레딧 잔액 표시 섹션 추가 */}
+                  <div className="mt-3 p-3 bg-amber-50/50 rounded-xl border border-amber-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-amber-500" />
+                      <span className="text-xs font-bold text-amber-800">
+                        보유 크레딧
+                      </span>
+                    </div>
+                    <span className="text-sm font-black text-amber-700">
+                      {(credits?.balance ?? 0).toLocaleString()} C
+                    </span>
                   </div>
                 </div>
 

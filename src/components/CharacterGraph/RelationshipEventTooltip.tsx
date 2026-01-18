@@ -70,17 +70,35 @@ export function RelationshipEventTooltip({
   const tooltipHeight = 400; // Estimated max height
   const padding = 20;
 
-  let leftPos = x + 40;
-  let topPos = y + 40;
+  // Initial position: slightly offset from cursor
+  let leftPos = x + 15;
+  let topPos = y + 15;
 
-  // Check right edge
+  // Check bounds
   if (typeof window !== "undefined") {
-    if (leftPos + tooltipWidth + padding > window.innerWidth) {
-      leftPos = x - tooltipWidth - 40;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    // Check right edge
+    if (leftPos + tooltipWidth + padding > windowWidth) {
+      // Flip to left side
+      leftPos = x - tooltipWidth - 15;
     }
+
+    // Check left edge (safety check)
+    if (leftPos < padding) {
+      leftPos = padding;
+    }
+
     // Check bottom edge
-    if (topPos + tooltipHeight + padding > window.innerHeight) {
-      topPos = y - tooltipHeight - 10;
+    if (topPos + tooltipHeight + padding > windowHeight) {
+      // Flip to top side
+      topPos = y - tooltipHeight - 15;
+    }
+
+    // Check top edge (safety check)
+    if (topPos < padding) {
+      topPos = padding;
     }
   }
 

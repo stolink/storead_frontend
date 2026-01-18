@@ -23,13 +23,11 @@ import {
   MessageSquare,
   Info,
 } from "lucide-react";
-import type {
-  DetailedRelationship,
-  BackendRelationshipType,
-} from "@/types/character";
+import type { DetailedRelationship } from "@/types/character";
 import type { RelationshipLink } from "@/types/characterGraph";
 import { cn } from "@/lib/utils";
 import { getRelationshipColor } from "./utils";
+import { toUIRelationType, RELATION_LABELS } from "./constants";
 import { RelationshipRadarChart } from "./components/RelationshipRadarChart";
 import { RelationshipTimelineGraph } from "./components/RelationshipTimelineGraph";
 import { DeepAnalysisUI } from "./components/DeepAnalysisUI";
@@ -44,16 +42,19 @@ interface RelationshipDetailSheetProps {
   chapterId?: string;
 }
 
-const RELATION_ICONS: Record<BackendRelationshipType, React.ReactNode> = {
-  friendly: <User className="w-4 h-4" />,
-  hostile: <Skull className="w-4 h-4" />,
+// 관계 타입별 아이콘 (UIRelationType 기준)
+const RELATION_ICONS: Partial<Record<import("@/types").UIRelationType, React.ReactNode>> = {
+  ally: <User className="w-4 h-4" />,
+  enemy: <Skull className="w-4 h-4" />,
+  rival: <Target className="w-4 h-4" />,
   romantic: <Heart className="w-4 h-4" />,
-};
-
-const RELATION_LABELS: Record<BackendRelationshipType, string> = {
-  friendly: "우호적",
-  hostile: "적대적",
-  romantic: "로맨틱",
+  family: <Shield className="w-4 h-4" />,
+  mentor: <User className="w-4 h-4" />,
+  protects: <Shield className="w-4 h-4" />,
+  betrayed: <AlertTriangle className="w-4 h-4" />,
+  knows: <User className="w-4 h-4" />,
+  neutral: <User className="w-4 h-4" />,
+  complex: <Zap className="w-4 h-4" />,
 };
 
 export function RelationshipDetailSheet({
@@ -80,8 +81,8 @@ export function RelationshipDetailSheet({
   } = relationship;
 
   // Use relationship.relationType if available, otherwise fallback to type
-  const displayType = (relationship.relationType ||
-    type) as BackendRelationshipType;
+  const rawType = relationship.relationType || type;
+  const displayType = toUIRelationType(rawType);
   const color = getRelationshipColor(displayType, strength);
   const label = RELATION_LABELS[displayType] || displayType;
   const icon = RELATION_ICONS[displayType] || <Activity className="w-4 h-4" />;
@@ -230,7 +231,7 @@ export function RelationshipDetailSheet({
                           }
                         }
                         size={240}
-                        color={displayType === "romantic" ? "rose" : displayType === "hostile" ? "teal" : "mocha"}
+                        color={displayType === "romantic" ? "rose" : displayType === "enemy" || displayType === "rival" || displayType === "betrayed" ? "teal" : "mocha"}
                       />
                     </div>
                   </div>
@@ -307,7 +308,7 @@ export function RelationshipDetailSheet({
                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {history.map((event: any, idx: number) => {
                           const eventColorHex = getRelationshipColor(
-                            event.type as BackendRelationshipType,
+                            toUIRelationType(event.type),
                             5,
                           ); // Default strength
 
@@ -346,9 +347,7 @@ export function RelationshipDetailSheet({
                                     className="text-[10px] px-1.5 py-0 h-5"
                                     style={{ borderColor: "currentColor" }}
                                   >
-                                    {RELATION_LABELS[
-                                      event.type as BackendRelationshipType
-                                    ] || event.type}
+                                    {RELATION_LABELS[toUIRelationType(event.type)] || event.type}
                                   </Badge>
                                 </div>
                               </div>
@@ -372,7 +371,7 @@ export function RelationshipDetailSheet({
                       </div>
                       <div className="flex items-center gap-3">
                         <Badge variant="outline" className="text-stone-500 bg-white">
-                          {RELATION_LABELS[evolvedFrom as BackendRelationshipType] ||
+                          {RELATION_LABELS[toUIRelationType(evolvedFrom)] ||
                             evolvedFrom}
                         </Badge>
                         <span className="text-stone-400">→</span>

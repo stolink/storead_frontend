@@ -33,6 +33,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: () => {
     set({ user: null, isAuthenticated: false });
+    // 멀티 탭 로그아웃 동기화
+    localStorage.setItem("auth-logout", Date.now().toString());
   },
 
   updateUser: (updates) =>
@@ -42,3 +44,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setLoading: (loading) => set({ isLoading: loading }),
 }));
+
+// 멀티 탭 로그아웃 감지 이벤트 리스너
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === "auth-logout") {
+      useAuthStore.getState().logout();
+    }
+  });
+}

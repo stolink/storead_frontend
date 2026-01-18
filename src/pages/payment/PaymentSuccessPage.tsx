@@ -204,7 +204,7 @@ export function PaymentSuccessPage() {
                   서재로 가기
                 </button>
                 <button
-                  onClick={() => navigate("/discovery")}
+                  onClick={() => navigate("/")}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl bg-mocha-900 text-white font-medium hover:bg-mocha-800 transition-colors shadow-lg shadow-mocha-900/20"
                 >
                   작품 보러가기

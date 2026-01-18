@@ -1,0 +1,183 @@
+
+/Users/dongha/jungle/storead_frontend/src/adapters/graphSnapshotAdapter.ts
+  81:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/dongha/jungle/storead_frontend/src/components/auth/AuthCard.tsx
+  110:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/dongha/jungle/storead_frontend/src/components/home/FeaturedCarousel.tsx
+  26:5  error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+
+/Users/dongha/jungle/storead_frontend/src/components/rating/ChapterRatingCard.tsx
+  88:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/dongha/jungle/storead_frontend/src/components/rating/ChapterRatingCard.tsx:88:13
+  86 |     useEffect(() => {
+  87 |         if (currentRating) {
+> 88 |             setScore(currentRating);
+     |             ^^^^^^^^ Avoid calling setState() directly within an effect
+  89 |             setShowThankYou(true);
+  90 |         }
+  91 |     }, [currentRating]);  react-hooks/set-state-in-effect
+
+/Users/dongha/jungle/storead_frontend/src/components/rating/RatingModal.tsx
+  65:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/dongha/jungle/storead_frontend/src/components/rating/RatingModal.tsx:65:13
+  63 |     useEffect(() => {
+  64 |         if (open) {
+> 65 |             setScore(currentRating || 0);
+     |             ^^^^^^^^ Avoid calling setState() directly within an effect
+  66 |             setSubmitted(false);
+  67 |         }
+  68 |     }, [open, currentRating]);  react-hooks/set-state-in-effect
+
+/Users/dongha/jungle/storead_frontend/src/components/ui/badge.tsx
+  39:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/dongha/jungle/storead_frontend/src/components/ui/button.tsx
+  62:18  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/dongha/jungle/storead_frontend/src/components/ui/form.tsx
+  159:3  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/dongha/jungle/storead_frontend/src/components/viewer/ViewerSettings.tsx
+  34:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      react-refresh/only-export-components
+  43:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      react-refresh/only-export-components
+  58:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      react-refresh/only-export-components
+  69:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      react-refresh/only-export-components
+  73:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/dongha/jungle/storead_frontend/src/components/viewer/ViewerSettings.tsx:73:9
+  71 |
+  72 |     useEffect(() => {
+> 73 |         setSettings(loadViewerSettings());
+     |         ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  74 |     }, []);
+  75 |
+  76 |     const updateSettings = (newSettings: Partial<ViewerSettings>) => {  react-hooks/set-state-in-effect
+
+/Users/dongha/jungle/storead_frontend/src/components/writer/ExportChapterForm.tsx
+  81:23  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/dongha/jungle/storead_frontend/src/components/writer/ExportChapterForm.tsx:81:23
+  79 |     } = form;
+  80 |
+> 81 |     const isNewWork = watch('isNewWork');
+     |                       ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  82 |
+  83 |     const onSubmit = async (data: ExportChapterFormData) => {
+  84 |         try {  react-hooks/incompatible-library
+
+/Users/dongha/jungle/storead_frontend/src/hooks/useCharacterGraphZoom.ts
+  57:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/dongha/jungle/storead_frontend/src/hooks/useLibrary.ts
+  23:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  35:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/dongha/jungle/storead_frontend/src/hooks/useSecureContent.ts
+  47:11  warning  The 'mergedOptions' object makes the dependencies of useEffect Hook (at line 123) change on every render. Move it inside the useEffect callback. Alternatively, wrap the initialization of 'mergedOptions' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+/Users/dongha/jungle/storead_frontend/src/hooks/useWorkLike.ts
+  35:22  error  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/dongha/jungle/storead_frontend/src/pages/ChapterViewerPage.tsx
+  144:65  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  147:6   warning  React Hook useMemo has a missing dependency: 'chapter'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+  175:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/dongha/jungle/storead_frontend/src/pages/ChapterViewerPage.tsx:175:5
+  173 |   // 챕터 변경 시 페이지 초기화 (2-3 해결: 다음화 이동 시 첫 페이지로)
+  174 |   useEffect(() => {
+> 175 |     setCurrentPage(0);
+      |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  176 |   }, [id]);
+  177 |
+  178 |   // 현재/이전/다음 챕터 찾기 (기존 로직 유지)  react-hooks/set-state-in-effect
+
+/Users/dongha/jungle/storead_frontend/src/pages/Profile/ProfilePage.tsx
+  88:27  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/dongha/jungle/storead_frontend/src/pages/Profile/ProfilePage.tsx:88:27
+  86 |
+  87 |   // 프로필 이미지 미리보기
+> 88 |   const previewImageUrl = form.watch("profileImageUrl");
+     |                           ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  89 |   const previewNickname = form.watch("nickname");
+  90 |
+  91 |   if (isLoading) {  react-hooks/incompatible-library
+
+/Users/dongha/jungle/storead_frontend/src/pages/WritePage.tsx
+   68:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  188:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  274:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  306:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  350:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  355:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/dongha/jungle/storead_frontend/src/pages/payment/PaymentSuccessPage.tsx
+  28:5   error    Error: Cannot access variable before it is declared
+
+`confirmPayment` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+/Users/dongha/jungle/storead_frontend/src/pages/payment/PaymentSuccessPage.tsx:28:5
+  26 |     }
+  27 |
+> 28 |     confirmPayment();
+     |     ^^^^^^^^^^^^^^ `confirmPayment` accessed before it is declared
+  29 |   }, [orderId, paymentKey, amount]);
+  30 |
+  31 |   const confirmPayment = async () => {
+
+/Users/dongha/jungle/storead_frontend/src/pages/payment/PaymentSuccessPage.tsx:31:3
+  29 |   }, [orderId, paymentKey, amount]);
+  30 |
+> 31 |   const confirmPayment = async () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 32 |     try {
+     | ^^^^^^^^^
+> 33 |       const response = await paymentService.confirmPayment({
+     …
+     | ^^^^^^^^^
+> 52 |     }
+     | ^^^^^^^^^
+> 53 |   };
+     | ^^^^^ `confirmPayment` is declared here
+  54 |
+  55 |   if (status === "loading") {
+  56 |     return (  react-hooks/immutability
+  29:6   warning  React Hook useEffect has a missing dependency: 'confirmPayment'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+  48:21  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+
+✖ 33 problems (28 errors, 5 warnings)
+

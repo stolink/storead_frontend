@@ -34,8 +34,8 @@ export function RelationshipSummaryPanel({
 
   // 관계 타입별 분류
   const relationCounts = {
-    friendly: relatedLinks.filter((l) => l.type === "friendly").length,
-    hostile: relatedLinks.filter((l) => l.type === "hostile").length,
+    ally: relatedLinks.filter((l) => l.type === "ally").length,
+    enemy: relatedLinks.filter((l) => l.type === "enemy" || l.type === "rival" || l.type === "betrayed").length,
     romantic: relatedLinks.filter((l) => l.type === "romantic").length,
   };
 
@@ -87,23 +87,23 @@ export function RelationshipSummaryPanel({
         <div className="flex items-center gap-1.5">
           <div
             className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: getRelationshipColor("friendly", 5) }}
+            style={{ backgroundColor: getRelationshipColor("ally", 5) }}
           />
           <span className="text-stone-600">
             우호{" "}
             <strong className="text-stone-800">
-              {relationCounts.friendly}
+              {relationCounts.ally}
             </strong>
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <div
             className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: getRelationshipColor("hostile", 5) }}
+            style={{ backgroundColor: getRelationshipColor("enemy", 5) }}
           />
           <span className="text-stone-600">
             적대{" "}
-            <strong className="text-stone-800">{relationCounts.hostile}</strong>
+            <strong className="text-stone-800">{relationCounts.enemy}</strong>
           </span>
         </div>
         <div className="flex items-center gap-1.5">

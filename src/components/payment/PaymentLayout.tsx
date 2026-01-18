@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { Home } from "lucide-react";
 
 interface PaymentLayoutProps {
   children: ReactNode;
@@ -10,6 +12,16 @@ interface PaymentLayoutProps {
 export function PaymentLayout({ children, className }: PaymentLayoutProps) {
   return (
     <div className="min-h-screen bg-[#F0F4EF] relative overflow-hidden flex items-center justify-center p-4 isolate">
+      {/* Home Button */}
+      <div className="absolute top-8 left-8 z-50">
+        <Link
+          to="/"
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-espresso-900 hover:bg-white/60 transition-all shadow-sm group font-medium"
+        >
+          <Home className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          <span className="text-sm">Home</span>
+        </Link>
+      </div>
       {/* Dynamic Mesh Gradient Background */}
       <div className="absolute inset-0 overflow-hidden -z-20">
         <div className="absolute top-[-10%] left-[-10%] w-[70vw] h-[70vw] bg-[#A47764] rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob" />

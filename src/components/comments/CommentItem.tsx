@@ -150,17 +150,6 @@ export const CommentItem = ({
               </button>
             )}
 
-            {/* 답글 (최대 깊이 미만일 때만) */}
-            {depth < maxDepth && (
-              <button
-                onClick={() => setShowReplyInput(!showReplyInput)}
-                className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-600"
-              >
-                <MessageCircle className="h-4 w-4" />
-                <span>답글</span>
-              </button>
-            )}
-
             {/* 삭제 (작성자만) */}
             {isAuthor && (
               <button

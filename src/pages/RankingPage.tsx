@@ -14,8 +14,6 @@ import {
   Loader2,
   BarChart3,
   Crown,
-  Trophy,
-  Medal,
   Star,
   Heart,
 } from "lucide-react";
@@ -45,7 +43,6 @@ export const RankingPage = () => {
   const [genre, setGenre] = useState<string>("");
   const [accessType, setAccessType] = useState<string>("");
   const [showAll, setShowAll] = useState(false);
-  const navigate = useNavigate();
 
   const { data: worksData, isLoading } = useRankings(period, genre, accessType);
   const works = worksData?.data || [];
@@ -308,7 +305,7 @@ function TopRankCard({
                 </span>
                 <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-md">
                   <Heart className="w-3 h-3 fill-rose-400 text-rose-400" />
-                  {work.likeCount.toLocaleString()}
+                  {(work.likeCount ?? 0).toLocaleString()}
                 </span>
               </div>
             )}
@@ -381,7 +378,7 @@ function RankingListItem({
       </div>
 
       <div className="hidden md:flex flex-col items-end gap-2 min-w-[140px]">
-        {work.likeCount < 50 ? (
+        {(work.likeCount ?? 0) < 50 ? (
           <div className="bg-mocha-100/50 dark:bg-mocha-900/20 px-3 py-1.5 rounded-lg border border-mocha-200/50">
             <span className="text-[10px] font-black text-mocha-600 uppercase tracking-widest">
               Rising ✨
@@ -395,7 +392,7 @@ function RankingListItem({
         )}
         <div className="text-xs text-mocha-300 dark:text-zinc-600 font-bold flex items-center gap-2 px-1">
           <Heart className="w-3.5 h-3.5 stroke-[2.5]" />
-          {work.likeCount.toLocaleString()}
+          {(work.likeCount ?? 0).toLocaleString()}
         </div>
       </div>
 

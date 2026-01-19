@@ -17,7 +17,7 @@ const relationLabels: Record<string, string> = {
  */
 export function useCharacterData(
   character: Character | null,
-  allCharacters: Character[] = []
+  allCharacters: Character[] = [],
 ) {
   // 성격 특성 추출
   const traits = useMemo(() => {
@@ -50,15 +50,22 @@ export function useCharacterData(
       return {
         name: targetName,
         relation: relationLabel,
-        type: rel.type || "friendly",
+        type: (rel.type as string) || "friendly",
       };
     });
   }, [character?.relations?.graph, allCharacters]);
 
   // 등장 챕터
   const appearances = useMemo(() => {
-    const char = character as any;
-    return char?.appearances || (char?.firstAppearance ? [char.firstAppearance] : []);
+    interface LegacyCharacter {
+      appearances?: unknown[];
+      firstAppearance?: unknown;
+    }
+    const legacy = character as unknown as LegacyCharacter;
+    return (
+      (legacy?.appearances as string[]) ||
+      (legacy?.firstAppearance ? [legacy.firstAppearance as string] : [])
+    );
   }, [character]);
 
   // 설명

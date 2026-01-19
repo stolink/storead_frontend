@@ -5,7 +5,6 @@
 import { useState, memo, useCallback } from "react";
 import {
   Heart,
-  MessageCircle,
   Trash2,
   ChevronDown,
   ChevronUp,

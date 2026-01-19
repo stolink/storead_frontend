@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Calendar, Flame } from "lucide-react";
 
 import { useUserGamification } from "@/hooks/useGamification";

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Trophy, TrendingUp, Sparkles, Plus } from "lucide-react";
 import { useRankings } from "@/hooks/useDiscovery";

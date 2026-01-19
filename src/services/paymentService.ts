@@ -7,35 +7,35 @@ import type {
   PaymentConfirmRequest,
   PaymentResponse,
 } from "@/types/payment";
+import type { AxiosRequestConfig } from "axios";
 
 export const paymentService = {
   getPackages: async (): Promise<ApiResponse<CreditPackage[]>> => {
     const response = await api.get<ApiResponse<CreditPackage[]>>(
       "/payments/packages",
       {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         skipAuthHandler: true,
-      } as any
+      } as AxiosRequestConfig,
     );
     return response.data;
   },
 
   preparePayment: async (
-    request: PaymentPrepareRequest
+    request: PaymentPrepareRequest,
   ): Promise<ApiResponse<PaymentPrepareResponse>> => {
     const response = await api.post<ApiResponse<PaymentPrepareResponse>>(
       "/payments/prepare",
-      request
+      request,
     );
     return response.data;
   },
 
   confirmPayment: async (
-    request: PaymentConfirmRequest
+    request: PaymentConfirmRequest,
   ): Promise<ApiResponse<PaymentResponse>> => {
     const response = await api.post<ApiResponse<PaymentResponse>>(
       "/payments/confirm",
-      request
+      request,
     );
     return response.data;
   },

@@ -1,5 +1,5 @@
-import { useMemo, memo, useRef } from "react";
-import type { CharacterNode, RelationshipLink, Character } from "@/types";
+import { memo, useRef } from "react";
+import type { RelationshipLink, Character } from "@/types";
 import type { GraphSnapshotDTO } from "@/adapters/graphSnapshotAdapter";
 
 // Components
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { RelationshipLegend } from "./RelationshipLegend";
 
 interface CharacterGraphProps {
-  characters: CharacterNode[];
+  characters: Character[];
   links: RelationshipLink[];
   onNodeClick?: (char: Character) => void;
   onLinkClick?: (link: RelationshipLink | null) => void;
@@ -38,19 +38,6 @@ export const CharacterGraph = memo(function CharacterGraph({
 }: CharacterGraphProps) {
   const canvasRef = useRef<CanvasGraphRef>(null);
 
-  // CharacterNode[] -> Character[] conversion for CanvasGraph compatibility if needed
-  // CanvasGraph expects Character[] but currently nodes are passed as characters prop.
-  // We need to ensure the structure matches what CanvasGraph expects.
-  const mappedCharacters = useMemo(() => {
-    return characters.map(
-      (node) =>
-        ({
-          ...node,
-          _id: node.id,
-        }) as unknown as Character,
-    );
-  }, [characters]);
-
   return (
     <div
       className={cn(
@@ -60,7 +47,7 @@ export const CharacterGraph = memo(function CharacterGraph({
     >
       <CanvasGraph
         ref={canvasRef}
-        characters={mappedCharacters}
+        characters={characters}
         links={links}
         onNodeClick={onNodeClick}
         onLinkClick={onLinkClick}

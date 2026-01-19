@@ -75,10 +75,18 @@ export const CategoryPage = () => {
     searchParams.get("sub") || GENRE_GROUPS[genreId!]?.tabs[0].value || genreId;
   const searchQuery = searchParams.get("search") || "";
 
-  // 상태 관리
+  // [FIX] Render phase state reset to satisfy strict lint rules
+  const [prevGenreId, setPrevGenreId] = useState(genreId);
   const [selectedGenreValue, setSelectedGenreValue] = useState<
     string | undefined
   >(initialSubGenre);
+
+  if (genreId !== prevGenreId) {
+    setPrevGenreId(genreId);
+    const defaultTab = GENRE_GROUPS[genreId!]?.tabs[0].value || genreId;
+    setSelectedGenreValue(searchParams.get("sub") || defaultTab);
+  }
+
   const [statusFilter, setStatusFilter] = useState<string>(
     searchParams.get("status") || "",
   ); // '' or 'ONGOING', 'COMPLETED'
@@ -86,7 +94,11 @@ export const CategoryPage = () => {
     searchParams.get("access") || "",
   ); // '' or 'FREE', 'PAID'
   const [sortBy, setSortBy] = useState<"latest" | "popular" | "rating">(
-    (searchParams.get("sort") as any) || "latest",
+    () => {
+      const sort = searchParams.get("sort");
+      if (sort === "popular" || sort === "rating") return sort;
+      return "latest";
+    }
   );
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
@@ -131,12 +143,6 @@ export const CategoryPage = () => {
       fetchNextPage();
     }
   }, [isVisible, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  // 카테고리(genreId) 변경 시 탭 상태 초기화
-  useEffect(() => {
-    const defaultTab = GENRE_GROUPS[genreId!]?.tabs[0].value || genreId;
-    setSelectedGenreValue(searchParams.get("sub") || defaultTab);
-  }, [genreId, searchParams]);
 
   // 필터 변경 시 URL 업데이트
   useEffect(() => {

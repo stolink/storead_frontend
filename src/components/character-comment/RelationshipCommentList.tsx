@@ -40,13 +40,19 @@ export function RelationshipCommentList({
     );
 
   const queryClient = useQueryClient();
+  const prevRelationIdRef = useRef(activeRelationId);
 
-  // Reset state and clear cache when relation changes or unmounts
+  // Reset state when relation changes
   useEffect(() => {
-    setContent("");
-    setReplyTo(null);
+    if (prevRelationIdRef.current !== activeRelationId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setContent("");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setReplyTo(null);
+      prevRelationIdRef.current = activeRelationId;
+    }
 
-    // Immediate cache clear to prevent flickering previous relation comments
+    // Cache clear logic
     queryClient.removeQueries({
       queryKey: [
         "comments",

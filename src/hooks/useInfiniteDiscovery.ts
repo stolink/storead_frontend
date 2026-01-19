@@ -16,16 +16,14 @@ interface DiscoveryParams {
   accessType?: string; // FREE / PAID
 }
 
-interface UseInfiniteDiscoveryParams extends Omit<DiscoveryParams, "page"> {}
-
 export const useInfiniteDiscoveryWorks = (
-  params: UseInfiniteDiscoveryParams = {},
+  params: DiscoveryParams = {},
 ) => {
   return useInfiniteQuery<PaginatedResponse<Work>>({
     queryKey: ["discovery", "infinite", params],
     queryFn: async ({ pageParam = 0 }) => {
       // Transform params for API
-      const apiParams: any = {
+      const apiParams: Record<string, unknown> = {
         ...params,
         page: pageParam,
         size: params.size || 20,

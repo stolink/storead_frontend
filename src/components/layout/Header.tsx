@@ -1,4 +1,4 @@
-import { Book, Library, PenTool, LogOut, Sparkles, User } from "lucide-react";
+import { Library, PenTool, LogOut, Sparkles, User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -44,11 +44,17 @@ export function Header() {
         {/* Logo Area - 클릭 시 홈으로 이동 */}
         <Link
           to="/"
-          className="flex items-center gap-2 mr-8 transition-opacity hover:opacity-80"
+          className="flex items-center gap-2.5 mr-8 transition-all hover:opacity-90 active:scale-95"
         >
-          <Book className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold font-heading text-foreground tracking-tight">
-            Storead
+          <div className="relative w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm border border-mocha-100 overflow-hidden group-hover:shadow-md transition-shadow">
+            <img
+              src="/logo.png"
+              alt="StoRead Logo"
+              className="w-full h-full object-cover scale-110"
+            />
+          </div>
+          <span className="text-xl font-bold font-heading text-mocha-900 tracking-tight">
+            StoRead
           </span>
         </Link>
 

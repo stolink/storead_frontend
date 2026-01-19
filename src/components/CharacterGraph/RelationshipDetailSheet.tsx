@@ -42,8 +42,27 @@ interface RelationshipDetailSheetProps {
   chapterId?: string;
 }
 
+interface RelationshipAttributes {
+  emotionalBond: number;
+  functionalTrust: number;
+  valueAlignment: number;
+  interdependence: number;
+  latentTension: number;
+}
+
+interface HistoryEvent {
+  eventId?: string;
+  type: string;
+  chapter?: string | number;
+  date?: string;
+  title: string;
+  reason?: string;
+}
+
 // 관계 타입별 아이콘 (UIRelationType 기준)
-const RELATION_ICONS: Partial<Record<import("@/types").UIRelationType, React.ReactNode>> = {
+const RELATION_ICONS: Partial<
+  Record<import("@/types").UIRelationType, React.ReactNode>
+> = {
   ally: <User className="w-4 h-4" />,
   enemy: <Skull className="w-4 h-4" />,
   rival: <Target className="w-4 h-4" />,
@@ -92,16 +111,19 @@ export function RelationshipDetailSheet({
     id: relationship.id || `rel-${relationship.source}-${relationship.target}`,
     source: relationship.source,
     target: relationship.target,
-    type: (relationship.relationType || type) as any,
+    type: (relationship.relationType || type) as RelationshipLink["type"],
     strength: strength,
     description: description,
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => {
-      if (!open) setIsCommentMode(false);
-      onClose();
-    }}>
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) setIsCommentMode(false);
+        onClose();
+      }}
+    >
       <SheetContent className="w-[400px] sm:w-[540px] p-0 border-l border-stone-200 flex flex-col">
         {/* Fixed Header */}
         <SheetHeader className="p-6 pb-2 space-y-4 shrink-0 bg-white z-10">
@@ -147,7 +169,7 @@ export function RelationshipDetailSheet({
                 "flex-1 flex items-center justify-center gap-2 py-2 text-sm font-bold rounded-md transition-all",
                 !isCommentMode
                   ? "bg-white text-espresso-900 shadow-sm"
-                  : "text-stone-400 hover:text-stone-600"
+                  : "text-stone-400 hover:text-stone-600",
               )}
             >
               <Info className="w-4 h-4" />
@@ -159,7 +181,7 @@ export function RelationshipDetailSheet({
                 "flex-1 flex items-center justify-center gap-2 py-2 text-sm font-bold rounded-md transition-all",
                 isCommentMode
                   ? "bg-white text-espresso-900 shadow-sm"
-                  : "text-stone-400 hover:text-stone-600"
+                  : "text-stone-400 hover:text-stone-600",
               )}
             >
               <MessageSquare className="w-4 h-4" />
@@ -222,16 +244,33 @@ export function RelationshipDetailSheet({
                     <div className="flex justify-center bg-stone-50/50 rounded-2xl py-4 border border-stone-100">
                       <RelationshipRadarChart
                         attributes={
-                          (relationship as any).attributes || {
+                          (
+                            relationship as unknown as {
+                              attributes: RelationshipAttributes;
+                            }
+                          ).attributes || {
                             emotionalBond: Math.min(10, strength + 1),
                             functionalTrust: Math.min(10, strength),
-                            valueAlignment: Math.min(10, Math.max(0, 10 - strength)),
+                            valueAlignment: Math.min(
+                              10,
+                              Math.max(0, 10 - strength),
+                            ),
                             interdependence: Math.min(10, strength - 1),
-                            latentTension: (relationship as any).tension || 2,
+                            latentTension:
+                              (relationship as unknown as { tension: number })
+                                .tension || 2,
                           }
                         }
                         size={240}
-                        color={displayType === "romantic" ? "rose" : displayType === "enemy" || displayType === "rival" || displayType === "betrayed" ? "teal" : "mocha"}
+                        color={
+                          displayType === "romantic"
+                            ? "rose"
+                            : displayType === "enemy" ||
+                                displayType === "rival" ||
+                                displayType === "betrayed"
+                              ? "teal"
+                              : "mocha"
+                        }
                       />
                     </div>
                   </div>
@@ -245,7 +284,11 @@ export function RelationshipDetailSheet({
                     <div className="bg-stone-50/50 rounded-2xl p-4 border border-stone-100">
                       <RelationshipTimelineGraph
                         data={
-                          (relationship as any).timeline || []
+                          (
+                            relationship as unknown as {
+                              timeline: import("./components/RelationshipTimelineGraph").RelationshipTimelinePoint[];
+                            }
+                          ).timeline || []
                         }
                         height={140}
                       />
@@ -262,10 +305,30 @@ export function RelationshipDetailSheet({
                       affinityDepth={Math.min(100, (strength || 0) * 10 + 20)}
                       stability={70 + ((strength || 0) > 5 ? 10 : -10)}
                       factors={[
-                        { label: "정서적 공감", value: 85, icon: Heart, color: "bg-rose-50 text-rose-600" },
-                        { label: "기능적 협력", value: 60, icon: Shield, color: "bg-sage-50 text-sage-600" },
-                        { label: "가치관 충돌", value: 20, icon: AlertTriangle, color: "bg-amber-50 text-amber-600" },
-                        { label: "운명적 결단", value: 45, icon: Zap, color: "bg-mocha-50 text-mocha-600" },
+                        {
+                          label: "정서적 공감",
+                          value: 85,
+                          icon: Heart,
+                          color: "bg-rose-50 text-rose-600",
+                        },
+                        {
+                          label: "기능적 협력",
+                          value: 60,
+                          icon: Shield,
+                          color: "bg-sage-50 text-sage-600",
+                        },
+                        {
+                          label: "가치관 충돌",
+                          value: 20,
+                          icon: AlertTriangle,
+                          color: "bg-amber-50 text-amber-600",
+                        },
+                        {
+                          label: "운명적 결단",
+                          value: 45,
+                          icon: Zap,
+                          color: "bg-mocha-50 text-mocha-600",
+                        },
                       ]}
                     />
                   </div>
@@ -305,15 +368,17 @@ export function RelationshipDetailSheet({
                     </h4>
                     {history && Array.isArray(history) && history.length > 0 ? (
                       <div className="relative pl-4 space-y-6 before:content-[''] before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-stone-200">
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {history.map((event: any, idx: number) => {
+                        {(history as HistoryEvent[]).map((event, idx) => {
                           const eventColorHex = getRelationshipColor(
                             toUIRelationType(event.type),
                             5,
                           ); // Default strength
 
                           return (
-                            <div key={event.eventId || idx} className="relative">
+                            <div
+                              key={event.eventId || idx}
+                              className="relative"
+                            >
                               {/* Timeline Dot */}
                               <div
                                 className={cn(
@@ -347,7 +412,9 @@ export function RelationshipDetailSheet({
                                     className="text-[10px] px-1.5 py-0 h-5"
                                     style={{ borderColor: "currentColor" }}
                                   >
-                                    {RELATION_LABELS[toUIRelationType(event.type)] || event.type}
+                                    {RELATION_LABELS[
+                                      toUIRelationType(event.type)
+                                    ] || event.type}
                                   </Badge>
                                 </div>
                               </div>
@@ -370,7 +437,10 @@ export function RelationshipDetailSheet({
                         <span className="text-sm font-medium">이전 관계</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="text-stone-500 bg-white">
+                        <Badge
+                          variant="outline"
+                          className="text-stone-500 bg-white"
+                        >
                           {RELATION_LABELS[toUIRelationType(evolvedFrom)] ||
                             evolvedFrom}
                         </Badge>

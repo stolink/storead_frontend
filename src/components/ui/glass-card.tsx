@@ -45,7 +45,7 @@ const glassCardVariants = cva(
       spotlight: "none",
       grain: "none",
     },
-  }
+  },
 );
 
 export interface GlassCardProps
@@ -57,7 +57,7 @@ export interface GlassCardProps
 const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
   (
     { className, variant, hover, spotlight, grain, children, ...props },
-    ref
+    ref,
   ) => {
     const cardRef = React.useRef<HTMLDivElement>(null);
 
@@ -73,14 +73,15 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
         cardRef.current.style.setProperty("--mouse-x", `${x}%`);
         cardRef.current.style.setProperty("--mouse-y", `${y}%`);
       },
-      [spotlight]
+      [spotlight],
     );
 
     return (
       <div
         ref={(node) => {
           // Forward both refs
-          (cardRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+          (cardRef as React.MutableRefObject<HTMLDivElement | null>).current =
+            node;
           if (typeof ref === "function") {
             ref(node);
           } else if (ref) {
@@ -89,7 +90,7 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
         }}
         className={cn(
           glassCardVariants({ variant, hover, spotlight, grain }),
-          className
+          className,
         )}
         onMouseMove={handleMouseMove}
         {...props}
@@ -97,7 +98,7 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
         {children}
       </div>
     );
-  }
+  },
 );
 
 GlassCard.displayName = "GlassCard";
@@ -140,4 +141,11 @@ const GlassCardFooter = React.forwardRef<
 
 GlassCardFooter.displayName = "GlassCardFooter";
 
-export { GlassCard, GlassCardContent, GlassCardHeader, GlassCardFooter, glassCardVariants };
+/* eslint-disable react-refresh/only-export-components */
+export {
+  GlassCard,
+  GlassCardContent,
+  GlassCardHeader,
+  GlassCardFooter,
+  glassCardVariants,
+};

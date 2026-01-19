@@ -128,7 +128,7 @@ const itemVariants = {
 
 function BatchPublishView({
   drafts,
-  onComplete: _onComplete,
+  onComplete,
 }: BatchPublishViewProps) {
   const navigate = useNavigate();
   const publishMutation = usePublish();
@@ -142,9 +142,17 @@ function BatchPublishView({
   const [currentPublishingId, setCurrentPublishingId] = useState<string | null>(
     null,
   );
-  const [_lastWorkId, setLastWorkId] = useState<string | null>(null);
+  const [lastWorkId, setLastWorkId] = useState<string | null>(null);
 
-  // UI 상태
+  // 모든 챕터 게시 완료 시 처리
+  useEffect(() => {
+    if (publishedIds.size > 0 && publishedIds.size === drafts.length) {
+      const timer = setTimeout(() => {
+        onComplete(lastWorkId || undefined);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [publishedIds.size, drafts.length, onComplete, lastWorkId]);
   const [showOnlyErrors, setShowOnlyErrors] = useState(false);
   const [editingDraft, setEditingDraft] = useState<Draft | null>(null);
 
@@ -605,10 +613,38 @@ interface SinglePublishViewProps {
 function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
   const navigate = useNavigate();
 
-  // 폼 상태
-  const [coverUrl, setCoverUrl] = useState("");
-  const [genre, setGenre] = useState<Genre>("OTHER");
-  const [synopsis, setSynopsis] = useState("");
+  // [FIX] Render phase reset to avoid useEffect cascading
+  const [prevDraftId, setPrevDraftId] = useState(draft?.id);
+  const [coverUrl, setCoverUrl] = useState(draft?.workCoverUrl || "");
+  const [genre, setGenre] = useState<Genre>(() => {
+    if (draft?.workGenre) {
+      const validGenre = GENRE_OPTIONS.find(
+        (opt) => opt.value === draft.workGenre,
+      );
+      return validGenre ? validGenre.value : "OTHER";
+    }
+    return "OTHER";
+  });
+  const [synopsis, setSynopsis] = useState(() => {
+    if (draft?.workSynopsis) return draft.workSynopsis;
+    if (draft?.content) return draft.content.replace(/<[^>]*>/g, "").slice(0, 500);
+    return "";
+  });
+
+  if (draft?.id !== prevDraftId) {
+    setPrevDraftId(draft?.id);
+    setCoverUrl(draft?.workCoverUrl || "");
+    if (draft?.workGenre) {
+      const validGenre = GENRE_OPTIONS.find((o) => o.value === draft.workGenre);
+      if (validGenre) setGenre(validGenre.value);
+    }
+    if (draft?.workSynopsis) {
+      setSynopsis(draft.workSynopsis);
+    } else if (draft?.content) {
+      setSynopsis(draft.content.replace(/<[^>]*>/g, "").slice(0, 500));
+    }
+  }
+
   const [showGraphModal, setShowGraphModal] = useState(false);
   const [accessType, setAccessType] = useState<"FREE" | "PAID">("FREE");
   const [price, setPrice] = useState<number>(100);
@@ -623,40 +659,6 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
   // 게시/취소 mutation
   const publishMutation = usePublish();
   const deleteDraftMutation = useDeleteDraft();
-
-  // Draft 데이터로 폼 초기화 (draft.id 변경 시에만 실행)
-  useEffect(() => {
-    if (!draft?.id) return;
-
-    // 표지 URL 초기화 (빈 값일 때만)
-    if (draft.workCoverUrl) {
-      setCoverUrl((prev) => prev || (draft.workCoverUrl ?? ""));
-    }
-
-    // 장르 초기화
-    if (draft.workGenre) {
-      const validGenre = GENRE_OPTIONS.find(
-        (opt) => opt.value === draft.workGenre,
-      );
-      if (validGenre) {
-        setGenre(validGenre.value);
-      }
-    }
-
-    // 줄거리 초기화 (빈 값일 때만)
-    if (draft.workSynopsis) {
-      setSynopsis((prev) => prev || (draft.workSynopsis ?? ""));
-    } else if (draft.content) {
-      const previewText = draft.content.replace(/<[^>]*>/g, "").slice(0, 500);
-      setSynopsis((prev) => prev || (previewText ?? ""));
-    }
-  }, [
-    draft?.id,
-    draft?.workCoverUrl,
-    draft?.workGenre,
-    draft?.workSynopsis,
-    draft?.content,
-  ]);
 
   // 게시하기 핸들러
   const handlePublish = async () => {
@@ -1024,16 +1026,38 @@ export const WritePage = () => {
   const {
     data: singleDraft,
     isLoading: isSingleDraftLoading,
-    isError: _isSingleDraftError,
-    error: _singleDraftError,
   } = useDraft(isAuthenticated && !isBatchMode ? draftId : null);
 
   // 다중 Draft 조회
   const {
     data: multipleDrafts,
     isLoading: isMultipleDraftsLoading,
-    isError: _isMultipleDraftsError,
   } = useDrafts(isAuthenticated && isBatchMode ? draftIds : []);
+
+  // 1. 공통 데이터 추출 (작품 정보) - Hook 규칙 준수를 위해 상단 이동
+  const draftForWork = useMemo(() => {
+    if (isBatchMode && multipleDrafts && multipleDrafts.length > 0)
+      return multipleDrafts[0];
+    return singleDraft;
+  }, [isBatchMode, multipleDrafts, singleDraft]);
+
+  // 게시할 Draft 목록 결정 (단일/다중 모드 통합) - Hook 규칙 준수를 위해 상단 이동
+  const allDrafts = useMemo(() => {
+    if (isBatchMode && multipleDrafts) {
+      return multipleDrafts;
+    }
+    if (singleDraft) {
+      return [singleDraft];
+    }
+    return [];
+  }, [isBatchMode, multipleDrafts, singleDraft]);
+
+  const { data: workData, isLoading: isWorkLoading } = useWorkByProjectId(
+    draftForWork?.projectId || null,
+  );
+  const existingWork = (
+    workData as { works?: { id: string; title?: string }[] }
+  )?.works?.[0];
 
   // 로그인 체크 - 무한 루프 방지를 위해 메모이제이션된 값 사용
   useEffect(() => {
@@ -1110,31 +1134,6 @@ export const WritePage = () => {
       </div>
     );
   }
-
-  // 1. 공통 데이터 추출 (작품 정보)
-  const draftForWork = useMemo(() => {
-    if (isBatchMode && multipleDrafts && multipleDrafts.length > 0)
-      return multipleDrafts[0];
-    return singleDraft;
-  }, [isBatchMode, multipleDrafts, singleDraft]);
-
-  // 게시할 Draft 목록 결정 (단일/다중 모드 통합) - Hook 규칙 준수를 위해 조건부 return 전에 위치
-  const allDrafts = useMemo(() => {
-    if (isBatchMode && multipleDrafts) {
-      return multipleDrafts;
-    }
-    if (singleDraft) {
-      return [singleDraft];
-    }
-    return [];
-  }, [isBatchMode, multipleDrafts, singleDraft]);
-
-  const { data: workData, isLoading: isWorkLoading } = useWorkByProjectId(
-    draftForWork?.projectId || null,
-  );
-  const existingWork = (
-    workData as { works?: { id: string; title?: string }[] }
-  )?.works?.[0];
 
   // 로딩 중 (작품 정보 조회 포함)
   if (isSingleDraftLoading || isMultipleDraftsLoading || isWorkLoading) {

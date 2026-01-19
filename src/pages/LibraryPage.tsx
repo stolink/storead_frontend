@@ -7,14 +7,8 @@ import {
   BookOpen,
   Trash2,
   Sparkles,
-  Search,
-  Filter,
-  MoreHorizontal,
-  Clock,
-  BookMarked,
-  Heart,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { BentoGrid, BentoCard } from "@/components/ui/bento-grid";
 import { useLibrary, useRemoveFromLibrary } from "@/hooks/useLibrary";
@@ -256,13 +250,13 @@ export const LibraryPage = () => {
                         <div className="flex-1 mr-4">
                           <div className="flex justify-between text-[10px] text-zinc-500 mb-1 font-medium">
                             <span>Progress</span>
-                            <span>{Math.floor(Math.random() * 90) + 10}%</span>
+                            <span>{Math.floor((item.workId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % 90) + 10)}%</span>
                           </div>
                           <div className="h-1 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{
-                                width: `${Math.floor(Math.random() * 90) + 10}%`,
+                                width: `${Math.floor((item.workId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % 90) + 10)}%`,
                               }}
                               transition={{ duration: 1, delay: 0.5 }}
                               className="h-full bg-mocha-500"

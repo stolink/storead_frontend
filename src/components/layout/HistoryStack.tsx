@@ -1,19 +1,17 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Clock } from "lucide-react";
-import { useThemeStore } from "@/stores/useTheme";
 
 interface ViewedWork {
   id: string;
   title: string;
-  thumbnail: string;
+  coverImageUrl: string;
+  authorNickname: string;
 }
 
 const STORAGE_KEY = "storead_recent_history";
 
 export const HistoryStack = () => {
   const [history, setHistory] = useState<ViewedWork[]>([]);
-  const { theme } = useThemeStore();
 
   useEffect(() => {
     const loadHistory = () => {
@@ -71,6 +69,7 @@ export const HistoryStack = () => {
 };
 
 // Helper function to add items to history
+// eslint-disable-next-line react-refresh/only-export-components
 export const addToHistory = (work: ViewedWork) => {
   const stored = localStorage.getItem(STORAGE_KEY);
   let history: ViewedWork[] = stored ? JSON.parse(stored) : [];

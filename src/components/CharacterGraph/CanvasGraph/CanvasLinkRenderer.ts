@@ -1,14 +1,26 @@
-import type { CharacterNode } from "@/types";
+import type { CharacterNode, RelationshipLink } from "@/types";
 import type { LinkRenderOptions } from "./types";
 import { getRelationshipColor, type UIRelationType } from "../utils";
 import tinycolor from "tinycolor2";
+
+/**
+ * 확장된 링크 타입 (Canvas 렌더링에 필요한 추가 필드 포함)
+ */
+interface DetailedLink extends RelationshipLink {
+  visualPattern?: "braided" | "parallel" | "standard";
+  relationTypes?: UIRelationType[];
+  flowDepth?: number;
+  bidirectional?: boolean;
+  curvature?: number;
+}
 
 /**
  * Canvas에 링크를 렌더링하는 함수
  * LinkRenderer.tsx의 7계층 렌더링 로직을 Canvas API로 구현
  */
 export function drawLink(options: LinkRenderOptions): void {
-  const { ctx, link, state, animationPhase, changeType } = options;
+  const { ctx, state, animationPhase, changeType } = options;
+  const link = options.link as DetailedLink;
 
   const source = link.source as CharacterNode;
   const target = link.target as CharacterNode;
@@ -56,7 +68,11 @@ export function drawLink(options: LinkRenderOptions): void {
   const dashArray: number[] = (() => {
     if (changeType === "collapse") return [4, 6];
     if (changeType === "new") return [];
-    if (link.type === "enemy" || link.type === "rival" || link.type === "betrayed") {
+    if (
+      link.type === "enemy" ||
+      link.type === "rival" ||
+      link.type === "betrayed"
+    ) {
       return [6 + link.strength, 4 + (10 - link.strength) / 2];
     }
     return [];
@@ -108,8 +124,8 @@ export function drawLink(options: LinkRenderOptions): void {
   }
 
   // === Layer 4: Base Line (Solid or Pattern) ===
-  const visualPattern = (link as any).visualPattern;
-  const relationTypes = (link as any).relationTypes;
+  const visualPattern = link.visualPattern;
+  const relationTypes = link.relationTypes;
 
   if (
     visualPattern === "braided" &&
@@ -120,7 +136,7 @@ export function drawLink(options: LinkRenderOptions): void {
     const steps = 40; // Higher resolution for smooth curves
 
     // Get unique colors for the strands
-    const colors = relationTypes.map((t: any) =>
+    const colors = relationTypes.map((t) =>
       getRelationshipColor(t as UIRelationType, 5),
     );
 
@@ -255,15 +271,14 @@ export function drawLink(options: LinkRenderOptions): void {
 
     // [STOLINK PARITY] Staggered Flow Animation
     // flowDepth * 0.2s delay logic
-    const flowDelay =
-      (link as any).flowDepth !== undefined ? (link as any).flowDepth * 0.2 : 0;
+    const flowDelay = link.flowDepth !== undefined ? link.flowDepth * 0.2 : 0;
     // const flowDuration = 1.0; // 1s cycle
     const adjustedPhase = (animationPhase + 10 - (flowDelay % 1.0)) % 1.0;
 
     const gradient = ctx.createLinearGradient(sx, sy, tx, ty);
     const pos = adjustedPhase; // 0 to 1
 
-    if ((link as any).bidirectional) {
+    if (link.bidirectional) {
       // === Bidirectional Flow: Pulse Outward from Center ===
       const p1 = 0.5 + pos * 0.5;
       const p2 = 0.5 - pos * 0.5;
@@ -301,14 +316,6 @@ export function drawLink(options: LinkRenderOptions): void {
   if (changeType !== "collapse") {
     const arrowSize = 6 + strokeWidth / 2; // Dynamic size
 
-    // Simplified Arrow Placement: Center of the path
-    // Calculating curve length intersection is expensive.
-    // Let's place small chevron text/shape at 2/3 distance?
-    // Or just draw a triangle at the "Center" of the curve pointing to Target?
-
-    // Unidirectional: Arrow at 60%
-    // Bidirectional: Arrows at 30% (<) and 70% (>)// _t_arrow1 and _t_arrow2 removed as they were unused // For bidirectional second arrow
-
     const drawChevron = (t: number, isReverse: boolean) => {
       const mt = 1 - t;
       const x = mt * mt * sx + 2 * mt * t * controlX + t * t * tx;
@@ -336,7 +343,7 @@ export function drawLink(options: LinkRenderOptions): void {
     };
 
     // Draw
-    if (!(link as any).bidirectional) {
+    if (!link.bidirectional) {
       // Unidirectional: Just one at 60% pointing to Target
       drawChevron(0.6, false);
     }

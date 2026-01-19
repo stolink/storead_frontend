@@ -2,7 +2,7 @@
  * 추천 캐러셀 컴포넌트
  * 메인 페이지 상단의 추천 작품 슬라이드
  */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";

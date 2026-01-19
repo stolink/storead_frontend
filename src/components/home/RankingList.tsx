@@ -3,7 +3,7 @@
  * 순위 변동 시 롤링 애니메이션 적용
  * 30초마다 자동 갱신
  */
-import { useMemo, useLayoutEffect, useRef, useCallback } from "react";
+import { useMemo, useLayoutEffect, useRef, useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import type { Work } from "@/types";
@@ -46,7 +46,7 @@ export const RankingList = ({
     [navigate],
   );
 
-  const prevWorksRef = useRef<Work[]>([]);
+  const [prevWorks, setPrevWorks] = useState<Work[]>([]);
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
   const animationFrameIds = useRef<number[]>([]);
@@ -104,7 +104,6 @@ export const RankingList = ({
 
     // Save current rects and works for next comparison
     prevRectsRef.current = currentRects;
-    prevWorksRef.current = sortedWorks;
 
     return () => {
       animationFrameIds.current.forEach(cancelAnimationFrame);
@@ -114,12 +113,17 @@ export const RankingList = ({
     };
   }, [sortedWorks]);
 
+  // Separate effect to sync state to avoid cascading in useLayoutEffect
+  useEffect(() => {
+    setPrevWorks(sortedWorks);
+  }, [sortedWorks]);
+
   // Rank change icon logic
   const getRankChangeIcon = (workId: string, currentIndex: number) => {
-    if (prevWorksRef.current.length === 0)
+    if (prevWorks.length === 0)
       return <span className="text-mocha-300">-</span>;
 
-    const prevIndex = prevWorksRef.current.findIndex((w) => w.id === workId);
+    const prevIndex = prevWorks.findIndex((w) => w.id === workId);
     if (prevIndex === -1)
       return (
         <span className="text-emerald-500 text-xs font-bold animate-pulse">

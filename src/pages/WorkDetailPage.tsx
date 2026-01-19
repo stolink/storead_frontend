@@ -7,7 +7,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Bookmark, BookOpen, User } from "lucide-react";
 import { DisplayStarRating } from "@/components/rating/DisplayStarRating";
 import { Button } from "@/components/ui/button";
-import { ChapterAccessBadge } from "@/components/common/ChapterAccessBadge";
 import { PurchaseConfirmModal } from "@/components/payment/PurchaseConfirmModal";
 import { usePublicWork } from "@/hooks/useDiscovery";
 import { WorkDetailTabs } from "@/components/work/WorkDetailTabs";

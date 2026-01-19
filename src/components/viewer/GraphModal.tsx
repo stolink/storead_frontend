@@ -3,23 +3,15 @@
  * CharacterGraph를 모달로 표시
  */
 import { useState, useMemo, useEffect, useRef } from "react";
-import { X, Network, HelpCircle, Users, Link2 } from "lucide-react";
+import { X, Network, Users, Link2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CharacterGraph } from "@/components/CharacterGraph";
 import { NetworkDetailPanelD3 } from "@/components/CharacterGraph/NetworkDetailPanelD3";
 import { HelpTooltip } from "@/components/CharacterGraph/HelpTooltip";
 import { CharacterDetailModal } from "@/components/common/CharacterDetailModal";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type { Character } from "@/types/character";
 import type { RelationshipLink } from "@/types/characterGraph";
 import type { GraphSnapshotDTO } from "@/adapters/graphSnapshotAdapter";
-import { cn } from "@/lib/utils";
 
 interface GraphModalProps {
   isOpen: boolean;
@@ -53,7 +45,7 @@ export function GraphModal({
   const [isGraphReady, setIsGraphReady] = useState(false);
   const [loadingStep, setLoadingStep] = useState(1);
 
-  const mountTimeRef = useRef(Date.now());
+  const mountTimeRef = useRef(0);
 
   // 로딩 단계 시뮬레이션
   useEffect(() => {
@@ -71,13 +63,17 @@ export function GraphModal({
   // Safety: Force remove loading overlay after 3s
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsGraphReady(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadingStep(1);
       mountTimeRef.current = Date.now();
       const timer = setTimeout(() => setIsGraphReady(true), 3000);
       return () => clearTimeout(timer);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsGraphReady(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadingStep(1);
     }
   }, [isOpen]);
@@ -87,8 +83,8 @@ export function GraphModal({
     () =>
       characters.map((c) => ({
         ...c,
-        id: c._id || (c as any).id,
-        _id: c._id || (c as any).id, // Ensure both are present for compatibility
+        id: c._id || (c as unknown as { id: string }).id,
+        _id: c._id || (c as unknown as { id: string }).id, // Ensure both are present for compatibility
         name: c.profile?.name || "Unnamed",
       })),
     [characters],
@@ -205,12 +201,12 @@ export function GraphModal({
             <div className="flex-1 relative overflow-hidden bg-mocha-50">
               <div className="absolute inset-0">
                 <CharacterGraph
-                  characters={memoizedNodes as any}
+                  characters={memoizedNodes as Character[]}
                   links={links}
-                  onNodeClick={(char: any) => {
-                    const charId = char?._id || char?.id;
+                  onNodeClick={(char: Character) => {
+                    const charId = char?._id || (char as unknown as { id: string })?.id;
                     const selectedId =
-                      selectedCharacter?._id || selectedCharacter?.id;
+                      selectedCharacter?._id;
 
                     if (
                       selectedCharacter &&

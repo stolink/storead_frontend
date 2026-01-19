@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { type Work } from "@/types";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ export function MiniBookCard({
   className,
 }: MiniBookCardProps) {
   const navigate = useNavigate();
+  const [now] = useState(() => Date.now());
 
   const badgeStyles = {
     blue: "bg-blue-500/90 text-white",
@@ -29,9 +31,12 @@ export function MiniBookCard({
   };
 
   // 3시간 이내 연재 여부 확인
-  const isRecentlyUpdated =
-    new Date(work.updatedAt || work.createdAt).getTime() >
-    Date.now() - 3 * 60 * 60 * 1000;
+  const isRecentlyUpdated = useMemo(() => {
+    const updatedAtTime = new Date(work.updatedAt || work.createdAt).getTime();
+    const threeHoursAgo = now - 3 * 60 * 60 * 1000;
+    return updatedAtTime > threeHoursAgo;
+  }, [work.updatedAt, work.createdAt, now]);
+
   const displayBadge = badge || (isRecentlyUpdated ? "3h ago" : undefined);
   const displayBadgeColor = badge
     ? badgeColor
@@ -108,16 +113,16 @@ export function MiniBookCard({
           )}
         </div>
         <div className="flex items-center justify-between mt-0.5">
-          {work.likeCount < 10 ? (
+          {(work.likeCount ?? 0) < 10 ? (
             <span className="text-[10px] font-bold text-mocha-500/80 uppercase tracking-tighter">
               Rising
             </span>
           ) : (
             <div className="text-[10px] text-zinc-400 font-medium">
-              ❤️ {formatNumber(work.likeCount)}
+              ❤️ {formatNumber(work.likeCount ?? 0)}
             </div>
           )}
-          {work.chapterCount > 0 && (
+          {(work.chapterCount ?? 0) > 0 && (
             <span className="text-[10px] text-zinc-400">
               {work.chapterCount}화
             </span>

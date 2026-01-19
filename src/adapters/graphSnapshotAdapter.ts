@@ -3,7 +3,7 @@
  * 백엔드 API의 graphSnapshot (Map<String, Object>)을
  * CharacterGraph 컴포넌트가 사용하는 타입으로 변환
  */
-import type { Character } from "@/types/character";
+import type { Character, CharacterRole } from "@/types/character";
 import type { RelationshipLink } from "@/types/characterGraph";
 import type { RelationshipDeepAnalysisData } from "@/types/relationshipAnalysis";
 import { parseRelationType } from "@/components/CharacterGraph/constants";
@@ -113,7 +113,7 @@ export interface GraphSnapshotDTO {
  * @returns Character[] 및 RelationshipLink[] 또는 null
  */
 export function adaptGraphSnapshot(
-  snapshot: GraphSnapshotDTO | null | undefined,
+  snapshot: GraphSnapshotDTO | string | null | undefined,
 ): { characters: Character[]; links: RelationshipLink[] } | null {
   // null/undefined 체크
   if (!snapshot) {
@@ -122,7 +122,7 @@ export function adaptGraphSnapshot(
 
   try {
     // 문자열인 경우 파싱
-    let data: GraphSnapshotDTO = snapshot;
+    let data: GraphSnapshotDTO;
     if (typeof snapshot === "string") {
       try {
         data = JSON.parse(snapshot);
@@ -130,15 +130,25 @@ export function adaptGraphSnapshot(
         console.error("Failed to parse graphSnapshot string:", e);
         return null;
       }
+    } else {
+      data = snapshot;
     }
 
     if (!data.nodes || !data.links) {
       return null;
     }
 
+    // Role validation helper
+    const isValidRole = (role: string): role is CharacterRole => {
+      return ["protagonist", "antagonist", "supporting", "mentor", "sidekick", "other"].includes(role);
+    };
+
     // 1. Nodes → Characters 변환
     const characters: Character[] = data.nodes.map((node) => {
       const profile = data.profiles?.[node.id];
+
+      const rawRole = profile?.role || node.role;
+      const role: CharacterRole = isValidRole(rawRole) ? rawRole : "other";
 
       // Helper to normalize attire/scarsTattoos to arrays
       const normalizeToArray = (
@@ -153,7 +163,7 @@ export function adaptGraphSnapshot(
         _id: node.id,
         id: node.id, // Added for D3 compatibility
         projectId: "unknown",
-        role: (profile?.role || node.role) as any,
+        role,
         profile: {
           characterId: node.id,
           name: profile?.name || node.name,
@@ -210,7 +220,7 @@ export function adaptGraphSnapshot(
           values: profile?.personality?.values ?? [],
         },
         motivation: profile?.motivation,
-        relations: profile?.relations ?? {
+        relations: (profile?.relations as unknown as Character["relations"]) ?? {
           graph: [],
           eventRefs: [],
           locationContext: "",
@@ -257,7 +267,7 @@ export function adaptGraphSnapshot(
     }));
 
     return { characters, links };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Failed to adapt graphSnapshot:", error);
     return null;
   }

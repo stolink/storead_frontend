@@ -74,12 +74,16 @@ export function RelationshipDeepAnalysisModal({
     // Loading simulation effect
     useEffect(() => {
         if (!isOpen) {
-            setIsInternalLoading(true);
-            setLoadingStep(1);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setIsInternalLoading((prev) => (prev ? prev : true));
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLoadingStep((prev) => (prev !== 1 ? 1 : prev));
             return;
         }
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsInternalLoading(true);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoadingStep(1);
 
         const step2Timer = setTimeout(() => setLoadingStep(2), 700);
@@ -253,7 +257,6 @@ export function RelationshipDeepAnalysisModal({
                                         sourceCharacter={data.sourceCharacter}
                                         targetCharacter={data.targetCharacter}
                                         asymmetricStrength={data.asymmetricStrength}
-                                        relationshipTypes={data.relationshipTypes}
                                         description={data.description}
                                         since={data.since}
                                         onClose={onClose}

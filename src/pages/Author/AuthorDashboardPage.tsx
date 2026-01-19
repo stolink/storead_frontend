@@ -344,13 +344,11 @@ export const AuthorDashboardPage = () => {
                   animate="visible"
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
-                  {works.map((work, index) => (
+                  {works.map((work) => (
                     <motion.div
-                      key={work.id}
                       variants={itemVariants}
-                      whileHover="hover"
-                      initial="rest"
-                      animate="rest"
+                      key={work.id}
+                      className="group relative"
                     >
                       <motion.div
                         variants={cardHoverVariants}
@@ -507,7 +505,7 @@ export const AuthorDashboardPage = () => {
                             </div>
                             <p className="text-base font-bold text-sage-700">
                               {work.chapterCount && work.chapterCount > 1
-                                ? `${Math.min(95, 60 + Math.floor(Math.random() * 30))}%`
+                                ? `${Math.min(95, 60 + (work.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 30))}%`
                                 : "-"}
                             </p>
                           </div>

@@ -204,18 +204,7 @@ export function GraphModal({
                   characters={memoizedNodes as Character[]}
                   links={links}
                   onNodeClick={(char: Character) => {
-                    const charId = char?._id || (char as unknown as { id: string })?.id;
-                    const selectedId =
-                      selectedCharacter?._id;
-
-                    if (
-                      selectedCharacter &&
-                      String(selectedId) === String(charId)
-                    ) {
-                      setIsCharacterDetailOpen(true);
-                    } else {
-                      setSelectedCharacter(char);
-                    }
+                    setSelectedCharacter(char);
                   }}
                   onLinkClick={(link) => {
                     setSelectedLink(link);
@@ -270,7 +259,6 @@ export function GraphModal({
       {isCharacterDetailOpen && selectedCharacter && (
         <CharacterDetailModal
           character={selectedCharacter}
-          allCharacters={characters}
           isOpen={isCharacterDetailOpen}
           onClose={() => setIsCharacterDetailOpen(false)}
         />

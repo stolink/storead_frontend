@@ -209,6 +209,11 @@ export function RelationshipCommentList({
             }
             className="flex-1 h-12 rounded-2xl bg-stone-50 border-stone-200 focus:bg-white focus:ring-mocha-500 transition-all font-serif"
             disabled={createComment.isPending}
+            onKeyDown={(e) => {
+              if (e.nativeEvent.isComposing && e.key === "Enter") {
+                e.preventDefault();
+              }
+            }}
           />
           <Button
             type="submit"

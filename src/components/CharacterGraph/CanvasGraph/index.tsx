@@ -876,8 +876,15 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
               t.x !== undefined &&
               t.y !== undefined
             ) {
-              const controlX = (s.x + t.x) / 2;
-              const controlY = (s.y + t.y) / 2 - 50 * (l.curvature || 0);
+              const midX = (s.x + t.x) / 2;
+              const midY = (s.y + t.y) / 2;
+              const dx = t.x - s.x;
+              const dy = t.y - s.y;
+              const curvature = l.curvature || 0;
+
+              const controlX = midX - dy * curvature;
+              const controlY = midY + dx * curvature;
+
               ctx.moveTo(s.x, s.y);
               ctx.quadraticCurveTo(controlX, controlY, t.x, t.y);
             }

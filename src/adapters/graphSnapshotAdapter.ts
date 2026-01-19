@@ -140,7 +140,14 @@ export function adaptGraphSnapshot(
 
     // Role validation helper
     const isValidRole = (role: string): role is CharacterRole => {
-      return ["protagonist", "antagonist", "supporting", "mentor", "sidekick", "other"].includes(role);
+      return [
+        "protagonist",
+        "antagonist",
+        "supporting",
+        "mentor",
+        "sidekick",
+        "other",
+      ].includes(role);
     };
 
     // 1. Nodes → Characters 변환
@@ -220,11 +227,12 @@ export function adaptGraphSnapshot(
           values: profile?.personality?.values ?? [],
         },
         motivation: profile?.motivation,
-        relations: (profile?.relations as unknown as Character["relations"]) ?? {
-          graph: [],
-          eventRefs: [],
-          locationContext: "",
-        },
+        relations:
+          (profile?.relations as unknown as Character["relations"]) ?? {
+            graph: [],
+            eventRefs: [],
+            locationContext: "",
+          },
         currentMood: profile?.currentMood ?? {
           emotion: "",
           intensity: 0,
@@ -254,17 +262,46 @@ export function adaptGraphSnapshot(
     });
 
     // 2. Links → RelationshipLinks 변환
+    // ID Resolution Map (Name -> ID) to handle backend inconsistencies
+    const nodeIdSet = new Set(characters.map((c) => c._id));
+    const nameToIdMap = new Map<string, string>();
+    characters.forEach((c) => {
+      if (c.profile.name) {
+        nameToIdMap.set(c.profile.name, c._id);
+      }
+    });
+
+    const resolveNodeId = (ref: string): string | null => {
+      if (nodeIdSet.has(ref)) return ref;
+      // Try resolving by name
+      const resolved = nameToIdMap.get(ref);
+      if (resolved) return resolved;
+      return null;
+    };
+
     // parseRelationType 공통 함수 사용 (constants.ts)
-    const links: RelationshipLink[] = data.links.map((link) => ({
-      id: link.id || `${link.source}-${link.target}`,
-      source: link.source,
-      target: link.target,
-      type: parseRelationType(link.type),
-      strength: link.strength,
-      description: link.description,
-      publicStance: link.publicStance,
-      privateFeeling: link.privateFeeling,
-    }));
+    const links: RelationshipLink[] = data.links
+      .map((link) => {
+        const sourceId = resolveNodeId(link.source);
+        const targetId = resolveNodeId(link.target);
+
+        if (!sourceId || !targetId) {
+          // console.warn(`Skipping invalid link: ${link.source} -> ${link.target}`);
+          return null;
+        }
+
+        return {
+          id: link.id || `${sourceId}-${targetId}`,
+          source: sourceId,
+          target: targetId,
+          type: parseRelationType(link.type),
+          strength: link.strength,
+          description: link.description,
+          publicStance: link.publicStance,
+          privateFeeling: link.privateFeeling,
+        } as RelationshipLink;
+      })
+      .filter((link): link is RelationshipLink => link !== null);
 
     return { characters, links };
   } catch (error: unknown) {

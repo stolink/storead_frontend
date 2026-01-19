@@ -38,8 +38,8 @@ export const exportChapterSchema = z
         chapterNumber: z.number().min(1, '1 이상의 회차 번호를 입력하세요'),
         content: z.string().min(1, '내용이 없습니다'),
         // 유료화 설정
-        accessType: z.enum(['FREE', 'PAID']).default('FREE'),
-        price: z.number().min(0).default(0),
+        accessType: z.enum(['FREE', 'PAID']),
+        price: z.number().min(0),
     })
     .refine(
         (data) => {

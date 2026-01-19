@@ -106,10 +106,69 @@ const formatContent = (content: string): string => {
   return content.replace(/\n/g, "<br />");
 };
 
+// 구매 오버레이 컴포넌트
+const PurchaseOverlay = ({
+  price,
+  balance,
+  isUsing,
+  onPurchase,
+}: {
+  price: number;
+  balance: number;
+  isUsing: boolean;
+  onPurchase: () => void;
+}) => (
+  <div className="flex flex-col items-center justify-center py-20 px-6 rounded-3xl border-2 border-dashed border-mocha-200 bg-mocha-50/30 backdrop-blur-sm animate-in fade-in zoom-in duration-500">
+    <div className="w-16 h-16 rounded-full bg-mocha-500 flex items-center justify-center mb-6 shadow-xl shadow-mocha-500/20">
+      <Lock className="w-8 h-8 text-white" />
+    </div>
+    <h3 className="text-2xl font-black text-espresso-900 mb-2">
+      유료 회차입니다
+    </h3>
+    <p className="text-mocha-600 mb-8 text-center max-w-sm">
+      이 챕터를 계속 읽으려면 {price} 크레딧이 필요합니다.
+      <br />
+      구매 후 영구 소장하여 언제든 다시 볼 수 있습니다.
+    </p>
+
+    <div className="bg-white/80 p-6 rounded-2xl shadow-sm border border-mocha-100 mb-8 w-full max-w-xs flex flex-col items-center">
+      <div className="text-xs font-bold text-mocha-400 uppercase tracking-widest mb-1">
+        My Balance
+      </div>
+      <div className="text-2xl font-black text-mocha-900 flex items-center gap-2">
+        <Sparkles className="w-5 h-5 text-amber-500" />
+        {balance.toLocaleString()} C
+      </div>
+    </div>
+
+    <Button
+      onClick={onPurchase}
+      disabled={isUsing}
+      className="w-full max-w-xs h-14 rounded-2xl bg-mocha-600 hover:bg-mocha-700 text-white font-black text-lg shadow-lg hover:shadow-mocha-600/30 transition-all hover:-translate-y-1"
+    >
+      {isUsing ? "처리 중..." : `${price} 크레딧으로 구매`}
+    </Button>
+
+    <p className="mt-6 text-xs text-mocha-400">
+      구매 즉시 크레딧이 차감되며 취소가 불가능합니다.
+    </p>
+  </div>
+);
+
 export const ChapterViewerPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+
+  // [FIX] Reset state when ID changes during render phase to avoid useEffect cascading renders
+  const [prevId, setPrevId] = useState(id);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  if (id !== prevId) {
+    setPrevId(id);
+    setCurrentPage(0);
+  }
+
   // 뷰어 전용 테마 상태 (전역 테마와 분리)
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem("viewer_theme") as Theme;
@@ -157,8 +216,7 @@ export const ChapterViewerPage = () => {
   // 뷰어 설정 상태
   const [viewMode, setViewMode] = useState<ViewMode>("scroll");
   const [fontSize, setFontSize] = useState(18);
-  const [lineHeight, setLineHeight] = useState<LineHeight>(1.8);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [lineHeight] = useState<LineHeight>(1.8);
 
   // UI 상태
   const [showTOC, setShowTOC] = useState(false);
@@ -169,7 +227,7 @@ export const ChapterViewerPage = () => {
     index: number;
     text: string;
   } | null>(null);
-  const [inlineComments, setInlineComments] = useState<Record<number, any[]>>(
+  const [inlineComments, setInlineComments] = useState<Record<number, unknown[]>>(
     {},
   );
 
@@ -189,7 +247,7 @@ export const ChapterViewerPage = () => {
   const saveBookmark = useSaveBookmark();
 
   const queryClient = useQueryClient();
-  const { balance, useCreditAsync, isUsing } = useCredits();
+  const { balance, creditAsync, isUsing } = useCredits();
 
   // 챕터 구매 핸들러
   const handlePurchase = async () => {
@@ -205,7 +263,7 @@ export const ChapterViewerPage = () => {
       confirm(`${chapter.price} 크레딧을 사용하여 이 챕터를 구매하시겠습니까?`)
     ) {
       try {
-        await useCreditAsync({
+        await creditAsync({
           amount: chapter.price || 0,
           description: `Chapter Purchase: ${chapter.title}`,
           referenceType: "CHAPTER",
@@ -267,11 +325,6 @@ export const ChapterViewerPage = () => {
       localStorage.setItem(`lastChapter_${chapter.workId}`, id);
     }
   }, [id, chapter?.workId, isAuthenticated]);
-
-  // 챕터 변경 시 페이지 초기화
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [id]);
 
   // 현재/이전/다음 챕터 찾기
   const sortedChapters = chapters?.sort(
@@ -364,45 +417,6 @@ export const ChapterViewerPage = () => {
       </div>
     );
   }
-
-  // 구매 오버레이 컴포넌트
-  const PurchaseOverlay = () => (
-    <div className="flex flex-col items-center justify-center py-20 px-6 rounded-3xl border-2 border-dashed border-mocha-200 bg-mocha-50/30 backdrop-blur-sm animate-in fade-in zoom-in duration-500">
-      <div className="w-16 h-16 rounded-full bg-mocha-500 flex items-center justify-center mb-6 shadow-xl shadow-mocha-500/20">
-        <Lock className="w-8 h-8 text-white" />
-      </div>
-      <h3 className="text-2xl font-black text-espresso-900 mb-2">
-        유료 회차입니다
-      </h3>
-      <p className="text-mocha-600 mb-8 text-center max-w-sm">
-        이 챕터를 계속 읽으려면 {chapter?.price} 크레딧이 필요합니다.
-        <br />
-        구매 후 영구 소장하여 언제든 다시 볼 수 있습니다.
-      </p>
-
-      <div className="bg-white/80 p-6 rounded-2xl shadow-sm border border-mocha-100 mb-8 w-full max-w-xs flex flex-col items-center">
-        <div className="text-xs font-bold text-mocha-400 uppercase tracking-widest mb-1">
-          My Balance
-        </div>
-        <div className="text-2xl font-black text-mocha-900 flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-amber-500" />
-          {balance.toLocaleString()} C
-        </div>
-      </div>
-
-      <Button
-        onClick={handlePurchase}
-        disabled={isUsing}
-        className="w-full max-w-xs h-14 rounded-2xl bg-mocha-600 hover:bg-mocha-700 text-white font-black text-lg shadow-lg hover:shadow-mocha-600/30 transition-all hover:-translate-y-1"
-      >
-        {isUsing ? "처리 중..." : `${chapter?.price} 크레딧으로 구매`}
-      </Button>
-
-      <p className="mt-6 text-xs text-mocha-400">
-        구매 즉시 크레딧이 차감되며 취소가 불가능합니다.
-      </p>
-    </div>
-  );
 
   return (
     <div
@@ -599,7 +613,12 @@ export const ChapterViewerPage = () => {
             }}
           >
             {chapter.accessType === "PAID" && !chapter.isPurchased ? (
-              <PurchaseOverlay />
+              <PurchaseOverlay 
+                price={chapter.price || 0} 
+                balance={balance} 
+                isUsing={isUsing} 
+                onPurchase={handlePurchase} 
+              />
             ) : (
               <>
                 <SecureViewer
@@ -624,7 +643,12 @@ export const ChapterViewerPage = () => {
           <div className="relative h-[calc(100vh-8rem)] flex flex-col">
             {chapter.accessType === "PAID" && !chapter.isPurchased ? (
               <div className="flex-1 flex items-center justify-center">
-                <PurchaseOverlay />
+                <PurchaseOverlay 
+                  price={chapter.price || 0} 
+                  balance={balance} 
+                  isUsing={isUsing} 
+                  onPurchase={handlePurchase} 
+                />
               </div>
             ) : (
               <>
@@ -795,7 +819,7 @@ export const ChapterViewerPage = () => {
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {(inlineComments[activeInlineComment.index] || []).length >
                 0 ? (
-                  inlineComments[activeInlineComment.index].map((c, i) => (
+                  (inlineComments[activeInlineComment.index] as { content: string; createdAt: string }[]).map((c, i) => (
                     <div key={i} className="space-y-1">
                       <p className="text-xs font-bold text-mocha-600">
                         익명 독자
@@ -1006,9 +1030,9 @@ export const ChapterViewerPage = () => {
         open={showRatingModal}
         onOpenChange={setShowRatingModal}
         onSubmit={handleSubmitRating}
-        initialRating={ratingData?.myRating || 0}
-        averageRating={ratingData?.avgRating || 0}
-        totalRatings={ratingData?.ratingCount || 0}
+        currentRating={ratingData?.myRating || 0}
+        avgRating={ratingData?.avgRating || 0}
+        ratingCount={ratingData?.ratingCount || 0}
       />
     </div>
   );

@@ -4,7 +4,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/client";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { Library } from "@/types";
+import type { Library, Genre, WorkStatus } from "@/types";
+
+interface RawLibraryItem {
+  id: string;
+  workId: string;
+  userId?: string;
+  addedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  workTitle?: string;
+  workSynopsis?: string;
+  workCoverImageUrl?: string;
+  workGenre?: string;
+  workStatus?: string;
+  authorNickname?: string;
+}
 
 /**
  * 내 서재 목록 조회
@@ -20,7 +35,7 @@ export const useLibrary = () => {
       const { data } = await api.get("/library");
 
 
-      let items: any[] = [];
+      let items: RawLibraryItem[] = [];
       if (Array.isArray(data)) {
         items = data;
       } else if (data.data && Array.isArray(data.data)) {
@@ -32,19 +47,19 @@ export const useLibrary = () => {
       // Backend returns flattened structure (workTitle, workSynopsis, etc.)
       // Frontend expects nested structure (work: { title, synopsis... })
       // Mapper logic:
-      return items.map((item: any) => ({
+      return items.map((item) => ({
         id: item.id,
         workId: item.workId,
         userId: item.userId || '', // response might not have userId
-        createdAt: item.addedAt || item.createdAt,
-        updatedAt: item.addedAt || item.updatedAt,
+        createdAt: item.addedAt || item.createdAt || '',
+        updatedAt: item.addedAt || item.updatedAt || '',
         work: {
           id: item.workId,
-          title: item.workTitle,
-          synopsis: item.workSynopsis,
+          title: item.workTitle || '',
+          synopsis: item.workSynopsis || '',
           coverImageUrl: item.workCoverImageUrl,
-          genre: item.workGenre,
-          status: item.workStatus,
+          genre: (item.workGenre as Genre) || 'OTHER',
+          status: (item.workStatus as WorkStatus) || 'ONGOING',
           authorNickname: item.authorNickname,
           authorId: "", // Not provided in flat response
           ratingSum: 0, // Not provided

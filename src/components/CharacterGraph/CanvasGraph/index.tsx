@@ -6,6 +6,7 @@ import {
   useCallback,
   forwardRef,
   useImperativeHandle,
+  useLayoutEffect,
 } from "react";
 import { throttle } from "lodash-es";
 import ForceGraph2D, { type ForceGraphMethods } from "react-force-graph-2d";
@@ -37,13 +38,12 @@ interface CanvasGraphProps {
   onNodeClick?: (character: Character) => void;
   onLinkClick?: (link: RelationshipLink | null) => void;
   selectedLink?: RelationshipLink | null;
-  onReady?: () => void; // [NEW] Notification when graph is visually ready
+  onReady?: () => void;
   width?: number;
   height?: number;
   className?: string;
   chapterId?: string;
   showSearch?: boolean;
-  /** graphSnapshot (stolink에서 전달된 심층 분석 데이터 포함) */
   graphSnapshot?:
     | import("@/adapters/graphSnapshotAdapter").GraphSnapshotDTO
     | null;
@@ -54,6 +54,17 @@ export interface CanvasGraphRef {
   zoomOut: () => void;
   resetZoom: () => void;
   focusNode: (nodeId: string) => void;
+}
+
+interface DetailedRelationshipLink extends RelationshipLink {
+  flowDepth?: number;
+  curvature?: number;
+  visualPattern?: "standard" | "braided" | "parallel";
+  isSuperEdge?: boolean;
+  relationTypes?: import("@/types").UIRelationType[];
+  originalLinks?: RelationshipLink[];
+  events?: unknown[];
+  label?: string;
 }
 
 const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
@@ -67,7 +78,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       chapterId,
       showSearch = true,
       graphSnapshot,
-      onReady, // [RESTORED]
+      onReady,
     },
     ref,
   ) => {
@@ -76,9 +87,11 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
     const nodeCharacterMapRef = useRef<Map<string, Character>>(new Map());
 
-    // [FIX] 콜백 Ref: 부모로부터 전달받은 핸들러를 Ref로 관리하여 의존성 제거 (시뮬레이션 드리프트 방지)
     const onNodeClickRef = useRef(onNodeClick);
-    onNodeClickRef.current = onNodeClick;
+
+    useLayoutEffect(() => {
+      onNodeClickRef.current = onNodeClick;
+    });
 
     useEffect(() => {
       if (!containerRef.current) return;
@@ -97,7 +110,6 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
 
     const { width, height } = dimensions;
 
-    // === State ===
     const [zoomState, setZoomState] = useState<ZoomState>({
       scale: 1,
       x: 0,
@@ -112,32 +124,27 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
     );
     const [hoverNode, setHoverNode] = useState<CharacterNode | null>(null);
 
-    // Animation Phase State (Triggers re-render for flow effect)
     const [animationPhase, setAnimationPhase] = useState(0);
 
-    // Filter State
     const [relationTypeFilter, setRelationTypeFilter] = useState<
       string | "all"
     >("all");
     const [showMainOnly, setShowMainOnly] = useState(false);
 
-    // Modal State
     const [deepAnalysisData, setDeepAnalysisData] = useState<{
       source: CharacterNode;
       target: CharacterNode;
-      link: RelationshipLink;
+      link: DetailedRelationshipLink;
     } | null>(null);
     const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
 
-    // Tooltip State
     const [tooltipState, setTooltipState] = useState<{
       show: boolean;
       x: number;
       y: number;
-      data: any | null;
+      data: DetailedRelationshipLink | null;
     }>({ show: false, x: 0, y: 0, data: null });
 
-    // Animation Loop using requestAnimationFrame to update state
     useEffect(() => {
       let frameId: number;
       let lastTime = 0;
@@ -156,13 +163,14 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       return () => cancelAnimationFrame(frameId);
     }, []);
 
-    // 이미지 캐싱
     const imageCache = useImageCache(characters);
 
-    // 1. Initial Data Generation
     const { initialNodes, initialLinks } = useMemo(() => {
       const nodes: CharacterNode[] = characters.map((char, index) => {
         const nodeId = char._id || `temp-${index}`;
+        const seed = nodeId
+          .split("")
+          .reduce((acc, char) => acc + char.charCodeAt(0), 0);
         return {
           id: nodeId,
           name: char.profile?.name || "Unknown",
@@ -171,9 +179,8 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           imageUrl: char.imageUrl,
           relationCount: 0,
           status: char.status,
-          // Bloom 효과: 중앙 부근에서 시작
-          x: width / 2 + (Math.random() - 0.5) * 100,
-          y: height / 2 + (Math.random() - 0.5) * 100,
+          x: width / 2 + ((seed % 100) / 100 - 0.5) * 100,
+          y: height / 2 + (((seed * 1.3) % 100) / 100 - 0.5) * 100,
         };
       });
 
@@ -182,7 +189,6 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           ? linksProp.map((l) => ({ ...l }))
           : generateLinksFromCharacters(characters);
 
-      // [STABILITY] Fix: Ensure links have stable IDs if missing
       links.forEach((l, idx) => {
         if (!l.id) {
           const sId =
@@ -206,7 +212,6 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       return { initialNodes: nodes, initialLinks: links };
     }, [characters, linksProp, width, height]);
 
-    // [FIX] Closure Issues: Update node character map
     useEffect(() => {
       nodeCharacterMapRef.current.clear();
       characters.forEach((char) => {
@@ -214,7 +219,6 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       });
     }, [characters]);
 
-    // 2. Filtering Logic
     const internalFilter = useCallback(
       (link: RelationshipLink) => {
         if (relationTypeFilter !== "all" && link.type !== relationTypeFilter)
@@ -239,38 +243,41 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
 
     const processedLinks = useMemo(() => {
       const validNodeIds = new Set(processedNodes.map((n) => n.id));
+
+      const getLinkId = (
+        sourceOrTarget: string | { id: string } | object,
+      ): string => {
+        if (typeof sourceOrTarget === "string") return sourceOrTarget;
+        if (
+          typeof sourceOrTarget === "object" &&
+          sourceOrTarget !== null &&
+          "id" in sourceOrTarget
+        ) {
+          return (sourceOrTarget as { id: string }).id;
+        }
+        return "";
+      };
+
       const filtered = initialLinks
         .filter(
           (l) =>
-            validNodeIds.has(
-              typeof l.source === "object"
-                ? (l.source as any).id
-                : (l.source as string),
-            ) &&
-            validNodeIds.has(
-              typeof l.target === "object"
-                ? (l.target as any).id
-                : (l.target as string),
-            ) &&
+            validNodeIds.has(getLinkId(l.source)) &&
+            validNodeIds.has(getLinkId(l.target)) &&
             internalFilter(l),
         )
-        .map((l) => ({ ...l, flowDepth: -1, curvature: 0 }));
+        .map(
+          (l) =>
+            ({ ...l, flowDepth: -1, curvature: 0 }) as DetailedRelationshipLink,
+        );
 
-      // 1. BFS for Flow Depth
       const protagonist = processedNodes.find((n) => n.role === "protagonist");
       const startNodeId = protagonist?.id || processedNodes[0]?.id;
 
       if (startNodeId) {
         const adj = new Map<string, string[]>();
         filtered.forEach((l) => {
-          const s =
-            typeof l.source === "object"
-              ? (l.source as any).id
-              : (l.source as string);
-          const t =
-            typeof l.target === "object"
-              ? (l.target as any).id
-              : (l.target as string);
+          const s = getLinkId(l.source);
+          const t = getLinkId(l.target);
           if (!adj.has(s)) adj.set(s, []);
           if (!adj.has(t)) adj.set(t, []);
           adj.get(s)!.push(t);
@@ -295,14 +302,8 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
         }
 
         filtered.forEach((l) => {
-          const s =
-            typeof l.source === "object"
-              ? (l.source as any).id
-              : (l.source as string);
-          const t =
-            typeof l.target === "object"
-              ? (l.target as any).id
-              : (l.target as string);
+          const s = getLinkId(l.source);
+          const t = getLinkId(l.target);
           const sD = depths.get(s);
           const tD = depths.get(t);
           if (sD !== undefined && tD !== undefined) {
@@ -316,31 +317,21 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
         });
       }
 
-      // 2. Super Edge Logic (Merge parallel edges)
-      const pairMap = new Map<string, typeof filtered>();
+      const pairMap = new Map<string, DetailedRelationshipLink[]>();
       filtered.forEach((l) => {
-        const s =
-          typeof l.source === "object"
-            ? (l.source as any).id
-            : (l.source as string);
-        const t =
-          typeof l.target === "object"
-            ? (l.target as any).id
-            : (l.target as string);
+        const s = getLinkId(l.source);
+        const t = getLinkId(l.target);
         const key = [s, t].sort().join("-");
         if (!pairMap.has(key)) pairMap.set(key, []);
         pairMap.get(key)!.push(l);
       });
 
-      const finalLinks: typeof filtered = [];
+      const finalLinks: DetailedRelationshipLink[] = [];
 
       pairMap.forEach((group) => {
         const len = group.length;
-
-        // Collect types
-        const allTypes = new Set<string>();
+        const allTypes = new Set<import("@/types").UIRelationType>();
         group.forEach((l) => {
-          // If relationTypes already exists (shouldn't usually for initial), use it
           if (l.relationTypes && l.relationTypes.length > 0) {
             l.relationTypes.forEach((t) => allTypes.add(t));
           } else if (l.type) {
@@ -349,32 +340,21 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
         });
 
         const isMixed = allTypes.size > 1;
-
-        // Curvature Direction (Consistent by ID hash)
         const hash = String(group[0].id)
           .split("")
           .reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const direction = hash % 2 === 0 ? 1 : -1;
         const curvature = 0.15 * direction;
 
-        // Bidirectional check
-        const groupSources = new Set(
-          group.map((l) =>
-            typeof l.source === "object"
-              ? (l.source as any).id
-              : (l.source as string),
-          ),
-        );
+        const groupSources = new Set(group.map((l) => getLinkId(l.source)));
         const isReciprocal = groupSources.size > 1;
         const isExplicitBidirectional = group.some((l) => l.bidirectional);
         const isBidirectional = isReciprocal || isExplicitBidirectional;
 
         if (len > 1 || isMixed) {
-          // Create Super Edge
           const base = group[0];
           const typesArray = Array.from(allTypes);
 
-          // Sort by Priority
           typesArray.sort((a, b) => {
             const pA =
               RELATION_PRIORITY[a as keyof typeof RELATION_PRIORITY] ?? 99;
@@ -385,10 +365,10 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
 
           const primaryType = typesArray[0] || base.type;
 
-          const superEdge = {
+          const superEdge: DetailedRelationshipLink = {
             ...base,
-            type: primaryType as any,
-            relationTypes: typesArray as any[],
+            type: primaryType as RelationshipLink["type"],
+            relationTypes: typesArray,
             strength: Math.max(...group.map((l) => l.strength)),
             curvature: curvature,
             flowDepth: base.flowDepth ?? -1,
@@ -401,7 +381,6 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           };
           finalLinks.push(superEdge);
         } else {
-          // Single Link (Reset visual effects to standard)
           const link = group[0];
           link.curvature = curvature;
           link.visualPattern = "standard";
@@ -413,9 +392,6 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       return finalLinks;
     }, [initialLinks, processedNodes, internalFilter]);
 
-    // [FIX] graphData 객체 메모이제이션 - 리렌더링 시 시뮬레이션 초기화(드리프트) 방지 핵심
-    // [STABILITY] node/link 정렬 또는 ID 기반 매핑을 고려할 수 있으나,
-    // 현재는 상위 processedNodes/Links가 변경될 때만 참조가 바뀌도록 유지
     const graphData = useMemo(
       () => ({
         nodes: processedNodes,
@@ -424,14 +400,10 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       [processedNodes, processedLinks],
     );
 
-    // === Force Simulation Config ===
-    // [FIX] 초기 마운트 시 1회만 실행하여 React 무한 루프 방지
-    // stolink 패턴 참고: 의존성 배열을 빈 배열로 설정
     useEffect(() => {
       const fg = graphRef.current;
       if (!fg) return;
 
-      // Charge Force (Repulsion)
       const chargeForce = fg.d3Force(
         "charge",
       ) as unknown as d3.ForceManyBody<CharacterNode>;
@@ -442,14 +414,13 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           .distanceMax(FORCE_CONFIG.chargeDistanceMax);
       }
 
-      // Link Force
       const linkForce = fg.d3Force("link") as unknown as d3.ForceLink<
         CharacterNode,
-        RelationshipLink
+        DetailedRelationshipLink
       >;
       if (linkForce) {
         linkForce
-          .distance((link: any) => {
+          .distance((link) => {
             const type = (link.type as string) || "neutral";
             let configKey: keyof typeof FORCE_CONFIG.dynamic = "neutral";
 
@@ -479,11 +450,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
             const baseDistance = dynamicConfig.distance;
             const strengthVal = link.strength || 1;
 
-            if (
-              configKey === "enemy" ||
-              // configKey === "rival" || // Removed dead code (rival maps to enemy)
-              configKey === "betrayed"
-            ) {
+            if (configKey === "enemy" || configKey === "betrayed") {
               return baseDistance * (1 + (strengthVal - 1) * 0.1);
             } else if (
               configKey === "ally" ||
@@ -497,7 +464,7 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
             }
             return baseDistance;
           })
-          .strength((link: any) => {
+          .strength((link) => {
             const type = (link.type as string) || "neutral";
             let configKey: keyof typeof FORCE_CONFIG.dynamic = "neutral";
 
@@ -519,7 +486,6 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           });
       }
 
-      // Center Force
       const centerForce = fg.d3Force(
         "center",
       ) as unknown as d3.ForceCenter<CharacterNode>;
@@ -527,12 +493,11 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
         centerForce.strength(FORCE_CONFIG.centerStrength);
       }
 
-      // Collision Force
       fg.d3Force(
         "collide",
         d3
           .forceCollide<CharacterNode>()
-          .radius((node: any) => {
+          .radius((node) => {
             const role = node.role || "other";
             const size =
               role === "protagonist"
@@ -543,51 +508,37 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           .strength(FORCE_CONFIG.collisionStrength) as any,
       );
 
-      // Reheat
       fg.d3ReheatSimulation();
-
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Initial Zoom to Fit & Dramatic Entry
     useEffect(() => {
-      // Wait for graph to settle slightly
       const timer = setTimeout(() => {
         if (graphRef.current) {
-          // [Fix] Instant zoom (0ms) to padding 150.
-          // This ensures the graph starts at the desired "zoomed out" scale immediately without transition.
           graphRef.current.zoomToFit(0, 200);
-
-          // Fade in after positioning is set (Double rAF to ensure canvas paint)
-          // Fade in after positioning is set (Double rAF to ensure canvas paint)
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               if (graphRef.current) {
-                // [Failsafe] Ensure zoom is applied right before showing
                 graphRef.current.zoomToFit(0, 150);
               }
-              if (onReady) onReady(); // [FIX] Notify parent that graph is ready
+              if (onReady) onReady();
             });
           });
         }
       }, 300);
       return () => clearTimeout(timer);
-    }, [initialNodes]);
-    // === Interaction Handlers ===
-    const handleEngineStop = useCallback(() => {
-      // Do nothing - keep physics alive or just let it settle without freezing
-      // If we want to freeze, we would do it here, but user wants movement.
-    }, []);
+    }, [initialNodes, onReady]);
+
+    const handleEngineStop = useCallback(() => {}, []);
 
     const handleNodeHover = useCallback(
-      (node: any) => {
+      (node: CharacterNode | null) => {
         if (
           (!node && !hoverNode) ||
           (node && hoverNode && node.id === hoverNode.id)
         )
           return;
 
-        setHoverNode(node || null);
+        setHoverNode(node);
         if (containerRef.current) {
           containerRef.current.style.cursor = node ? "pointer" : "default";
         }
@@ -603,14 +554,21 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
 
         newHighlightNodes.add(node.id);
         processedLinks.forEach((link) => {
-          const sId =
-            typeof link.source === "object"
-              ? (link.source as any).id
-              : link.source;
-          const tId =
-            typeof link.target === "object"
-              ? (link.target as any).id
-              : link.target;
+          const getLinkId = (
+            sourceOrTarget: string | { id: string } | object,
+          ): string => {
+            if (typeof sourceOrTarget === "string") return sourceOrTarget;
+            if (
+              typeof sourceOrTarget === "object" &&
+              sourceOrTarget !== null &&
+              "id" in sourceOrTarget
+            ) {
+              return (sourceOrTarget as { id: string }).id;
+            }
+            return "";
+          };
+          const sId = getLinkId(link.source);
+          const tId = getLinkId(link.target);
 
           if (sId === node.id || tId === node.id) {
             newHighlightLinks.add(link.id);
@@ -625,25 +583,21 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       [processedLinks, hoverNode],
     );
 
-    const handleNodeClick = useCallback(
-      (node: CharacterNode) => {
-        // [FIX] Stolink Parity: nodeCharacterMapRef를 통한 정밀 매핑으로 이전 프로필 노출 방지
-        const char = nodeCharacterMapRef.current.get(node.id);
-        if (char && onNodeClickRef.current) {
-          onNodeClickRef.current(char);
-        }
-        setSelectedNodeId(node.id);
-        graphRef.current?.centerAt(node.x, node.y, 400);
-        graphRef.current?.zoom(1.25, 400);
-      },
-      [], // [FIX] 의존성 배열 비움 - Ref 사용으로 안정적 참조 유지
-    );
+    const handleNodeClick = useCallback((node: CharacterNode) => {
+      const char = nodeCharacterMapRef.current.get(node.id);
+      if (char && onNodeClickRef.current) {
+        onNodeClickRef.current(char);
+      }
+      setSelectedNodeId(node.id);
+      graphRef.current?.centerAt(node.x, node.y, 400);
+      graphRef.current?.zoom(1.25, 400);
+    }, []);
 
-    // [FIX] CharacterSearchOverlay 콜백을 useCallback으로 메모이제이션하여 무한 루프 방지
-    // 인라인 함수는 매 렌더링마다 새 참조를 생성하여 useEffect 재실행을 유발함
     const handleSearchSelect = useCallback(
       (char: Character) => {
-        const node = processedNodes.find((n) => n.id === char._id);
+        const node = processedNodes.find(
+          (n) => n.id === (char._id || (char as unknown as { id: string }).id),
+        );
         if (node) handleNodeClick(node);
       },
       [processedNodes, handleNodeClick],
@@ -653,35 +607,53 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       setHighlightNodes(ids ? new Set(ids) : new Set());
     }, []);
 
-    const handleLinkHover = useCallback((link: any, prevLink: any) => {
-      if (link === prevLink) return;
-      if (link) {
-        setTooltipState((prev) => ({ ...prev, show: true, data: link }));
-        if (containerRef.current) containerRef.current.style.cursor = "pointer";
-      } else {
-        setTooltipState((prev) => ({ ...prev, show: false, data: null }));
-        if (containerRef.current) containerRef.current.style.cursor = "default";
-      }
-    }, []);
+    const handleLinkHover = useCallback(
+      (
+        link: DetailedRelationshipLink | null,
+        prevLink: DetailedRelationshipLink | null,
+      ) => {
+        if (link === prevLink) return;
+        if (link) {
+          setTooltipState((prev) => ({ ...prev, show: true, data: link }));
+          if (containerRef.current)
+            containerRef.current.style.cursor = "pointer";
+        } else {
+          setTooltipState((prev) => ({ ...prev, show: false, data: null }));
+          if (containerRef.current)
+            containerRef.current.style.cursor = "default";
+        }
+      },
+      [],
+    );
 
     const handleLinkClick = useCallback(
-      (link: any) => {
+      (link: DetailedRelationshipLink) => {
         if (onLinkClick) {
           onLinkClick(link);
         }
-        const sNode =
-          typeof link.source === "object"
-            ? link.source
-            : processedNodes.find((n) => n.id === link.source);
-        const tNode =
-          typeof link.target === "object"
-            ? link.target
-            : processedNodes.find((n) => n.id === link.target);
+        const getLinkId = (
+          sourceOrTarget: string | { id: string } | object,
+        ): string => {
+          if (typeof sourceOrTarget === "string") return sourceOrTarget;
+          if (
+            typeof sourceOrTarget === "object" &&
+            sourceOrTarget !== null &&
+            "id" in sourceOrTarget
+          ) {
+            return (sourceOrTarget as { id: string }).id;
+          }
+          return "";
+        };
+        const sId = getLinkId(link.source);
+        const tId = getLinkId(link.target);
+
+        const sNode = processedNodes.find((n) => n.id === sId);
+        const tNode = processedNodes.find((n) => n.id === tId);
 
         if (sNode && tNode) {
           setDeepAnalysisData({
-            source: sNode as CharacterNode,
-            target: tNode as CharacterNode,
+            source: sNode,
+            target: tNode,
             link: link,
           });
           setIsAnalysisOpen(true);
@@ -705,9 +677,12 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
       return () => window.removeEventListener("mousemove", handleMouseMove);
     }, [tooltipState.show]);
 
-    // === Renderers ===
     const nodeCanvasObject = useCallback(
-      (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+      (
+        node: CharacterNode,
+        ctx: CanvasRenderingContext2D,
+        globalScale: number,
+      ) => {
         const isSelected = node.id === selectedNodeId;
         const isHighlighted = highlightNodes.has(node.id);
         const isDimmed = highlightNodes.size > 0 && !isHighlighted;
@@ -725,7 +700,11 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
     );
 
     const linkCanvasObject = useCallback(
-      (link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+      (
+        link: DetailedRelationshipLink,
+        ctx: CanvasRenderingContext2D,
+        globalScale: number,
+      ) => {
         const isHighlighted = highlightLinks.has(link.id);
         const isDimmed = highlightLinks.size > 0 && !isHighlighted;
 
@@ -768,10 +747,8 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           ctx.save();
           ctx.beginPath();
           ctx.arc(avgX, avgY, maxDist, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(164, 119, 100, 0.05)"; // Mocha color with very low opacity
+          ctx.fillStyle = "rgba(164, 119, 100, 0.05)";
           ctx.fill();
-
-          // Subtle Border
           ctx.strokeStyle = "rgba(164, 119, 100, 0.1)";
           ctx.lineWidth = 1;
           ctx.setLineDash([5, 5]);
@@ -811,14 +788,26 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
         <TiledBackground zoomState={zoomState} className="absolute inset-0" />
 
         <ForceGraph2D
-          ref={graphRef as any}
+          ref={graphRef as unknown as React.MutableRefObject<ForceGraphMethods>}
           width={width}
           height={height}
-          graphData={graphData as any}
+          graphData={graphData}
           nodeLabel={() => ""}
           linkLabel={() => ""}
-          nodeCanvasObject={nodeCanvasObject}
-          linkCanvasObject={linkCanvasObject}
+          nodeCanvasObject={
+            nodeCanvasObject as unknown as (
+              node: object,
+              ctx: CanvasRenderingContext2D,
+              globalScale: number,
+            ) => void
+          }
+          linkCanvasObject={
+            linkCanvasObject as unknown as (
+              link: object,
+              ctx: CanvasRenderingContext2D,
+              globalScale: number,
+            ) => void
+          }
           onRenderFramePre={(ctx) => drawGroupClouds(ctx)}
           warmupTicks={50}
           cooldownTicks={200}
@@ -826,61 +815,83 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           d3AlphaDecay={FORCE_CONFIG.alphaDecay}
           d3AlphaMin={FORCE_CONFIG.alphaMin}
           d3VelocityDecay={FORCE_CONFIG.velocityDecay}
-          {...({ clickDistanceThreshold: 6 } as any)} // [FIX] Stolink 사양인 6으로 조정하여 클릭 조작성 향상
           onEngineStop={handleEngineStop}
-          enableNodeDrag={true} // Enable Drag
-          onNodeClick={handleNodeClick as any}
+          enableNodeDrag={true}
+          onNodeClick={
+            handleNodeClick as unknown as (
+              node: object,
+              event: MouseEvent,
+            ) => void
+          }
           nodeCanvasObjectMode={() => "replace"}
-          // [FIX] Hit Area 설정: 노드 실제 크기와 동일 (링크 클릭 가능하도록)
           nodePointerAreaPaint={(
-            node: any,
+            node: unknown,
             color: string,
             ctx: CanvasRenderingContext2D,
           ) => {
-            // 노드 크기와 동일하게 설정하여 인접 링크 클릭 가능
+            const n = node as CharacterNode;
             const radius =
-              (node.role === "protagonist"
+              (n.role === "protagonist"
                 ? NODE_SIZES.protagonist
                 : NODE_SIZES.default) / 2;
             ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.arc(node.x!, node.y!, radius, 0, 2 * Math.PI);
+            ctx.arc(n.x!, n.y!, radius, 0, 2 * Math.PI);
             ctx.fill();
           }}
-          onNodeHover={handleNodeHover}
-          onLinkClick={handleLinkClick as any}
+          onNodeHover={
+            handleNodeHover as unknown as (
+              node: object | null,
+              prevNode: object | null,
+            ) => void
+          }
+          onLinkClick={
+            handleLinkClick as unknown as (
+              link: object,
+              event: MouseEvent,
+            ) => void
+          }
           linkCanvasObjectMode={() => "replace"}
-          // [NEW] Hit Area 설정: 링크 클릭 범위 확장 및 곡선 일치 (12px 두께)
           linkPointerAreaPaint={(
-            link: any,
+            link: unknown,
             color: string,
             ctx: CanvasRenderingContext2D,
           ) => {
-            const s = link.source;
-            const t = link.target;
+            const l = link as DetailedRelationshipLink;
+            const s = l.source as CharacterNode;
+            const t = l.target as CharacterNode;
             if (!s || !t || s.x === undefined || t.x === undefined) return;
 
-            const curvature = link.curvature || 0;
-            const midX = (s.x + t.x) / 2;
-            const midY = (s.y + t.y) / 2;
-            const dx = t.x - s.x;
-            const dy = t.y - s.y;
-            const controlX = midX - dy * curvature;
-            const controlY = midY + dx * curvature;
+            if (!s || !t || s.x === undefined || t.x === undefined) return;
 
-            ctx.lineWidth = 18; // [FIX] 더 넓은 클릭 영역으로 조작성 향상
+            // Calculate normal vector for perpendicular offset
+
+            ctx.lineWidth = 18;
             ctx.strokeStyle = color;
             ctx.lineCap = "round";
             ctx.beginPath();
-            ctx.moveTo(s.x, s.y);
-            ctx.quadraticCurveTo(controlX, controlY, t.x, t.y);
+            if (
+              s.x !== undefined &&
+              s.y !== undefined &&
+              t.x !== undefined &&
+              t.y !== undefined
+            ) {
+              const controlX = (s.x + t.x) / 2;
+              const controlY = (s.y + t.y) / 2 - 50 * (l.curvature || 0);
+              ctx.moveTo(s.x, s.y);
+              ctx.quadraticCurveTo(controlX, controlY, t.x, t.y);
+            }
             ctx.stroke();
           }}
-          onLinkHover={handleLinkHover}
+          onLinkHover={
+            handleLinkHover as unknown as (
+              link: object | null,
+              prevLink: object | null,
+            ) => void
+          }
           onZoom={useMemo(
             () =>
               throttle((transform: { k: number; x: number; y: number }) => {
-                // [FIX] throttle + requestAnimationFrame으로 줌 이벤트 과부하 방지
                 requestAnimationFrame(() => {
                   setZoomState({
                     scale: transform.k,
@@ -896,7 +907,9 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
         />
 
         <NetworkControls
-          relationTypeFilter={relationTypeFilter as any}
+          relationTypeFilter={
+            relationTypeFilter as import("@/types").UIRelationType | "all"
+          }
           onFilterChange={setRelationTypeFilter}
           showMainOnly={showMainOnly}
           onShowMainOnlyChange={setShowMainOnly}
@@ -914,19 +927,25 @@ const CanvasGraph = forwardRef<CanvasGraphRef, CanvasGraphProps>(
           <RelationshipEventTooltip
             x={tooltipState.x}
             y={tooltipState.y}
-            events={(tooltipState.data as any).events || []}
+            events={
+              (
+                tooltipState.data as {
+                  events?: import("@/types/characterGraph").HistoryEvent[];
+                }
+              ).events || []
+            }
             sourceName={(tooltipState.data.source as CharacterNode).name}
             targetName={(tooltipState.data.target as CharacterNode).name}
             sourceImage={(tooltipState.data.source as CharacterNode).imageUrl}
             targetImage={(tooltipState.data.target as CharacterNode).imageUrl}
             type={tooltipState.data.type}
-            types={(tooltipState.data as any).relationTypes}
+            types={tooltipState.data.relationTypes}
             strength={tooltipState.data.strength}
             description={
               tooltipState.data.label || tooltipState.data.description
             }
             onEventClick={() => {}}
-            onOpenDeepAnalysis={() => handleLinkClick(tooltipState.data)}
+            onOpenDeepAnalysis={() => handleLinkClick(tooltipState.data!)}
             onMouseEnter={() => {}}
           />
         )}

@@ -6,9 +6,9 @@
  * - 호버 시 퀵 액션 오버레이 표시 (관심 등록, 첫 화 보기)
  * - 장르 태그 Glassmorphism 효과로 가독성 개선
  */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, Heart, Play } from "lucide-react";
+import { BookOpen, Play } from "lucide-react";
 import type { Work } from "@/types";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
@@ -31,6 +31,14 @@ export function BookCard({
   const { isAuthenticated } = useAuthStore();
   const { openAuthModal } = useAuthModalStore();
   const [isHovered, setIsHovered] = useState(false);
+  const [now] = useState(() => Date.now());
+
+  // NEW 뱃지 노출 여부 (임계점: 7일)
+  const isNew = useMemo(() => {
+    const createdAtTime = new Date(work.createdAt).getTime();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    return createdAtTime > sevenDaysAgo;
+  }, [work.createdAt, now]);
 
   // 장르 레이블 (category가 있으면 그것을, 없으면 work.genre 사용)
   const genreLabel =
@@ -109,8 +117,7 @@ export function BookCard({
             </div>
           )}
           {/* NEW Badge: created within 7 days */}
-          {new Date(work.createdAt).getTime() >
-            Date.now() - 7 * 24 * 60 * 60 * 1000 && (
+          {isNew && (
             <div className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
               NEW
             </div>
@@ -163,7 +170,7 @@ export function BookCard({
 
         {/* Consolidated Micro Tags (#hashtags) */}
         <div className="flex flex-wrap gap-1.5 mt-2 h-[24px] overflow-hidden">
-          {(work.tags || ["#회귀", "#먼치킨", "#사이다"])
+          {((work as unknown as { tags?: string[] }).tags || ["#회귀", "#먼치킨", "#사이다"])
             .slice(0, 3)
             .map((tag, i) => (
               <span

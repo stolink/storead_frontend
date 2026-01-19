@@ -2,6 +2,7 @@
  * 작가용 챕터 내보내기 폼
  * React Hook Form + Zod 유효성 검증
  */
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -58,8 +59,8 @@ export const ExportChapterForm = ({
     const form = useForm<ExportChapterFormData>({
         resolver: zodResolver(exportChapterSchema),
         defaultValues: {
-            isNewWork: myWorks?.length === 0,
-            workId: undefined,
+            isNewWork: false,
+            workId: '',
             newWork: {
                 title: '',
                 synopsis: '',
@@ -68,6 +69,8 @@ export const ExportChapterForm = ({
             chapterTitle: '',
             chapterNumber: 1,
             content: initialContent,
+            accessType: 'FREE',
+            price: 100,
         },
     });
 
@@ -79,6 +82,13 @@ export const ExportChapterForm = ({
     } = form;
 
     const isNewWork = watch('isNewWork');
+
+    // Handle initial isNewWork state based on myWorks
+    useEffect(() => {
+        if (!worksLoading && myWorks && myWorks.length === 0) {
+            form.setValue('isNewWork', true);
+        }
+    }, [myWorks, worksLoading, form]);
 
     const onSubmit = async (data: ExportChapterFormData) => {
         try {
@@ -95,7 +105,7 @@ export const ExportChapterForm = ({
                 <CardTitle>챕터 내보내기</CardTitle>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={handleSubmit((data) => onSubmit(data as unknown as ExportChapterFormData))} className="space-y-6">
                     {/* 작품 선택 섹션 */}
                     <div className="space-y-4">
                         <h3 className="font-semibold">작품 선택</h3>
@@ -105,7 +115,6 @@ export const ExportChapterForm = ({
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="radio"
-                                    {...register('isNewWork')}
                                     value="false"
                                     checked={!isNewWork}
                                     onChange={() => form.setValue('isNewWork', false)}
@@ -116,7 +125,6 @@ export const ExportChapterForm = ({
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="radio"
-                                    {...register('isNewWork')}
                                     value="true"
                                     checked={isNewWork}
                                     onChange={() => form.setValue('isNewWork', true)}

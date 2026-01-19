@@ -35,7 +35,7 @@ export function useForceSimulation(
     options: UseForceSimulationOptions,
 ): UseForceSimulationReturn {
     const { width, height } = options;
-    const [simulation, setSimulation] = useState<d3.Simulation<CharacterNode, RelationshipLink> | null>(null);
+    const [simulationState, setSimulationState] = useState<d3.Simulation<CharacterNode, RelationshipLink> | null>(null);
 
     const storeRef = useRef<{
         simulation: d3.Simulation<CharacterNode, RelationshipLink> | null;
@@ -67,8 +67,9 @@ export function useForceSimulation(
             const isOffScreen = (val: number | null | undefined) =>
                 typeof val === 'number' && (val < -threshold || val > threshold);
 
-            const x = isOffScreen(d.x) ? (width / 2 + (Math.random() - 0.5) * 100) : (typeof d.x === 'number' ? d.x : (width / 2 + (Math.random() - 0.5) * 50));
-            const y = isOffScreen(d.y) ? (height / 2 + (Math.random() - 0.5) * 100) : (typeof d.y === 'number' ? d.y : (height / 2 + (Math.random() - 0.5) * 50));
+            const seed = d.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const x = isOffScreen(d.x) ? (width / 2 + ((seed % 100) / 100 - 0.5) * 100) : (typeof d.x === 'number' ? d.x : (width / 2 + (((seed * 1.5) % 100) / 100 - 0.5) * 50));
+            const y = isOffScreen(d.y) ? (height / 2 + (((seed * 1.3) % 100) / 100 - 0.5) * 100) : (typeof d.y === 'number' ? d.y : (height / 2 + (((seed * 1.7) % 100) / 100 - 0.5) * 50));
 
             // fx, fy가 화면 밖이면 무시하여 시뮬레이션이 중앙으로 끌고 오도록 유도합니다.
             const fx = isOffScreen(d.fx) ? undefined : (typeof d.fx === 'number' ? d.fx : undefined);
@@ -90,8 +91,12 @@ export function useForceSimulation(
 
         const validNodeIds = new Set(nodesCopy.map((n) => n.id));
         const validLinks = linksCopy.filter((link) => {
-            const sourceId = typeof link.source === "object" ? (link.source as any).id || (link.source as any)._id : link.source;
-            const targetId = typeof link.target === "object" ? (link.target as any).id || (link.target as any)._id : link.target;
+            const getLinkId = (node: string | { id?: string; _id?: string }) => {
+                if (typeof node === "string") return node;
+                return node.id || node._id || "";
+            };
+            const sourceId = getLinkId(link.source);
+            const targetId = getLinkId(link.target);
             return validNodeIds.has(sourceId) && validNodeIds.has(targetId);
         });
 
@@ -114,7 +119,8 @@ export function useForceSimulation(
         store.listeners.forEach((l) => l());
         simulationRef.current = newSimulation;
         store.simulation = newSimulation;
-        setSimulation(newSimulation);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSimulationState((prev) => prev !== newSimulation ? newSimulation : prev);
 
         return () => { newSimulation.stop(); };
     }, [initialNodes, initialLinks, width, height, getNodeRadius]);
@@ -132,5 +138,5 @@ export function useForceSimulation(
         if (simulationRef.current) simulationRef.current.alpha(0.3).restart();
     }, []);
 
-    return { nodes: state.nodes, links: state.links, reheat, simulation };
+    return { nodes: state.nodes, links: state.links, reheat, simulation: simulationState };
 }

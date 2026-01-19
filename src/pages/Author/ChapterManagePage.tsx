@@ -5,7 +5,7 @@
  */
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { navigateToExternalEditor } from "@/utils/navigation";
 import { useWork } from "@/hooks/useWorks";
 import { useWorkChapters, useDeleteChapter } from "@/hooks/useChapters";
@@ -36,7 +36,6 @@ import {
   Edit3,
   Trash2,
   MoreVertical,
-  ExternalLink,
   FileText,
   Sparkles,
 } from "lucide-react";

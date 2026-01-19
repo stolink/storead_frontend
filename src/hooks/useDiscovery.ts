@@ -73,7 +73,7 @@ export const useDiscoveryWorks = (params?: DiscoveryParams) => {
     enabled: enabled,
     // 검색어 등이 없을 때만 30초마다 자동 갱신 (실시간 순위 표시용)
     // 검색어 등이 없을 때만 30초마다 자동 갱신 (실시간 순위 표시용)
-    refetchInterval: (_query) => {
+    refetchInterval: () => {
       // 정렬/필터링 조건이 있거나 검색 모드인 경우(query가 유효한 경우) 자동 갱신 중단 여부 결정
 
       // 단순 레이아웃 옵션(limit, size, page, enabled)은 자동 갱신을 방해하지 않도록 함

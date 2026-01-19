@@ -29,21 +29,6 @@ export const useCredits = () => {
     },
   });
 
-  // 거래 내역 조회 (필요 시)
-  const transactionsQuery = (
-    page = 0,
-    size = 20,
-    type?: "CHARGE" | "USE" | "REFUND",
-  ) =>
-    useQuery({
-      queryKey: ["credits", "transactions", { page, size, type }],
-      queryFn: async () => {
-        const response = await creditService.getTransactions(page, size, type);
-        return response.data;
-      },
-      enabled: isAuthenticated,
-    });
-
   return {
     credits: creditsQuery.data,
     isLoading: creditsQuery.isLoading,
@@ -51,8 +36,24 @@ export const useCredits = () => {
     refetch: creditsQuery.refetch,
     balance: creditsQuery.data?.balance ?? 0,
     useCredit: useCreditMutation.mutate,
-    useCreditAsync: useCreditMutation.mutateAsync,
+    creditAsync: useCreditMutation.mutateAsync,
     isUsing: useCreditMutation.isPending,
-    getTransactions: transactionsQuery,
   };
+};
+
+export const useTransactions = (
+  page = 0,
+  size = 20,
+  type?: "CHARGE" | "USE" | "REFUND",
+) => {
+  const { isAuthenticated } = useAuthStore();
+
+  return useQuery({
+    queryKey: ["credits", "transactions", { page, size, type }],
+    queryFn: async () => {
+      const response = await creditService.getTransactions(page, size, type);
+      return response.data;
+    },
+    enabled: isAuthenticated,
+  });
 };

@@ -125,3 +125,12 @@ export interface RelationshipEvent {
   emotionDelta: number; // -5 ~ +5
   timestamp: string;
 }
+
+export interface HistoryEvent {
+  eventId: string;
+  type: string;
+  chapter?: string | number;
+  date?: string;
+  title: string;
+  reason?: string;
+}

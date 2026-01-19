@@ -9,10 +9,21 @@ import {
   Users,
 } from "lucide-react";
 
+interface FooterLink {
+  label: string;
+  path: string;
+  icon?: React.ReactNode;
+}
+
+interface FooterSection {
+  title: string;
+  links: FooterLink[];
+}
+
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
-  const sections = [
+  const sections: FooterSection[] = [
     {
       title: "플랫폼",
       links: [

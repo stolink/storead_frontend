@@ -7,16 +7,7 @@ import { getRelationshipColor, type UIRelationType } from "./utils";
 import { toUIRelationType } from "./constants";
 import { motion, AnimatePresence } from "framer-motion";
 
-import type { RelationType } from "@/types/character";
-
-interface HistoryEvent {
-  eventId: string;
-  title: string;
-  chapter?: string;
-  type: RelationType | UIRelationType;
-  reason?: string;
-  date?: string;
-}
+import type { HistoryEvent } from "@/types/characterGraph";
 
 interface RelationshipEventTooltipProps {
   events: HistoryEvent[];

@@ -24,7 +24,7 @@ export const useUserGamification = () => {
       try {
         const { data } = await api.get("/users/me/gamification");
         return data.data;
-      } catch (error) {
+      } catch {
         // 백엔드 API 미구현 시 데모 데이터 반환
         return {
           level: 12,

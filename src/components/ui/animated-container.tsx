@@ -297,6 +297,7 @@ export const LayoutAnimation = React.forwardRef<
 
 LayoutAnimation.displayName = "LayoutAnimation";
 
+/* eslint-disable react-refresh/only-export-components */
 export {
   fadeUpVariants,
   fadeInVariants,

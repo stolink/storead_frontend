@@ -1,4 +1,4 @@
-import React from "react";
+
 import { HistoryStack } from "./HistoryStack";
 import { MiniRankingTab } from "./MiniRankingTab";
 import { AttendanceStreak } from "../gamification/AttendanceStreak";

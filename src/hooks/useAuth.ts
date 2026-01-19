@@ -61,8 +61,9 @@ export const useUpdateProfile = () => {
       const updatedUser = (data.data || data) as User;
 
       // 응답 데이터도 정규화
-      if (!updatedUser.profileImageUrl && (updatedUser as any).avatarUrl) {
-        updatedUser.profileImageUrl = (updatedUser as any).avatarUrl;
+      const rawUser = (data.data || data) as User & { avatarUrl?: string };
+      if (!updatedUser.profileImageUrl && rawUser.avatarUrl) {
+        updatedUser.profileImageUrl = rawUser.avatarUrl;
       }
 
       return updatedUser;

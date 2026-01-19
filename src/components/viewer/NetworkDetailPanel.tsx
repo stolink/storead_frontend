@@ -21,22 +21,32 @@ import { cn } from "@/lib/utils";
 
 // 관계 타입별 색상 클래스
 const RELATION_BADGE_COLORS: Record<UIRelationType, string> = {
-  friendly: "bg-sage-100 text-sage-700 border-sage-200",
-  hostile: "bg-status-error/10 text-status-error border-status-error/20",
+  ally: "bg-sage-100 text-sage-700 border-sage-200",
+  enemy: "bg-status-error/10 text-status-error border-status-error/20",
   romantic: "bg-mocha-100 text-mocha-700 border-mocha-200",
   family: "bg-stone-100 text-stone-600 border-stone-200",
   neutral: "bg-stone-100 text-stone-400 border-stone-200",
   complex: "bg-mocha-50 text-mocha-500 border-mocha-100",
+  rival: "bg-orange-100 text-orange-700 border-orange-200",
+  betrayed: "bg-rose-100 text-rose-700 border-rose-200",
+  knows: "bg-zinc-100 text-zinc-600 border-zinc-200",
+  protects: "bg-sky-100 text-sky-700 border-sky-200",
+  mentor: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
 // 관계 타입별 아이콘
 const RELATION_ICONS: Record<UIRelationType, React.ReactNode> = {
-  friendly: <User className="w-3 h-3" />,
-  hostile: <Skull className="w-3 h-3" />,
+  ally: <User className="w-3 h-3" />,
+  enemy: <Skull className="w-3 h-3" />,
   romantic: <Heart className="w-3 h-3" />,
   family: <Users className="w-3 h-3" />,
   neutral: <User className="w-3 h-3 opacity-50" />,
   complex: <Network className="w-3 h-3" />,
+  rival: <TrendingUp className="w-3 h-3" />,
+  betrayed: <Skull className="w-3 h-3" />,
+  knows: <User className="w-3 h-3" />,
+  protects: <User className="w-3 h-3" />,
+  mentor: <User className="w-3 h-3" />,
 };
 
 // 역할별 색상

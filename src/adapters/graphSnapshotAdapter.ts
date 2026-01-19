@@ -3,9 +3,10 @@
  * 백엔드 API의 graphSnapshot (Map<String, Object>)을
  * CharacterGraph 컴포넌트가 사용하는 타입으로 변환
  */
-import type { Character } from "@/types/character";
+import type { Character, CharacterRole } from "@/types/character";
 import type { RelationshipLink } from "@/types/characterGraph";
 import type { RelationshipDeepAnalysisData } from "@/types/relationshipAnalysis";
+import { parseRelationType } from "@/components/CharacterGraph/constants";
 
 // 백엔드 GraphSnapshot 타입
 export interface GraphSnapshotDTO {
@@ -112,7 +113,7 @@ export interface GraphSnapshotDTO {
  * @returns Character[] 및 RelationshipLink[] 또는 null
  */
 export function adaptGraphSnapshot(
-  snapshot: GraphSnapshotDTO | null | undefined
+  snapshot: GraphSnapshotDTO | string | null | undefined,
 ): { characters: Character[]; links: RelationshipLink[] } | null {
   // null/undefined 체크
   if (!snapshot) {
@@ -121,7 +122,7 @@ export function adaptGraphSnapshot(
 
   try {
     // 문자열인 경우 파싱
-    let data: GraphSnapshotDTO = snapshot;
+    let data: GraphSnapshotDTO;
     if (typeof snapshot === "string") {
       try {
         data = JSON.parse(snapshot);
@@ -129,19 +130,29 @@ export function adaptGraphSnapshot(
         console.error("Failed to parse graphSnapshot string:", e);
         return null;
       }
+    } else {
+      data = snapshot;
     }
 
     if (!data.nodes || !data.links) {
       return null;
     }
 
+    // Role validation helper
+    const isValidRole = (role: string): role is CharacterRole => {
+      return ["protagonist", "antagonist", "supporting", "mentor", "sidekick", "other"].includes(role);
+    };
+
     // 1. Nodes → Characters 변환
     const characters: Character[] = data.nodes.map((node) => {
       const profile = data.profiles?.[node.id];
 
+      const rawRole = profile?.role || node.role;
+      const role: CharacterRole = isValidRole(rawRole) ? rawRole : "other";
+
       // Helper to normalize attire/scarsTattoos to arrays
       const normalizeToArray = (
-        val: string | string[] | undefined
+        val: string | string[] | undefined,
       ): string[] => {
         if (!val) return [];
         if (Array.isArray(val)) return val;
@@ -152,7 +163,7 @@ export function adaptGraphSnapshot(
         _id: node.id,
         id: node.id, // Added for D3 compatibility
         projectId: "unknown",
-        role: (profile?.role || node.role) as any,
+        role,
         profile: {
           characterId: node.id,
           name: profile?.name || node.name,
@@ -175,33 +186,33 @@ export function adaptGraphSnapshot(
         status: "alive",
         appearance: profile?.appearance
           ? {
-            physique: profile.appearance.physique ?? "",
-            skinTone: profile.appearance.skinTone ?? "",
-            eyes: profile.appearance.eyes ?? "",
-            nose: profile.appearance.nose ?? "",
-            mouth: profile.appearance.mouth ?? "",
-            hairStyle: profile.appearance.hairStyle ?? "",
-            hairColor: profile.appearance.hairColor ?? "",
-            attire: normalizeToArray(profile.appearance.attire),
-            expression: profile.appearance.expression ?? "",
-            scarsTattoos: normalizeToArray(profile.appearance.scarsTattoos),
-            styleContext: {
-              artStyle: profile.appearance.styleContext?.artStyle ?? "",
-            },
-          }
+              physique: profile.appearance.physique ?? "",
+              skinTone: profile.appearance.skinTone ?? "",
+              eyes: profile.appearance.eyes ?? "",
+              nose: profile.appearance.nose ?? "",
+              mouth: profile.appearance.mouth ?? "",
+              hairStyle: profile.appearance.hairStyle ?? "",
+              hairColor: profile.appearance.hairColor ?? "",
+              attire: normalizeToArray(profile.appearance.attire),
+              expression: profile.appearance.expression ?? "",
+              scarsTattoos: normalizeToArray(profile.appearance.scarsTattoos),
+              styleContext: {
+                artStyle: profile.appearance.styleContext?.artStyle ?? "",
+              },
+            }
           : {
-            physique: "",
-            skinTone: "",
-            eyes: "",
-            nose: "",
-            mouth: "",
-            hairStyle: "",
-            hairColor: "",
-            attire: [],
-            expression: "",
-            scarsTattoos: [],
-            styleContext: { artStyle: "" },
-          },
+              physique: "",
+              skinTone: "",
+              eyes: "",
+              nose: "",
+              mouth: "",
+              hairStyle: "",
+              hairColor: "",
+              attire: [],
+              expression: "",
+              scarsTattoos: [],
+              styleContext: { artStyle: "" },
+            },
         personality: {
           coreTraits: profile?.personality?.coreTraits ?? [],
           strengths: profile?.personality?.strengths ?? [],
@@ -209,7 +220,7 @@ export function adaptGraphSnapshot(
           values: profile?.personality?.values ?? [],
         },
         motivation: profile?.motivation,
-        relations: profile?.relations ?? {
+        relations: (profile?.relations as unknown as Character["relations"]) ?? {
           graph: [],
           eventRefs: [],
           locationContext: "",
@@ -222,17 +233,17 @@ export function adaptGraphSnapshot(
         inventory: [],
         meta: profile?.meta
           ? {
-            createdAt: profile.meta.createdAt ?? null,
-            updatedAt: profile.meta.updatedAt ?? null,
-            dataVersion: "",
-            lockVersion: 0,
-          }
+              createdAt: profile.meta.createdAt ?? null,
+              updatedAt: profile.meta.updatedAt ?? null,
+              dataVersion: "",
+              lockVersion: 0,
+            }
           : {
-            createdAt: null,
-            updatedAt: null,
-            dataVersion: "",
-            lockVersion: 0,
-          },
+              createdAt: null,
+              updatedAt: null,
+              dataVersion: "",
+              lockVersion: 0,
+            },
         imageUrl: profile?.imageUrl || node.imageUrl,
         // Layout coordinates (Respect fixed positions from snapshot)
         x: node.x,
@@ -243,27 +254,12 @@ export function adaptGraphSnapshot(
     });
 
     // 2. Links → RelationshipLinks 변환
-    const getRelationType = (
-      type: string
-    ): "friendly" | "hostile" | "romantic" => {
-      const t = type?.toLowerCase() || "";
-      if (
-        t.includes("hostile") ||
-        t.includes("enemy") ||
-        t.includes("rival") ||
-        t.includes("적대")
-      )
-        return "hostile";
-      if (t.includes("romantic") || t.includes("love") || t.includes("로맨스"))
-        return "romantic";
-      return "friendly";
-    };
-
+    // parseRelationType 공통 함수 사용 (constants.ts)
     const links: RelationshipLink[] = data.links.map((link) => ({
       id: link.id || `${link.source}-${link.target}`,
       source: link.source,
       target: link.target,
-      type: getRelationType(link.type),
+      type: parseRelationType(link.type),
       strength: link.strength,
       description: link.description,
       publicStance: link.publicStance,
@@ -271,7 +267,7 @@ export function adaptGraphSnapshot(
     }));
 
     return { characters, links };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Failed to adapt graphSnapshot:", error);
     return null;
   }

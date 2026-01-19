@@ -5,14 +5,22 @@ interface CharacterCoreProfileProps {
     character: Character;
 }
 
+interface LegacyCharacterFields {
+    occupation?: string;
+    faction?: { name: string };
+    age?: string | number;
+    gender?: string;
+}
+
 export function CharacterCoreProfile({ character }: CharacterCoreProfileProps) {
     const profile = character.profile;
+    const legacy = character as unknown as LegacyCharacterFields;
 
     const fields = [
-        { label: "직업", value: profile.occupation || (character as any).occupation, icon: Briefcase },
-        { label: "소속", value: profile.faction?.name || (character as any).faction?.name, icon: Shield },
-        { label: "나이", value: profile.age || (character as any).age, icon: Hash },
-        { label: "성별", value: profile.gender || (character as any).gender, icon: User },
+        { label: "직업", value: profile.occupation || legacy.occupation, icon: Briefcase },
+        { label: "소속", value: profile.faction?.name || legacy.faction?.name, icon: Shield },
+        { label: "나이", value: profile.age || legacy.age, icon: Hash },
+        { label: "성별", value: profile.gender || legacy.gender, icon: User },
     ];
 
     return (

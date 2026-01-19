@@ -23,7 +23,6 @@ interface DeepAnalysisHeroProps {
     targetCharacter: AnalysisCharacterInfo;
     asymmetricStrength: AsymmetricStrength;
     onClose: () => void;
-    relationshipTypes: string[]; // Added
     description?: string; // Added
     since?: string;
     className?: string;
@@ -394,11 +393,10 @@ export function DeepAnalysisHero({
     targetCharacter,
     asymmetricStrength,
     className,
-    relationshipTypes: _relationshipTypes,
     description,
     since,
 }: DeepAnalysisHeroProps) {
-    // Note: _relationshipTypes is passed for future use but currently colors are derived from factors
+    // Note: colors are derived from factors
     const sourceColor = getRelationColor(
         asymmetricStrength.sourceToTarget.factors[0]?.type,
     );

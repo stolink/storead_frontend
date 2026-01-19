@@ -39,14 +39,34 @@ export const LinkRenderer = memo(function LinkRenderer({
 
   // Memoized ID for gradient/filter uniqueness
   const gradientId = useMemo(
-    () => `link-grad-${link.id || Math.random().toString(36).substr(2, 9)}`,
+    () => `link-grad-${link.id || "temp-grad"}`,
     [link.id],
   );
 
   const glowFilterId = useMemo(
-    () => `glow-${link.id || Math.random().toString(36).substr(2, 9)}`,
+    () => `glow-${link.id || "temp-glow"}`,
     [link.id],
   );
+
+  // --- 2. Color & Style Logic ---
+  const primaryColor = useMemo(() => {
+    if (changeType === "new") return "#10B981"; // Green
+    if (changeType === "updated") return "#3B82F6"; // Blue
+    if (changeType === "collapse") return "#F59E0B"; // Amber for collapse path
+
+    return getRelationshipColor(
+      link.type as UIRelationType,
+      link.strength,
+      link.relationTypes as string[],
+    );
+  }, [link.type, link.strength, link.relationTypes, changeType]);
+
+  const secondaryColor = useMemo(() => {
+    // Gradient end color (slightly lighter or related hue)
+    if (changeType) return "#FFF";
+    const palette = RELATION_PALETTE[link.type as UIRelationType] || RELATION_PALETTE.neutral;
+    return palette.weak;
+  }, [link.type, changeType]);
 
   if (
     !source ||
@@ -95,26 +115,6 @@ export const LinkRenderer = memo(function LinkRenderer({
     pathD = `M${source.x},${source.y} L${target.x},${target.y}`;
   }
 
-  // --- 2. Color & Style Logic ---
-  const primaryColor = useMemo(() => {
-    if (changeType === "new") return "#10B981"; // Green
-    if (changeType === "updated") return "#3B82F6"; // Blue
-    if (changeType === "collapse") return "#F59E0B"; // Amber for collapse path
-
-    return getRelationshipColor(
-      link.type as UIRelationType,
-      link.strength,
-      link.relationTypes as string[],
-    );
-  }, [link.type, link.strength, link.relationTypes, changeType]);
-
-  const secondaryColor = useMemo(() => {
-    // Gradient end color (slightly lighter or related hue)
-    if (changeType) return "#FFF";
-    const palette = RELATION_PALETTE[link.type as UIRelationType] || RELATION_PALETTE.neutral;
-    return palette.weak;
-  }, [link.type, changeType]);
-
   // Interaction State
   const isHovered = false; // We use onHover prop typically, but local state if needed. React handles hover via parent.
   // Actually, parent handles hover logic, this component just receives props.
@@ -140,7 +140,7 @@ export const LinkRenderer = memo(function LinkRenderer({
   const flowDuration = 3 - (link.strength / 10) * 1.5;
   const flowDelay = link.flowDepth !== undefined && link.flowDepth >= 0
     ? link.flowDepth * 0.2
-    : Math.random() * 2;
+    : (link.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 20) / 10;
 
   // Transition Styles
   const transitionStyle = {

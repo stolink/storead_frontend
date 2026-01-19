@@ -9,7 +9,7 @@ import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { QueryClient } from "@tanstack/react-query";
 
 // API 기본 URL - Vite 환경 변수 사용
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "/api";
 
 // 재시도 플래그를 위한 타입 확장
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -161,9 +161,11 @@ api.interceptors.response.use(
       originalRequest &&
       !originalRequest._retry
     ) {
-      // 인증된 적 없는 익명 유저는 refresh 시도하지 않음
+      // 인증된 적 없는 익명 유저는 refresh 시도하지 않음 (단, 초기 세션 복원을 위한 /auth/me 요청은 예외)
       const { isAuthenticated } = useAuthStore.getState();
-      if (!isAuthenticated) {
+      const isSessionRestore = originalRequest.url?.includes("/auth/me");
+
+      if (!isAuthenticated && !isSessionRestore) {
         console.log("[Auth] 401 error for anonymous user. Skipping refresh.");
         return Promise.reject(error);
       }

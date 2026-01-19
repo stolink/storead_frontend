@@ -60,7 +60,7 @@ export function CreditPackageCard({
       {/* Main Content Container */}
       <div
         className={cn(
-          "relative h-full overflow-hidden rounded-[22px] bg-white/60 backdrop-blur-xl p-6 transition-colors",
+          "relative h-full min-h-[380px] overflow-hidden rounded-[22px] bg-white/60 backdrop-blur-xl p-6 transition-colors flex flex-col",
           selected
             ? "bg-white/90 shadow-2xl shadow-mocha-900/10 ring-1 ring-mocha-500/20"
             : "hover:bg-white/80"

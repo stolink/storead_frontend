@@ -4,18 +4,17 @@
  */
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Bookmark, BookOpen, User, Heart } from "lucide-react";
+import { Bookmark, BookOpen, User } from "lucide-react";
 import { DisplayStarRating } from "@/components/rating/DisplayStarRating";
 import { Button } from "@/components/ui/button";
-import { ChapterAccessBadge } from "@/components/common/ChapterAccessBadge";
 import { PurchaseConfirmModal } from "@/components/payment/PurchaseConfirmModal";
 import { usePublicWork } from "@/hooks/useDiscovery";
+import { WorkDetailTabs } from "@/components/work/WorkDetailTabs";
 import {
   useAddToLibrary,
   useRemoveFromLibrary,
   useIsInLibrary,
 } from "@/hooks/useLibrary";
-import { useWorkLike, useToggleWorkLike } from "@/hooks/useWorkLike";
 import { useReadingProgress } from "@/hooks/useBookmark";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
@@ -51,16 +50,12 @@ export const WorkDetailPage = () => {
   const chapters = work?.chapters;
   const { data: readingProgress } = useReadingProgress(id || "");
 
-  // 수정: work.isInLibrary는 초기 로딩 시 유용하지만, 
+  // 수정: work.isInLibrary는 초기 로딩 시 유용하지만,
   // mutation(추가/삭제) 후에는 useIsInLibrary(queryKey: ['library'])가 더 정확한 상태를 반영함.
   // work.isInLibrary가 stale 상태로 남아서 UI 업데이트를 막는 문제를 해결하기 위해 libraryHookResult를 우선 사용.
   const isInLibrary = useIsInLibrary(id || "");
   const addToLibrary = useAddToLibrary();
   const removeFromLibrary = useRemoveFromLibrary();
-
-  // 작품 좋아요 (항상 최신 상태 조회)
-  const { data: likeStatus } = useWorkLike(id || "");
-  const toggleWorkLike = useToggleWorkLike();
 
   const avgRating =
     work && (work.ratingCount || 0) > 0
@@ -81,11 +76,6 @@ export const WorkDetailPage = () => {
     } else {
       addToLibrary.mutate(id);
     }
-  };
-
-  const handleWorkLikeToggle = () => {
-    if (!id || !isAuthenticated) return;
-    toggleWorkLike.mutate(id);
   };
 
   const handleContinueReading = () => {
@@ -119,8 +109,10 @@ export const WorkDetailPage = () => {
     }
 
     // 유료 챕터이고 아직 구매하지 않은 경우 구매 모달 표시
-    const isPaidChapter = chapter.accessType === 'PAID' || chapter.accessType === 'EXCLUSIVE';
-    const needsPurchase = isPaidChapter && !chapter.isPurchased && !chapter.isFree;
+    const isPaidChapter =
+      chapter.accessType === "PAID" || chapter.accessType === "EXCLUSIVE";
+    const needsPurchase =
+      isPaidChapter && !chapter.isPurchased && !chapter.isFree;
 
     if (needsPurchase) {
       setSelectedChapter(chapter);
@@ -162,11 +154,11 @@ export const WorkDetailPage = () => {
     <div className={`min-h-screen ${backgroundThemeClasses[theme]}`}>
       <main className="container mx-auto px-6 py-12">
         {/* 히어로 섹션 */}
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+        <div className="glass-card grain-overlay rounded-2xl shadow-lg p-8 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* 표지 */}
-            <div>
-              <div className="aspect-[3/4] bg-gradient-to-br from-mocha-400 to-mocha-700 rounded-lg shadow-lg overflow-hidden">
+            <div className="glow-mocha">
+              <div className="aspect-[3/4] bg-gradient-to-br from-mocha-400 to-mocha-700 rounded-xl shadow-lg overflow-hidden relative group">
                 {work.coverImageUrl ? (
                   <img
                     src={work.coverImageUrl}
@@ -183,7 +175,24 @@ export const WorkDetailPage = () => {
 
             {/* 작품 정보 */}
             <div className="md:col-span-2">
-              <h1 className="text-4xl font-bold mb-2">{work.title}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-4xl font-bold">{work.title}</h1>
+                {work.status === "COMPLETED" && (
+                  <span className="px-3 py-1 bg-mocha-600 text-white rounded-full text-sm font-bold shadow-sm">
+                    완결
+                  </span>
+                )}
+                {work.status === "HIATUS" && (
+                  <span className="px-3 py-1 bg-zinc-500 text-white rounded-full text-sm font-bold shadow-sm">
+                    휴재
+                  </span>
+                )}
+                {work.status === "ONGOING" && (
+                  <span className="px-3 py-1 bg-sage-500 text-white rounded-full text-sm font-bold shadow-sm">
+                    연재중
+                  </span>
+                )}
+              </div>
               <p className="text-zinc-600 mb-4 flex items-center gap-2">
                 <User className="h-4 w-4" />
                 작가: {work.authorNickname || work.author?.nickname || "익명"}
@@ -212,12 +221,12 @@ export const WorkDetailPage = () => {
               <div className="flex gap-4">
                 <Button
                   size="lg"
-                  className="flex-1 bg-mocha-500 hover:bg-mocha-700 text-paper"
+                  className="flex-1 bg-mocha-500 hover:bg-mocha-600 text-white btn-glow transition-all duration-300 transform hover:scale-[1.02]"
                   onClick={handleContinueReading}
                 >
                   {readingProgress ? "이어 읽기" : "첫 화 보기"}
                 </Button>
-                {/* 서재 담기/좋아요 - 비로그인 시에도 표시, 클릭 시 로그인 유도 */}
+                {/* 서재 담기 - 비로그인 시에도 표시, 클릭 시 로그인 유도 */}
                 <Button
                   size="lg"
                   variant={isInLibrary ? "secondary" : "outline"}
@@ -228,37 +237,18 @@ export const WorkDetailPage = () => {
                     }
                     handleLibraryToggle();
                   }}
-                  className={`px-6 ${isInLibrary
-                    ? "border-mocha-500 bg-mocha-400/20 text-mocha-700"
-                    : "border-mocha-400 hover:border-mocha-500 text-ink"
-                    }`}
+                  className={`px-6 transition-all duration-300 ${
+                    isInLibrary
+                      ? "glass bg-mocha-400/20 border-mocha-500/50 text-mocha-700"
+                      : "glass border-mocha-200/50 hover:border-mocha-400 hover:bg-mocha-50/50 text-zinc-700"
+                  }`}
                 >
                   <Bookmark
-                    className={`w-5 h-5 mr-2 ${isInLibrary ? "fill-mocha-500" : ""
-                      }`}
+                    className={`w-5 h-5 mr-2 ${
+                      isInLibrary ? "fill-mocha-500" : ""
+                    }`}
                   />
                   {isInLibrary ? "서재에 담김" : "내 서재에 담기"}
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      openAuthModal(window.location.pathname);
-                      return;
-                    }
-                    handleWorkLikeToggle();
-                  }}
-                  className={`px-6 ${likeStatus?.isLiked
-                    ? "border-red-500 bg-red-50 text-red-500"
-                    : "border-zinc-300 hover:border-red-500"
-                    }`}
-                >
-                  <Heart
-                    className={`w-5 h-5 mr-2 ${likeStatus?.isLiked ? "fill-red-500" : ""
-                      }`}
-                  />
-                  {likeStatus?.likeCount || 0}
                 </Button>
               </div>
 
@@ -274,97 +264,15 @@ export const WorkDetailPage = () => {
           </div>
         </div>
 
-        {/* 회차 목록 */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">회차 목록</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSortOrder("asc")}
-                className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === "asc"
-                  ? "bg-mocha-500 text-paper"
-                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  }`}
-              >
-                1화부터 보기
-              </button>
-              <button
-                onClick={() => setSortOrder("desc")}
-                className={`px-4 py-2 rounded-lg transition-colors ${sortOrder === "desc"
-                  ? "bg-mocha-500 text-paper"
-                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  }`}
-              >
-                최신화부터 보기
-              </button>
-            </div>
-          </div>
-
-          {chapters?.length === 0 ? (
-            <div className="text-center py-8 text-zinc-500">
-              아직 등록된 회차가 없습니다.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {sortedChapters.map((chapter) => {
-                const chapterRating =
-                  chapter.ratingCount > 0
-                    ? chapter.ratingSum / chapter.ratingCount / 2
-                    : 0;
-                const isRead = false; // TODO: 읽은 챕터 표시
-
-                // 챕터 접근 유형 결정 (기본값: FREE)
-                const accessType = chapter.accessType || (chapter.isFree === false ? 'PAID' : 'FREE');
-
-                return (
-                  <button
-                    key={chapter.id}
-                    onClick={() => handleChapterClick(chapter)}
-                    className={`w-full text-left block p-4 rounded-lg border transition-colors ${isRead
-                      ? "border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
-                      : "border-mocha-400 hover:border-mocha-500 hover:bg-mocha-400/10"
-                      }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`text-lg font-semibold ${isRead ? "text-mocha-400" : "text-mocha-700"
-                            }`}
-                        >
-                          제{chapter.chapterNumber}화
-                        </span>
-                        <span
-                          className={isRead ? "text-zinc-400" : "text-zinc-900"}
-                        >
-                          {chapter.title}
-                        </span>
-                        {/* 유료/무료 배지 */}
-                        <ChapterAccessBadge
-                          accessType={accessType}
-                          price={chapter.price}
-                          isPurchased={chapter.isPurchased}
-                          size="sm"
-                        />
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1">
-                          <DisplayStarRating score={chapterRating} size={4} />
-                          <span className="text-sm">
-                            {chapterRating.toFixed(1)}
-                          </span>
-                        </div>
-                        <span className="text-sm text-zinc-500">
-                          {new Date(chapter.createdAt).toLocaleDateString(
-                            "ko-KR"
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+        {/* 메인 콘텐츠 유닛 (탭 시스템: 회차 목록 | 작가의 다른 작품 | 맞춤 추천) */}
+        <div className="mt-8">
+          <WorkDetailTabs
+            work={work}
+            chapters={sortedChapters}
+            onChapterClick={handleChapterClick}
+            sortOrder={sortOrder}
+            onSortToggle={setSortOrder}
+          />
         </div>
       </main>
 

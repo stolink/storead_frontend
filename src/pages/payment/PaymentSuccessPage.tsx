@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { paymentService } from "@/services/paymentService";
 import { PaymentLayout } from "@/components/payment/PaymentLayout";
@@ -21,14 +21,39 @@ export function PaymentSuccessPage() {
   // Simple count-up effect state
   const [displayCredit, setDisplayCredit] = useState(0);
 
+  const confirmPayment = useCallback(async () => {
+    try {
+      const response = await paymentService.confirmPayment({
+        orderId: orderId!,
+        paymentKey: paymentKey!,
+        amount: Number(amount),
+      });
+
+      if (response && response.status === "OK") {
+        setAddedCredit(response.data.creditAmount);
+        setStatus("success");
+      } else {
+        setStatus("error");
+        setResultMessage(
+          response?.message || "결제 승인 중 오류가 발생했습니다."
+        );
+      }
+    } catch (error: unknown) {
+      console.error("결제 승인 실패:", error);
+      setStatus("error");
+      const err = error as { message?: string };
+      setResultMessage(err.message || "서버 통신 오류가 발생했습니다.");
+    }
+  }, [orderId, paymentKey, amount]);
+
   useEffect(() => {
     if (!orderId || !paymentKey || !amount) {
-      setStatus("error");
+      setStatus((prev) => (prev !== "error" ? "error" : prev));
       setResultMessage("필수 결제 정보가 누락되었습니다.");
       return;
     }
     confirmPayment();
-  }, [orderId, paymentKey, amount]);
+  }, [orderId, paymentKey, amount, confirmPayment]);
 
   useEffect(() => {
     if (status === "success" && addedCredit > 0) {
@@ -50,30 +75,6 @@ export function PaymentSuccessPage() {
       return () => clearInterval(timer);
     }
   }, [status, addedCredit]);
-
-  const confirmPayment = async () => {
-    try {
-      const response = await paymentService.confirmPayment({
-        orderId: orderId!,
-        paymentKey: paymentKey!,
-        amount: Number(amount),
-      });
-
-      if (response && response.status === "OK") {
-        setAddedCredit(response.data.creditAmount);
-        setStatus("success");
-      } else {
-        setStatus("error");
-        setResultMessage(
-          response?.message || "결제 승인 중 오류가 발생했습니다."
-        );
-      }
-    } catch (error: any) {
-      console.error("결제 승인 실패:", error);
-      setStatus("error");
-      setResultMessage(error.message || "서버 통신 오류가 발생했습니다.");
-    }
-  };
 
   if (status === "loading") {
     return (
@@ -204,7 +205,7 @@ export function PaymentSuccessPage() {
                   서재로 가기
                 </button>
                 <button
-                  onClick={() => navigate("/discovery")}
+                  onClick={() => navigate("/")}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl bg-mocha-900 text-white font-medium hover:bg-mocha-800 transition-colors shadow-lg shadow-mocha-900/20"
                 >
                   작품 보러가기

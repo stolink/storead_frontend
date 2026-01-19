@@ -54,6 +54,9 @@ export interface Work {
   ratingSum: number; // 역정규화: 별점 합계
   ratingCount: number; // 역정규화: 별점 개수
   chapterCount?: number; // 역정규화: 챕터 개수
+  viewCount?: number; // Added
+  subscriberCount?: number; // Added
+  tags?: string[]; // Added
   createdAt: string;
   updatedAt: string;
   // 프론트엔드 계산/확장 필드
@@ -64,6 +67,8 @@ export interface Work {
   isLiked?: boolean;
   likeCount?: number;
   isInLibrary?: boolean;
+  // 캐릭터 관계도 (stolink에서 배포 시 저장)
+  characterGraphData?: GraphSnapshotDTO;
 }
 
 // === Chapters (챕터/회차) ===
@@ -159,6 +164,12 @@ export interface PaginatedResponse<T> {
   data: T[];
   nextCursor?: string;
   hasMore: boolean;
+  pagination?: {
+    total: number;
+    page: number;
+    size: number;
+    hasNext: boolean;
+  };
 }
 
 // === API Request Types ===
@@ -223,4 +234,10 @@ export interface PersonalizedRecommendation {
 
 // === Exports ===
 export * from "./character";
-export * from "./characterGraph";
+export {
+  type CharacterNode,
+  type RelationshipLink,
+  type UIRelationType,
+  type RelationshipEvent as GraphRelationshipEvent,
+  type ZoomState,
+} from "./characterGraph";

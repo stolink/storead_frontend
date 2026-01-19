@@ -77,29 +77,36 @@ export function useForceSimulation(
     const store = storeRef.current;
 
     // 노드/링크 복사
-    const nodesCopy = initialNodes.map((d) => ({
+    const nodesCopy: CharacterNode[] = initialNodes.map((d) => ({
       ...d,
       x: d.fx !== undefined ? d.fx : (d.x !== undefined ? d.x : width / 2 + (Math.random() - 0.5) * 50),
       y: d.fy !== undefined ? d.fy : (d.y !== undefined ? d.y : height / 2 + (Math.random() - 0.5) * 50),
     }));
     // [CLEANING] 노드 목록에 존재하지 않는 ID를 참조하는 링크 필터링
     const validNodeIds = new Set(nodesCopy.map((n) => n.id));
-    const validLinks = initialLinks.filter((link) => {
-      const sourceId = typeof link.source === "object" ? (link.source as CharacterNode).id : link.source;
-      const targetId = typeof link.target === "object" ? (link.target as CharacterNode).id : link.target;
-      return validNodeIds.has(sourceId as string) && validNodeIds.has(targetId as string);
+    const validLinks: RelationshipLink[] = initialLinks.filter((link) => {
+      const getLinkId = (node: string | { id?: string } | object): string => {
+        if (typeof node === "string") return node;
+        if (typeof node === "object" && node !== null && "id" in node) {
+          return (node as { id: string }).id;
+        }
+        return "";
+      };
+      const sourceId = getLinkId(link.source);
+      const targetId = getLinkId(link.target);
+      return validNodeIds.has(sourceId) && validNodeIds.has(targetId);
     }).map(l => ({ ...l }));
 
     if (simulationRef.current) {
       // If we already have a simulation, just update data sparingly
       const sim = simulationRef.current;
-      sim.nodes(nodesCopy as any);
-      (sim.force("link") as d3.ForceLink<any, any>).links(validLinks);
+      sim.nodes(nodesCopy);
+      (sim.force("link") as d3.ForceLink<CharacterNode, RelationshipLink>).links(validLinks);
 
       // Update forces
-      sim.force("center", d3.forceCenter(width / 2, height / 2).strength(FORCE_CONFIG.centerStrength));
-      sim.force("x", d3.forceX(width / 2).strength(FORCE_CONFIG.positionStrength));
-      sim.force("y", d3.forceY(height / 2).strength(FORCE_CONFIG.positionStrength));
+      sim.force("center", d3.forceCenter<CharacterNode>(width / 2, height / 2).strength(FORCE_CONFIG.centerStrength));
+      sim.force("x", d3.forceX<CharacterNode>(width / 2).strength(FORCE_CONFIG.positionStrength));
+      sim.force("y", d3.forceY<CharacterNode>(height / 2).strength(FORCE_CONFIG.positionStrength));
 
       // [FIX] tick 핸들러 재등록 - 데이터 변경 시 React 상태와 동기화
       let rafId: number | null = null;
@@ -107,8 +114,8 @@ export function useForceSimulation(
         if (rafId !== null) return; // RAF 스로틀링
         rafId = requestAnimationFrame(() => {
           store.state = {
-            nodes: sim.nodes() as CharacterNode[],
-            links: (sim.force("link") as d3.ForceLink<CharacterNode, RelationshipLink>).links() as RelationshipLink[],
+            nodes: sim.nodes(),
+            links: (sim.force("link") as d3.ForceLink<CharacterNode, RelationshipLink>).links(),
           };
           store.listeners.forEach((l) => l());
           rafId = null;
@@ -117,14 +124,14 @@ export function useForceSimulation(
 
       sim.alpha(0.3).restart();
 
-      store.state = { nodes: [...nodesCopy] as any, links: [...validLinks] };
+      store.state = { nodes: nodesCopy, links: validLinks };
       store.listeners.forEach((l) => l());
       return;
     }
 
     // 새 시뮬레이션 생성
     const newSimulation = d3
-      .forceSimulation<CharacterNode, RelationshipLink>(nodesCopy as any)
+      .forceSimulation<CharacterNode, RelationshipLink>(nodesCopy)
       .force(
         "link",
         d3
@@ -157,12 +164,12 @@ export function useForceSimulation(
       .force(
         "center",
         d3
-          .forceCenter(width / 2, height / 2)
+          .forceCenter<CharacterNode>(width / 2, height / 2)
           .strength(FORCE_CONFIG.centerStrength),
       )
       .force(
         "y",
-        d3.forceY(height / 2).strength(FORCE_CONFIG.positionStrength),
+        d3.forceY<CharacterNode>(height / 2).strength(FORCE_CONFIG.positionStrength),
       );
 
     // [New] Grouping Force (Faction-based)
@@ -209,21 +216,21 @@ export function useForceSimulation(
       } else {
         // Fallback to default position force if no groups found
         newSimulation
-          .force("x", d3.forceX(width / 2).strength(FORCE_CONFIG.positionStrength))
-          .force("y", d3.forceY(height / 2).strength(FORCE_CONFIG.positionStrength));
+          .force("x", d3.forceX<CharacterNode>(width / 2).strength(FORCE_CONFIG.positionStrength))
+          .force("y", d3.forceY<CharacterNode>(height / 2).strength(FORCE_CONFIG.positionStrength));
       }
     } else {
       // Default: Center nodes
       newSimulation
-        .force("x", d3.forceX(width / 2).strength(FORCE_CONFIG.positionStrength))
-        .force("y", d3.forceY(height / 2).strength(FORCE_CONFIG.positionStrength));
+        .force("x", d3.forceX<CharacterNode>(width / 2).strength(FORCE_CONFIG.positionStrength))
+        .force("y", d3.forceY<CharacterNode>(height / 2).strength(FORCE_CONFIG.positionStrength));
     }
 
     // [Pre-warming]
     newSimulation.tick(10);
 
     // Initial State Sync
-    store.state = { nodes: [...nodesCopy] as any, links: [...validLinks] };
+    store.state = { nodes: nodesCopy, links: validLinks };
     store.listeners.forEach((listener) => listener());
 
     // Update Refs & State
@@ -241,8 +248,8 @@ export function useForceSimulation(
 
       animationFrameId = requestAnimationFrame(() => {
         store.state = {
-          nodes: newSimulation.nodes() as CharacterNode[],
-          links: (newSimulation.force("link") as d3.ForceLink<CharacterNode, RelationshipLink>).links() as RelationshipLink[],
+          nodes: newSimulation.nodes(),
+          links: (newSimulation.force("link") as d3.ForceLink<CharacterNode, RelationshipLink>).links(),
         };
         store.listeners.forEach((listener) => listener());
         animationFrameId = null;
@@ -267,7 +274,7 @@ export function useForceSimulation(
       clearTimeout(timer);
       newSimulation.stop();
     };
-  }, [width, height, getNodeRadius, enableGrouping]); // Removed initialNodes, initialLinks to prevent constant restart
+  }, [width, height, getNodeRadius, enableGrouping, initialNodes, initialLinks]);
 
   // [REMOVED] 중복 리사이즈 useEffect 제거됨
   // 메인 useEffect가 이미 width, height를 의존성으로 가지므로 불필요한 restart() 호출 방지

@@ -3,8 +3,8 @@
 // 관계 심층 분석 + 댓글(토론) 통합 모달
 // =====================================================
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     X,
     MessageSquare,
@@ -52,8 +52,6 @@ interface RelationshipDeepAnalysisModalProps {
     graphSnapshot?: GraphSnapshotDTO | null;
 }
 
-
-
 export function RelationshipDeepAnalysisModal({
     isOpen,
     onClose,
@@ -66,15 +64,40 @@ export function RelationshipDeepAnalysisModal({
     const [activeTab, setActiveTab] = useState<"analysis" | "comments">("analysis");
     const [isFullscreen, setIsFullscreen] = useState(false);
 
+    // [LOADING] Simulated loading state for polished UI transition
+    const [isInternalLoading, setIsInternalLoading] = useState(true);
+    const [loadingStep, setLoadingStep] = useState(1);
+
     // [REFACTOR] graphSnapshot에서 stolink 심층 분석 데이터 조회
     const { data } = useRelationshipAnalysis(sourceNode, targetNode, graphSnapshot);
 
-    // [FIX] react-hooks/set-state-in-effect: 모달이 열릴 때 탭 리셋 로직을 상태 초기화 시점이나 Key 변경으로 처리 권장
-    // 여기서는 간단히 useEffect 없이 탭 상태가 항상 'analysis'로 시작하도록 보장하기 위해 
-    // Tabs 에 key를 주어 isOpen이 true가 될 때마다 리셋되도록 합니다.
+    // Loading simulation effect
+    useEffect(() => {
+        if (!isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setIsInternalLoading((prev) => (prev ? prev : true));
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLoadingStep((prev) => (prev !== 1 ? 1 : prev));
+            return;
+        }
+
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsInternalLoading(true);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setLoadingStep(1);
+
+        const step2Timer = setTimeout(() => setLoadingStep(2), 700);
+        const step3Timer = setTimeout(() => setLoadingStep(3), 1400);
+        const finishTimer = setTimeout(() => setIsInternalLoading(false), 2200);
+
+        return () => {
+            clearTimeout(step2Timer);
+            clearTimeout(step3Timer);
+            clearTimeout(finishTimer);
+        };
+    }, [isOpen]);
 
     // [FIX] early return 제거: 분석 데이터가 없더라도 모달 프레임은 열려야 함 (댓글 등 이용 가능)
-    // if (!isOpen || !data) return null;
     if (!isOpen) return null;
 
     return (
@@ -87,6 +110,62 @@ export function RelationshipDeepAnalysisModal({
                     "flex flex-col",
                 )}
             >
+                {/* Loading Overlay */}
+                <AnimatePresence>
+                    {isInternalLoading && (
+                        <motion.div
+                            initial={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.4 }}
+                            className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-[#FDFBF7] backdrop-blur-md"
+                        >
+                            <motion.div
+                                animate={{
+                                    scale: [1, 1.05, 1],
+                                    rotate: [0, 10, -10, 0],
+                                }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                className="mb-6 p-5 bg-white rounded-3xl shadow-xl border border-mocha-100/50"
+                            >
+                                <Network className="w-12 h-12 text-mocha-500" />
+                            </motion.div>
+
+                            <div className="text-center space-y-3">
+                                <h3 className="text-xl font-bold text-espresso-900 font-serif">
+                                    관계를 심층 분석하고 있습니다
+                                </h3>
+                                <div className="h-6 overflow-hidden">
+                                    <AnimatePresence mode="wait">
+                                        <motion.p
+                                            key={loadingStep}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            className="text-mocha-500 font-medium font-serif italic"
+                                        >
+                                            {loadingStep === 1 && "캐릭터 간의 서사 데이터를 수집 중..."}
+                                            {loadingStep === 2 && "감정 궤적과 주요 사건을 재구성 중..."}
+                                            {loadingStep === 3 && "심층 인사이트를 도출하는 중..."}
+                                        </motion.p>
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+
+                            {/* Minimal progress bar */}
+                            <div className="mt-8 w-48 h-1 bg-mocha-100 rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full bg-mocha-500"
+                                    initial={{ width: "0%" }}
+                                    animate={{ 
+                                        width: loadingStep === 1 ? "30%" : loadingStep === 2 ? "65%" : "100%" 
+                                    }}
+                                    transition={{ duration: 0.8 }}
+                                />
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
                     {data && (
                         <MoodBackground
@@ -108,9 +187,6 @@ export function RelationshipDeepAnalysisModal({
                                 캐릭터 간의 심층 관계 분석 및 감정 변화를 시각화합니다.
                             </DialogDescription>
                         </div>
-                        <DialogDescription className="sr-only">
-                            {sourceNode.name}와 {targetNode.name}의 상세 관계 분석 및 토론 모달입니다.
-                        </DialogDescription>
                         <Separator orientation="vertical" className="h-4 bg-espresso-200" />
                         <div className="flex items-center gap-2 text-sm text-espresso-600">
                             <span className="font-semibold">{sourceNode.name}</span>
@@ -151,8 +227,6 @@ export function RelationshipDeepAnalysisModal({
                     onValueChange={(v) => setActiveTab(v as "analysis" | "comments")}
                     className="flex-1 flex flex-col min-h-0 relative z-10"
                 >
-                    {/* [FIX] 데이터가 없을 경우 기본 탭 조정 로직 (Optional: 데이터가 없으면 댓글 탭으로 유도 가능) */}
-                    {/* Tab List */}
                     <div className="px-6 pt-2 border-b border-black/5 bg-white/20 backdrop-blur-sm">
                         <TabsList className="bg-transparent gap-6 p-0 h-auto">
                             <TabsTrigger
@@ -172,7 +246,6 @@ export function RelationshipDeepAnalysisModal({
                         </TabsList>
                     </div>
 
-                    {/* Analysis Content */}
                     <TabsContent
                         value="analysis"
                         className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden"
@@ -180,28 +253,22 @@ export function RelationshipDeepAnalysisModal({
                         {data ? (
                             <ScrollArea className="h-full w-full">
                                 <div className="p-0 pb-20">
-                                    {/* Hero Section */}
                                     <DeepAnalysisHero
                                         sourceCharacter={data.sourceCharacter}
                                         targetCharacter={data.targetCharacter}
                                         asymmetricStrength={data.asymmetricStrength}
-                                        relationshipTypes={data.relationshipTypes}
                                         description={data.description}
                                         since={data.since}
                                         onClose={onClose}
                                         className="mb-8"
                                     />
 
-                                    {/* Dashboard Grid */}
                                     <div className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-                                        {/* Left Column: Timeline & Scenes (8 cols) */}
                                         <div className="lg:col-span-8 flex flex-col gap-6">
-                                            {/* Warning Banner */}
                                             {data.warnings && data.warnings.length > 0 && (
                                                 <RelationshipWarningBanner warnings={data.warnings} />
                                             )}
 
-                                            {/* Timeline Graph */}
                                             <motion.div
                                                 initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
@@ -223,7 +290,6 @@ export function RelationshipDeepAnalysisModal({
                                             </motion.div>
                                         </div>
 
-                                        {/* Right Column: Insights & Shared Scenes (4 cols) */}
                                         <div className="lg:col-span-4 flex flex-col gap-6">
                                             <InsightsPanel
                                                 insights={data.insights}
@@ -252,7 +318,6 @@ export function RelationshipDeepAnalysisModal({
                         )}
                     </TabsContent>
 
-                    {/* Comments Content */}
                     <TabsContent
                         value="comments"
                         className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden bg-white/50"

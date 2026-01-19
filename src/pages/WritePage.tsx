@@ -52,6 +52,7 @@ import {
   Filter,
   Pencil,
   Info,
+  Upload,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -126,10 +127,7 @@ const itemVariants = {
   },
 };
 
-function BatchPublishView({
-  drafts,
-  onComplete,
-}: BatchPublishViewProps) {
+function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
   const navigate = useNavigate();
   const publishMutation = usePublish();
   const updateDraftMutation = useUpdateDraft();
@@ -613,6 +611,19 @@ interface SinglePublishViewProps {
 function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
   const navigate = useNavigate();
 
+  // [IMAGE UPLOAD] Handle local file to Base64 conversion
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setCoverUrl(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
   // [FIX] Render phase reset to avoid useEffect cascading
   const [prevDraftId, setPrevDraftId] = useState(draft?.id);
   const [coverUrl, setCoverUrl] = useState(draft?.workCoverUrl || "");
@@ -627,7 +638,8 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
   });
   const [synopsis, setSynopsis] = useState(() => {
     if (draft?.workSynopsis) return draft.workSynopsis;
-    if (draft?.content) return draft.content.replace(/<[^>]*>/g, "").slice(0, 500);
+    if (draft?.content)
+      return draft.content.replace(/<[^>]*>/g, "").slice(0, 500);
     return "";
   });
 
@@ -734,17 +746,42 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
             )}
           </div>
 
-          {/* 표지 URL 입력 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              표지 URL
-            </label>
+          {/* 표지 URL 입력 & 업로드 */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-foreground">
+                표지 이미지
+              </label>
+              <div className="relative">
+                <input
+                  type="file"
+                  id="cover-upload"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-2 border-mocha-200 text-mocha-600 hover:bg-mocha-50"
+                  onClick={() =>
+                    document.getElementById("cover-upload")?.click()
+                  }
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  파일 업로드
+                </Button>
+              </div>
+            </div>
             <Input
               value={coverUrl}
               onChange={(e) => setCoverUrl(e.target.value)}
-              placeholder="https://example.com/cover.jpg"
-              className="rounded-lg"
+              placeholder="직접 URL 입력 또는 파일 업로드"
+              className="rounded-lg text-xs font-mono"
             />
+            <p className="text-[10px] text-muted-foreground pl-1">
+              * Base64 이미지를 직접 붙여넣거나 파일을 업로드할 수 있습니다.
+            </p>
           </div>
         </div>
 
@@ -1023,16 +1060,13 @@ export const WritePage = () => {
   const { openAuthModal } = useAuthModalStore();
 
   // 단일 Draft 조회
-  const {
-    data: singleDraft,
-    isLoading: isSingleDraftLoading,
-  } = useDraft(isAuthenticated && !isBatchMode ? draftId : null);
+  const { data: singleDraft, isLoading: isSingleDraftLoading } = useDraft(
+    isAuthenticated && !isBatchMode ? draftId : null,
+  );
 
   // 다중 Draft 조회
-  const {
-    data: multipleDrafts,
-    isLoading: isMultipleDraftsLoading,
-  } = useDrafts(isAuthenticated && isBatchMode ? draftIds : []);
+  const { data: multipleDrafts, isLoading: isMultipleDraftsLoading } =
+    useDrafts(isAuthenticated && isBatchMode ? draftIds : []);
 
   // 1. 공통 데이터 추출 (작품 정보) - Hook 규칙 준수를 위해 상단 이동
   const draftForWork = useMemo(() => {

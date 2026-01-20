@@ -51,7 +51,7 @@ export const RankingItem = memo(
               {work.title}
             </p>
             <p className="text-xs text-mocha-500 dark:text-zinc-400 truncate">
-              {work.authorNickname || work.author?.nickname || "작가"}
+              {work.author?.nickname || work.authorNickname || "작가"}
             </p>
           </div>
 

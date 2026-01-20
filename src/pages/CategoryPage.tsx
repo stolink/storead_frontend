@@ -21,6 +21,8 @@ import {
   Star,
   MessageSquare,
 } from "lucide-react";
+import { motion } from "framer-motion";
+import { CategoryNavbar } from "@/components/layout/CategoryNavbar";
 import type { Work } from "@/types";
 
 // 장르 매핑 및 서브장르 정의
@@ -93,13 +95,11 @@ export const CategoryPage = () => {
   const [accessTypeFilter, setAccessTypeFilter] = useState<string>(
     searchParams.get("access") || "",
   ); // '' or 'FREE', 'PAID'
-  const [sortBy, setSortBy] = useState<"latest" | "popular" | "rating">(
-    () => {
-      const sort = searchParams.get("sort");
-      if (sort === "popular" || sort === "rating") return sort;
-      return "latest";
-    }
-  );
+  const [sortBy, setSortBy] = useState<"latest" | "popular" | "rating">(() => {
+    const sort = searchParams.get("sort");
+    if (sort === "popular" || sort === "rating") return sort;
+    return "latest";
+  });
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
@@ -152,7 +152,7 @@ export const CategoryPage = () => {
     if (statusFilter) params.set("status", statusFilter);
     if (accessTypeFilter) params.set("access", accessTypeFilter);
     if (sortBy !== "latest") params.set("sort", sortBy);
-    
+
     // 검색어 파라미터 유지
     const currentSearch = searchParams.get("search");
     if (currentSearch) {
@@ -181,100 +181,115 @@ export const CategoryPage = () => {
   const title = currentGroup?.label || genreId;
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 pb-20">
-      {/* 헤더 & 탭 - 통합 Sticky로 변경 */}
-      <div className="glass-warm border-b border-mocha-100/50 sticky top-0 z-20 backdrop-blur-md">
-        <div className="container mx-auto px-6 py-6 transition-all duration-300">
-          <div className="flex justify-between items-end mb-6">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 pb-20 font-sans text-ink dark:text-zinc-100">
+      <CategoryNavbar className="mb-0" />
+
+      {/* Header Section - Espresso Theme (Warm Dark) */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden bg-espresso-900 shadow-2xl mb-8"
+      >
+        {/* Decorative Grid / Texture */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#A4776412_1px,transparent_1px),linear-gradient(to_bottom,#A4776412_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-mocha-400/20 to-transparent pointer-events-none" />
+
+        <div className="relative z-10 container mx-auto px-6 py-12 md:py-16">
+          <div className="flex flex-col gap-6">
             <div>
-              <h1 className="text-4xl font-heading font-black text-zinc-900 dark:text-zinc-100 tracking-tight leading-none mb-2">
+              <motion.h1
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-4xl md:text-5xl font-heading font-black mb-3 tracking-tight text-white"
+              >
                 {title}
-              </h1>
-              <p className="text-zinc-500 dark:text-zinc-400 font-serif italic">
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-mocha-100/80 font-medium text-lg max-w-xl"
+              >
                 엄선된 {title} 작품을 만나보세요.
-              </p>
+              </motion.p>
             </div>
 
-            {/* Follow Genre 버튼 - 백엔드 API 구현 후 활성화
-                        <Button
-                            variant="outline"
-                            className="rounded-full border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-100 dark:hover:text-zinc-900 transition-all font-bold"
-                        >
-                            + Follow Genre
-                        </Button>
-                        */}
+            {/* 서브 장르 탭 */}
+            {currentGroup && (
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pt-4">
+                {currentGroup.tabs.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setSelectedGenreValue(tab.value)}
+                    className={`px-5 py-2 rounded-xl text-sm font-bold transition-all duration-300 whitespace-nowrap ${
+                      selectedGenreValue === tab.value
+                        ? "bg-white text-espresso-900 shadow-lg scale-105"
+                        : "bg-white/10 text-mocha-100/60 hover:bg-white/20 hover:text-white"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-
-          {/* 서브 장르 탭 */}
-          {currentGroup && (
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-              {currentGroup.tabs.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setSelectedGenreValue(tab.value)}
-                  className={`px-5 py-2 rounded-full text-sm font-bold tracking-wide transition-all duration-300 ${
-                    selectedGenreValue === tab.value
-                      ? "bg-mocha-500 text-white shadow-lg scale-105"
-                      : "glass hover:bg-mocha-50 hover:text-mocha-900 text-zinc-500"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
+      </motion.div>
 
-        {/* 필터 바 - 헤더 내부에 포함되어 있음 */}
-        <div className="container mx-auto px-6 py-3 flex items-center justify-between border-t border-mocha-100/30 bg-white/30 backdrop-blur-sm">
-          <div className="flex gap-2 items-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 mr-2">
-              필터
-            </span>
-            <FilterBadge
-              label="전체"
-              isActive={statusFilter === ""}
-              onClick={() => setStatusFilter("")}
-            />
-            <FilterBadge
-              label="연재중"
-              isActive={statusFilter === "ONGOING"}
-              onClick={() => setStatusFilter("ONGOING")}
-            />
-            <FilterBadge
-              label="완결"
-              isActive={statusFilter === "COMPLETED"}
-              onClick={() => setStatusFilter("COMPLETED")}
-            />
+      {/* 필터 바 */}
+      <div className="container mx-auto px-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-white dark:bg-zinc-800/50 rounded-2xl border border-mocha-100 dark:border-zinc-800/50 shadow-sm backdrop-blur-sm">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex gap-2 items-center">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 mr-2">
+                필터
+              </span>
+              <FilterBadge
+                label="전체"
+                isActive={statusFilter === ""}
+                onClick={() => setStatusFilter("")}
+              />
+              <FilterBadge
+                label="연재중"
+                isActive={statusFilter === "ONGOING"}
+                onClick={() => setStatusFilter("ONGOING")}
+              />
+              <FilterBadge
+                label="완결"
+                isActive={statusFilter === "COMPLETED"}
+                onClick={() => setStatusFilter("COMPLETED")}
+              />
+            </div>
+
+            <div className="flex gap-2 items-center md:border-l md:border-mocha-200/30 md:pl-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 mr-2">
+                가격
+              </span>
+              <FilterBadge
+                label="전체"
+                isActive={accessTypeFilter === ""}
+                onClick={() => setAccessTypeFilter("")}
+              />
+              <FilterBadge
+                label="무료"
+                isActive={accessTypeFilter === "FREE"}
+                onClick={() => setAccessTypeFilter("FREE")}
+              />
+              <FilterBadge
+                label="유료"
+                isActive={accessTypeFilter === "PAID"}
+                onClick={() => setAccessTypeFilter("PAID")}
+              />
+            </div>
           </div>
 
-          <div className="flex gap-2 items-center ml-4 border-l border-mocha-100/30 pl-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 mr-2">
-              가격
-            </span>
-            <FilterBadge
-              label="전체"
-              isActive={accessTypeFilter === ""}
-              onClick={() => setAccessTypeFilter("")}
-            />
-            <FilterBadge
-              label="무료"
-              isActive={accessTypeFilter === "FREE"}
-              onClick={() => setAccessTypeFilter("FREE")}
-            />
-            <FilterBadge
-              label="유료"
-              isActive={accessTypeFilter === "PAID"}
-              onClick={() => setAccessTypeFilter("PAID")}
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 justify-end">
             {/* 정렬 드롭다운 - 클릭 방식 */}
             <div className="relative" ref={sortDropdownRef}>
               <button
                 onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-                className="flex items-center text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:text-mocha-600 transition-colors uppercase tracking-wide"
+                className="flex items-center text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:text-mocha-600 transition-colors uppercase tracking-wide px-3 py-1.5 rounded-lg hover:bg-mocha-50 dark:hover:bg-white/5"
               >
                 {sortBy === "latest"
                   ? "최신순"
@@ -319,16 +334,16 @@ export const CategoryPage = () => {
             </div>
 
             {/* 뷰 모드 토글 */}
-            <div className="flex bg-white dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700">
+            <div className="flex bg-zinc-100 dark:bg-zinc-900 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-zinc-100 dark:bg-zinc-700 text-zinc-900 dark:text-white" : "text-zinc-400 hover:text-zinc-600"}`}
+                className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-zinc-100 dark:bg-zinc-700 text-zinc-900 dark:text-white" : "text-zinc-400 hover:text-zinc-600"}`}
+                className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
               >
                 <ListIcon className="w-4 h-4" />
               </button>

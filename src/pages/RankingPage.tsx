@@ -10,17 +10,12 @@
  */
 import { useState } from "react";
 import { useRankings } from "@/hooks/useDiscovery";
-import {
-  Loader2,
-  BarChart3,
-  Crown,
-  Star,
-  Heart,
-} from "lucide-react";
+import { Loader2, BarChart3, Crown, Star, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import type { Work } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
+import { CategoryNavbar } from "@/components/layout/CategoryNavbar";
 
 const PERIOD_TABS = [
   { label: "실시간", value: "REALTIME" },
@@ -53,6 +48,7 @@ export const RankingPage = () => {
 
   return (
     <div className="w-full space-y-12 pb-20 font-sans text-ink dark:text-zinc-100">
+      <CategoryNavbar className="mb-8" />
       {/* Header Section - Espresso Theme (Warm Dark) */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

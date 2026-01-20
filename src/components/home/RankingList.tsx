@@ -3,7 +3,8 @@
  * 순위 변동 시 롤링 애니메이션 적용
  * 30초마다 자동 갱신
  */
-import { useMemo, useLayoutEffect, useRef, useCallback, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import type { Work } from "@/types";
@@ -46,74 +47,9 @@ export const RankingList = ({
     [navigate],
   );
 
+  // Previous works for rank change comparison
   const [prevWorks, setPrevWorks] = useState<Work[]>([]);
-  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const prevRectsRef = useRef<Map<string, DOMRect>>(new Map());
-  const animationFrameIds = useRef<number[]>([]);
-  const timerIds = useRef<number[]>([]);
 
-  // 2. FLIP Animation using useLayoutEffect
-  // DOM 업데이트 후 브라우저 페인팅 전에 실행되어 깜빡임 방지
-  useLayoutEffect(() => {
-    const currentRects = new Map<string, DOMRect>();
-
-    // Measure new positions
-    sortedWorks.forEach((work) => {
-      const el = itemRefs.current.get(work.id);
-      if (el) {
-        currentRects.set(work.id, el.getBoundingClientRect());
-      }
-    });
-
-    // Calculate and apply transforms
-    sortedWorks.forEach((work) => {
-      const el = itemRefs.current.get(work.id);
-      const prevRect = prevRectsRef.current.get(work.id);
-
-      if (el && prevRect) {
-        const newRect = currentRects.get(work.id);
-        if (newRect) {
-          const dy = prevRect.top - newRect.top;
-
-          // 위치가 변했다면 Invert (이전 위치로 강제 이동 및 트랜지션 제거)
-          if (dy !== 0) {
-            el.style.transform = `translateY(${dy}px)`;
-            el.style.transition = "none";
-            el.style.willChange = "transform"; // 최적화: 애니메이션 중에만 will-change 적용
-
-            // Play (다음 프레임에 원래 위치로 이동 및 트랜지션 복구)
-            const id1 = requestAnimationFrame(() => {
-              const id2 = requestAnimationFrame(() => {
-                el.style.transform = "";
-                el.style.transition = ""; // CSS 클래스(duration-600 ease-organic) 적용
-              });
-              animationFrameIds.current.push(id2);
-            });
-            animationFrameIds.current.push(id1);
-
-            // Cleanup will-change after animation
-            // duration(600ms)보다 약간 여유있게 설정
-            const timerId = window.setTimeout(() => {
-              if (el) el.style.willChange = "auto";
-            }, 700);
-            timerIds.current.push(timerId);
-          }
-        }
-      }
-    });
-
-    // Save current rects and works for next comparison
-    prevRectsRef.current = currentRects;
-
-    return () => {
-      animationFrameIds.current.forEach(cancelAnimationFrame);
-      animationFrameIds.current = [];
-      timerIds.current.forEach(clearTimeout);
-      timerIds.current = [];
-    };
-  }, [sortedWorks]);
-
-  // Separate effect to sync state to avoid cascading in useLayoutEffect
   useEffect(() => {
     setPrevWorks(sortedWorks);
   }, [sortedWorks]);
@@ -177,19 +113,28 @@ export const RankingList = ({
 
       {/* Ranking Items */}
       <div className="space-y-2 relative px-6">
-        {sortedWorks.map((work, index) => (
-          <RankingItem
-            key={work.id}
-            ref={(el) => {
-              if (el) itemRefs.current.set(work.id, el);
-              else itemRefs.current.delete(work.id);
-            }}
-            work={work}
-            index={index}
-            rankChange={getRankChangeIcon(work.id, index)}
-            onClick={handleItemClick}
-          />
-        ))}
+        <AnimatePresence mode="popLayout">
+          {sortedWorks.map((work, index) => (
+            <motion.div
+              layout
+              key={work.id}
+              initial={{ opacity: 0, scale: 0.9, x: -10 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.9, x: 10 }}
+              transition={{
+                layout: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 },
+              }}
+            >
+              <RankingItem
+                work={work}
+                index={index}
+                rankChange={getRankChangeIcon(work.id, index)}
+                onClick={handleItemClick}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* View Full Ranking Button */}

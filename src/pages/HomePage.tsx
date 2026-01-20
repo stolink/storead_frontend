@@ -3,10 +3,11 @@
  * 추천 캐러셀 + 개인화 추천 섹션 + 작품 그리드 + 실시간 순위
  */
 import { useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { FeaturedCarousel } from "@/components/home/FeaturedCarousel";
 import { ContentGrid } from "@/components/home/ContentGrid";
 import { TrendKeywordBar } from "@/components/home/TrendKeywordBar";
+import { CategoryNavbar } from "@/components/layout/CategoryNavbar";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -170,17 +171,7 @@ export const HomePage = () => {
       ) : (
         <>
           {/* 카테고리 네비게이션 (검색 중이 아닐 때만) */}
-          {!isSearching && (
-            <div className="container mx-auto px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 mb-4 overflow-x-auto scrollbar-hide">
-              <div className="flex gap-4">
-                <CategoryLink label="홈" path="/" isActive={true} />
-                <CategoryLink label="판타지" path="/category/FANTASY" />
-                <CategoryLink label="로맨스" path="/category/ROMANCE" />
-                <CategoryLink label="무협" path="/category/MARTIAL_ARTS" />
-                <CategoryLink label="랭킹" path="/ranking" />
-              </div>
-            </div>
-          )}
+          {!isSearching && <CategoryNavbar />}
           {/* 상단 히어로 섹션 (캐러셀 + 실시간 순위) */}
           {!isSearching && works && works.length > 0 && (
             <>
@@ -307,32 +298,5 @@ export const HomePage = () => {
     </div>
   );
 };
-
-// 카테고리 링크 컴포넌트
-// 카테고리 링크 컴포넌트
-function CategoryLink({
-  label,
-  path,
-  isActive,
-}: {
-  label: string;
-  path: string;
-  isActive?: boolean;
-}) {
-  return (
-    <Link
-      to={path}
-      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-        isActive
-          ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" // 홈은 활성 상태 스타일 (데모용)
-          : path === window.location.pathname // 실제 활성 상태 체크는 useLocation 필요하지만 여기선 간단히
-            ? "bg-zinc-900 text-white"
-            : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
-      }`}
-    >
-      {label}
-    </Link>
-  );
-}
 
 export default HomePage;

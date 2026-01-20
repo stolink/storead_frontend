@@ -24,11 +24,15 @@ export const RankingItem = memo(
           <span
             className={`
                 w-7 h-7 flex items-center justify-center rounded-full font-bold text-sm flex-shrink-0
-                font-heading transition-colors duration-300
+                font-heading transition-colors duration-300 shadow-sm
                 ${
-                  index < 3
-                    ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm"
-                    : "bg-mocha-100 dark:bg-zinc-600 text-mocha-600 dark:text-zinc-300"
+                  index === 0
+                    ? "bg-gradient-to-br from-yellow-300 via-amber-400 to-amber-500 text-white shadow-amber-500/30"
+                    : index === 1
+                      ? "bg-gradient-to-br from-slate-300 via-slate-400 to-slate-500 text-white shadow-slate-500/30"
+                      : index === 2
+                        ? "bg-gradient-to-br from-orange-300 via-orange-400 to-orange-600 text-white shadow-orange-500/30"
+                        : "bg-mocha-100 dark:bg-zinc-800 text-mocha-600 dark:text-zinc-400"
                 }
             `}
           >

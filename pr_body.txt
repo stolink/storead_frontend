@@ -1,9 +1,0 @@
-## Changes
-- **Global Category Navigation**: Implemented `CategoryNavbar` for consistent navigation across Home, Ranking, and Category pages.
-- **Premium Design Consistency**: Redesigned `CategoryPage` with the 'Espresso' theme (dark textured header) to match `RankingPage`.
-- **Ranking UI Fixes**: Fixed `RankingItem` syntax error and optimized `RankingList` animations with `framer-motion`.
-- **Refactoring**: Standardized page layouts to use shared navigation components.
-
-## Verification
-- **Build Pass**: `npm run build` completed successfully.
-- **Visual Check**: Verified unified design and navigation link functionality.

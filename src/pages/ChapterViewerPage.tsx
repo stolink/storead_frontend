@@ -718,7 +718,7 @@ export const ChapterViewerPage = () => {
                 <div
                   ref={bookModeContentRef}
                   className={cn(
-                    "flex-1 px-8 md:px-16 py-8 font-serif overflow-hidden relative z-10 pointer-events-none",
+                    "flex-1 px-8 md:px-16 py-8 font-serif overflow-hidden relative z-10",
                     styles.text,
                   )}
                 >

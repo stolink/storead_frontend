@@ -135,8 +135,17 @@ test.describe("탐색 (Discovery)", () => {
         await searchField.fill("판타지");
         await searchField.press("Enter");
 
-        // 검색 결과 또는 URL 변경 확인
-        await page.waitForTimeout(1000);
+        // 검색 결과 또는 URL 변경 확인 (waitForTimeout 대신 안정적인 대기)
+        await Promise.race([
+            // URL에 검색어가 포함될 때까지 대기
+            page.waitForURL(/search|query|q=/, { timeout: TIMEOUTS.API_RESPONSE }).catch(() => { }),
+            // 또는 검색 결과 영역이 표시될 때까지 대기
+            page.locator("[class*='result'], [class*='search'], main").first().waitFor({
+                state: "visible",
+                timeout: TIMEOUTS.API_RESPONSE
+            }).catch(() => { }),
+        ]);
+
         // 결과가 표시되거나 URL에 검색어가 포함되어야 함
     });
 

@@ -346,12 +346,13 @@ export const ChapterViewerPage = () => {
   // CSS Column으로 브라우저가 자동 분할하므로, 이중 개행 분할 방식은 더 이상 사용하지 않음
   const isLastPage = currentPage >= calculatedTotalPages - 1;
 
-  // 책 모드 콘텐츠 렌더 후 실제 페이지 수 계산
+  // 책 모드 콘텐츠 렌더 후 실제 페이지 수 계산 (ResizeObserver 사용으로 안정성 향상)
   useEffect(() => {
     if (viewMode === 'page' && bookModeContentRef.current) {
-      // 렌더링 완료 후 계산을 위해 약간의 지연
-      const timeoutId = setTimeout(() => {
-        const container = bookModeContentRef.current;
+      const container = bookModeContentRef.current;
+
+      // 페이지 수 계산 함수
+      const calculatePages = () => {
         if (container) {
           const scrollWidth = container.scrollWidth;
           const clientWidth = container.clientWidth;
@@ -359,8 +360,20 @@ export const ChapterViewerPage = () => {
           const pages = Math.max(1, Math.ceil(scrollWidth / clientWidth));
           setCalculatedTotalPages(pages);
         }
-      }, 100);
-      return () => clearTimeout(timeoutId);
+      };
+
+      // ResizeObserver로 레이아웃 변경 감지
+      const resizeObserver = new ResizeObserver(() => {
+        // 레이아웃 안정화를 위해 requestAnimationFrame 사용
+        requestAnimationFrame(calculatePages);
+      });
+
+      resizeObserver.observe(container);
+
+      // 초기 계산 (콘텐츠 로드 직후)
+      requestAnimationFrame(calculatePages);
+
+      return () => resizeObserver.disconnect();
     }
   }, [viewMode, cleanContent, fontSize, lineHeight]);
 

@@ -162,9 +162,8 @@ test.describe("뷰어 (Viewer)", () => {
         const toggledTheme = await html.getAttribute("data-theme");
 
         // 변경 여부만 확인 (실제 테마 이름은 구현에 따라 다름)
-        expect(
-            initialClass !== newClass || initialTheme !== toggledTheme || true
-        ).toBeTruthy();
+        // 클래스 또는 data-theme 중 하나가 변경되었어야 함
+        expect(initialClass !== newClass || initialTheme !== toggledTheme).toBeTruthy();
     });
 
     /**

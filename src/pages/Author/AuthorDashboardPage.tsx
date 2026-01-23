@@ -15,6 +15,7 @@ import { navigateToExternalEditor } from "@/utils/navigation";
 import { useMyWorks } from "@/hooks/useExportChapter";
 import { useDeleteWork, useUpdateWork } from "@/hooks/useWorks";
 import { useUpload } from "@/hooks/useUpload";
+import { UPLOAD_TYPES } from "@/constants/upload";
 import {
   ChevronLeft,
   BarChart3,
@@ -190,7 +191,7 @@ export const AuthorDashboardPage = () => {
   const handleCoverUpload = async (workId: string, file: File) => {
     try {
       // 1. 파일 업로드 (multipart/form-data)
-      const { url } = await upload.mutateAsync({ file, type: "cover" });
+      const { url } = await upload.mutateAsync({ file, type: UPLOAD_TYPES.COVER });
 
       // 2. 업로드된 URL로 작품 정보 업데이트
       // URL에 쿼리 파라미터를 붙여 브라우저 캐시 방지 (필요 시)

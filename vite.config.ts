@@ -26,11 +26,21 @@ export default defineConfig(({ mode: _mode }) => ({
     open: true,
     proxy: {
       "/api": {
-        target: "http://localhost:8081", // storead 백엔드
-        changeOrigin: true, // 쿠키 도메인 일치를 위해 true로 변경
+        target: "http://localhost:8081",
+        changeOrigin: true,
         secure: false,
-        cookieDomainRewrite: "localhost", // 쿠키 도메인 재작성
-        cookiePathRewrite: "/", // 쿠키 경로 재작성
+        cookieDomainRewrite: "localhost",
+        cookiePathRewrite: "/",
+      },
+      "/covers": {
+        target: "http://localhost:8081",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/uploads": {
+        target: "http://localhost:8081",
+        changeOrigin: true,
+        secure: false,
       },
     },
   },

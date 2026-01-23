@@ -63,7 +63,9 @@ export function ChapterSummaryCard({ draft, className, onPreviewGraph }: Chapter
                                     📚 <strong>{sectionCount}개</strong>의 섹션이 병합됩니다
                                 </span>
                             ) : (
-                                <span>1개의 섹션이 게시됩니다</span>
+                                <span>
+                                    📄 <strong>{sectionCount}개</strong>의 섹션이 게시됩니다
+                                </span>
                             )}
                         </div>
                         {isMerged && (

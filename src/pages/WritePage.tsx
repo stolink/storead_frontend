@@ -210,12 +210,58 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
     }
   };
 
-  // 전체 게시
+  // 전체 게시 (첫 작품 생성 시 Race Condition 방지)
   const handlePublishAll = async () => {
     const unpublished = drafts.filter(
       (d) => !publishedIds.has(d.id) && !errorMessages.has(d.id),
     );
-    for (const draft of unpublished) {
+
+    if (unpublished.length === 0) return;
+
+    // 첫 번째 Draft 배포 (Work 생성이 필요할 수 있음)
+    const firstDraft = unpublished[0];
+    setCurrentPublishingId(firstDraft.id);
+    setErrorMessages((prev) => {
+      const next = new Map(prev);
+      next.delete(firstDraft.id);
+      return next;
+    });
+
+    let isFirstWorkCreated = false;
+
+    try {
+      const result = await publishMutation.mutateAsync({
+        draftId: firstDraft.id,
+        title: firstDraft.title || firstDraft.workTitle || "제목 없음",
+        accessType,
+        price: accessType === "PAID" ? price : 0,
+      });
+      setPublishedIds((prev) => new Set([...prev, firstDraft.id]));
+      isFirstWorkCreated = result.workCreated;
+      if (result.workId) setLastWorkId(result.workId);
+    } catch (error: unknown) {
+      console.error("첫 번째 게시 실패:", firstDraft.id, error);
+      const err = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+      const msg =
+        err?.response?.data?.message || err?.message || "알 수 없는 에러";
+      setErrorMessages((prev) => new Map(prev).set(firstDraft.id, msg));
+      setCurrentPublishingId(null);
+      return; // 첫 번째 실패 시 중단
+    }
+
+    setCurrentPublishingId(null);
+
+    // 첫 번째 배포가 Work 생성을 포함한 경우,
+    // 백엔드 트랜잭션 커밋 완료를 위한 대기 시간 추가
+    if (isFirstWorkCreated) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    // 나머지 Draft들은 순차 처리
+    for (const draft of unpublished.slice(1)) {
       await handlePublishOne(draft);
     }
   };
@@ -317,21 +363,19 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
               <div className="flex bg-mocha-900/5 p-1 rounded-xl">
                 <button
                   onClick={() => setAccessType("FREE")}
-                  className={`px-5 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
-                    accessType === "FREE"
-                      ? "bg-white text-emerald-600 shadow-md transform scale-105"
-                      : "text-mocha-400 hover:text-mocha-600"
-                  }`}
+                  className={`px-5 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${accessType === "FREE"
+                    ? "bg-white text-emerald-600 shadow-md transform scale-105"
+                    : "text-mocha-400 hover:text-mocha-600"
+                    }`}
                 >
                   무료
                 </button>
                 <button
                   onClick={() => setAccessType("PAID")}
-                  className={`px-5 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
-                    accessType === "PAID"
-                      ? "bg-white text-mocha-600 shadow-md transform scale-105"
-                      : "text-mocha-400 hover:text-mocha-600"
-                  }`}
+                  className={`px-5 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${accessType === "PAID"
+                    ? "bg-white text-mocha-600 shadow-md transform scale-105"
+                    : "text-mocha-400 hover:text-mocha-600"
+                    }`}
                 >
                   유료
                 </button>
@@ -407,15 +451,14 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
                   variants={itemVariants}
                   whileHover="hover"
                   key={draft.id}
-                  className={`flex flex-col p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group ${
-                    isPublished
-                      ? "bg-emerald-50/80 border-emerald-200/60"
-                      : errorMessage
-                        ? "bg-red-50/80 border-red-200/60 shadow-red-100"
-                        : isPublishing
-                          ? "bg-white border-mocha-400 ring-2 ring-mocha-100 shadow-lg"
-                          : "bg-white/80 border-white/40 hover:border-mocha-300 hover:bg-white hover:shadow-lg hover:shadow-mocha-900/5 backdrop-blur-sm"
-                  }`}
+                  className={`flex flex-col p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group ${isPublished
+                    ? "bg-emerald-50/80 border-emerald-200/60"
+                    : errorMessage
+                      ? "bg-red-50/80 border-red-200/60 shadow-red-100"
+                      : isPublishing
+                        ? "bg-white border-mocha-400 ring-2 ring-mocha-100 shadow-lg"
+                        : "bg-white/80 border-white/40 hover:border-mocha-300 hover:bg-white hover:shadow-lg hover:shadow-mocha-900/5 backdrop-blur-sm"
+                    }`}
                 >
                   {isPublishing && (
                     <motion.div
@@ -432,13 +475,12 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
                   <div className="flex items-center gap-5 relative z-10">
                     {/* 순서 번호 */}
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm flex-shrink-0 transition-colors duration-300 ${
-                        isPublished
-                          ? "bg-emerald-500 text-white shadow-emerald-200"
-                          : errorMessage
-                            ? "bg-red-500 text-white shadow-red-200"
-                            : "bg-mocha-100 text-mocha-600 group-hover:bg-mocha-500 group-hover:text-white"
-                      }`}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm flex-shrink-0 transition-colors duration-300 ${isPublished
+                        ? "bg-emerald-500 text-white shadow-emerald-200"
+                        : errorMessage
+                          ? "bg-red-500 text-white shadow-red-200"
+                          : "bg-mocha-100 text-mocha-600 group-hover:bg-mocha-500 group-hover:text-white"
+                        }`}
                     >
                       {isPublished ? (
                         <motion.div
@@ -606,9 +648,16 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
 interface SinglePublishViewProps {
   draft: Draft;
   draftId: string;
+  allDrafts?: Draft[];
+  isBatchMode?: boolean;
 }
 
-function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
+function SinglePublishView({
+  draft,
+  draftId,
+  allDrafts = [],
+  isBatchMode = false,
+}: SinglePublishViewProps) {
   const navigate = useNavigate();
 
   // [IMAGE UPLOAD] Handle local file to Base64 conversion
@@ -674,19 +723,58 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
 
   // 게시하기 핸들러
   const handlePublish = async () => {
-    try {
-      const result = await publishMutation.mutateAsync({
-        draftId,
-        title: draft?.title || draft?.workTitle || "제목 없음",
-        accessType,
-        price: accessType === "PAID" ? price : 0,
-      });
-      // 1.5초 후 이동
-      setTimeout(() => {
-        navigate(`/chapters/${result.chapterId}`);
-      }, 1500);
-    } catch (error) {
-      console.error("게시 실패:", error);
+    if (isBatchMode && allDrafts.length > 0) {
+      // === 다중 게시 모드 (첫 배포 시) ===
+      try {
+        // 첫 번째 Draft 배포 (Work 생성이 필요함)
+        const firstDraft = allDrafts[0];
+        const result = await publishMutation.mutateAsync({
+          draftId: firstDraft.id,
+          title: firstDraft.title || firstDraft.workTitle || "제목 없음",
+          accessType,
+          price: accessType === "PAID" ? price : 0,
+        });
+
+        const firstChapterId = result.chapterId;
+
+        // 첫 번째 배포가 Work 생성을 포함하므로, 백엔드 안정화를 위해 대기
+        if (result.workCreated) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
+        // 나머지 Draft들을 순차적으로 배포
+        for (const nextDraft of allDrafts.slice(1)) {
+          await publishMutation.mutateAsync({
+            draftId: nextDraft.id,
+            title: nextDraft.title || nextDraft.workTitle || "제목 없음",
+            accessType,
+            price: accessType === "PAID" ? price : 0,
+          });
+        }
+
+        // 모든 배포 완료 후 이동
+        setTimeout(() => {
+          navigate(`/chapters/${firstChapterId}`);
+        }, 1500);
+      } catch (error) {
+        console.error("일괄 게시 실패:", error);
+      }
+    } else {
+      // === 단일 게시 모드 ===
+      try {
+        const result = await publishMutation.mutateAsync({
+          draftId,
+          title: draft?.title || draft?.workTitle || "제목 없음",
+          accessType,
+          price: accessType === "PAID" ? price : 0,
+        });
+        // 1.5초 후 이동
+        setTimeout(() => {
+          navigate(`/chapters/${result.chapterId}`);
+        }, 1500);
+      } catch (error) {
+        console.error("게시 실패:", error);
+      }
     }
   };
 
@@ -883,21 +971,19 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
                 <div className="flex bg-mocha-900/5 p-1 rounded-xl">
                   <button
                     onClick={() => setAccessType("FREE")}
-                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
-                      accessType === "FREE"
-                        ? "bg-white text-emerald-600 shadow-sm transform scale-105"
-                        : "text-mocha-400 hover:text-mocha-600"
-                    }`}
+                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${accessType === "FREE"
+                      ? "bg-white text-emerald-600 shadow-sm transform scale-105"
+                      : "text-mocha-400 hover:text-mocha-600"
+                      }`}
                   >
                     무료
                   </button>
                   <button
                     onClick={() => setAccessType("PAID")}
-                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
-                      accessType === "PAID"
-                        ? "bg-white text-mocha-600 shadow-sm transform scale-105"
-                        : "text-mocha-400 hover:text-mocha-600"
-                    }`}
+                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${accessType === "PAID"
+                      ? "bg-white text-mocha-600 shadow-sm transform scale-105"
+                      : "text-mocha-400 hover:text-mocha-600"
+                      }`}
                   >
                     유료
                   </button>
@@ -1005,11 +1091,14 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
               }
             >
               {publishMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <div className="flex items-center gap-1.5 ">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>게시 중...</span>
+                </div>
               ) : (
                 <div className="flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4" />
-                  <span>게시하기</span>
+                  <span>{isBatchMode ? "전체 게시하기" : "게시하기"}</span>
                 </div>
               )}
             </Button>
@@ -1024,15 +1113,15 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
         characters={
           draft?.graphSnapshot
             ? (adaptGraphSnapshot(
-                draft.graphSnapshot as Parameters<typeof adaptGraphSnapshot>[0],
-              )?.characters ?? [])
+              draft.graphSnapshot as Parameters<typeof adaptGraphSnapshot>[0],
+            )?.characters ?? [])
             : []
         }
         links={
           draft?.graphSnapshot
             ? (adaptGraphSnapshot(
-                draft.graphSnapshot as Parameters<typeof adaptGraphSnapshot>[0],
-              )?.links ?? [])
+              draft.graphSnapshot as Parameters<typeof adaptGraphSnapshot>[0],
+            )?.links ?? [])
             : []
         }
         graphSnapshot={draft?.graphSnapshot as GraphSnapshotDTO | undefined}
@@ -1196,6 +1285,8 @@ export const WritePage = () => {
           <SinglePublishView
             draft={draftForWork}
             draftId={draftId || draftForWork.id}
+            allDrafts={allDrafts}
+            isBatchMode={isBatchMode}
           />
         )}
 

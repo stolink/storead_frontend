@@ -223,4 +223,17 @@ test.describe("뷰어 (Viewer)", () => {
             await expect(page).toHaveURL(/\/works\//);
         }
     });
+
+    /**
+     * TC-STR-WRK-001: 작품 메타 정보 조회
+     */
+    test("TC-STR-WRK-001: 작품 메타 정보 조회", async ({ page }) => {
+        test.skip(!workId, "테스트할 작품을 찾지 못함");
+        await page.goto(ROUTES.WORK_DETAIL(workId));
+        await page.waitForLoadState("networkidle");
+
+        // 작품 통계 또는 메타 정보 확인
+        const stats = page.locator("[class*='stats'], [class*='meta']");
+        await expect(stats.first()).toBeVisible();
+    });
 });

@@ -101,6 +101,11 @@ export function BookCard({
               완결
             </div>
           )}
+          {work.isFree === false && (
+            <div className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500 text-white shadow-sm border border-amber-400/50">
+              PAID
+            </div>
+          )}
           {work.status === "HIATUS" && (
             <div className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-zinc-500 text-white shadow-sm border border-zinc-400/50">
               휴재
@@ -170,7 +175,13 @@ export function BookCard({
 
         {/* Consolidated Micro Tags (#hashtags) */}
         <div className="flex flex-wrap gap-1.5 mt-2 h-[24px] overflow-hidden">
-          {((work as unknown as { tags?: string[] }).tags || ["#회귀", "#먼치킨", "#사이다"])
+          {(
+            (work as unknown as { tags?: string[] }).tags || [
+              "#회귀",
+              "#먼치킨",
+              "#사이다",
+            ]
+          )
             .slice(0, 3)
             .map((tag, i) => (
               <span

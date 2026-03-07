@@ -759,7 +759,7 @@ function SinglePublishView({
   };
 
   return (
-    <div className="py-8 w-full max-w-6xl mx-auto">
+    <div className="py-8 px-4 md:px-6 w-full max-w-6xl mx-auto">
       {/* 페이지 헤더 */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold font-heading text-foreground">

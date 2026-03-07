@@ -922,9 +922,9 @@ export const AuthorDashboardPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center h-[200px] gap-10">
+                  <div className="flex flex-col md:flex-row items-center justify-center h-auto md:h-[200px] gap-6 md:gap-10 py-4">
                     {/* Donut Chart */}
-                    <div className="relative w-36 h-36">
+                    <div className="relative w-36 h-36 shrink-0">
                       <svg
                         viewBox="0 0 36 36"
                         className="w-full h-full transform -rotate-90"

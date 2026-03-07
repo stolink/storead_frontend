@@ -16,10 +16,10 @@ interface UserGamification {
  * GET /api/users/me/gamification
  */
 export const useUserGamification = () => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   return useQuery<UserGamification>({
-    queryKey: ["userGamification"],
+    queryKey: ["userGamification", user?.id],
     queryFn: async () => {
       try {
         const { data } = await api.get("/users/me/gamification");
@@ -30,7 +30,7 @@ export const useUserGamification = () => {
           level: 12,
           exp: 650,
           maxExp: 1000,
-          title: "정독자",
+          title: user?.nickname || "정독자",
           attendanceStreak: 5,
           isTodayChecked: true,
         };

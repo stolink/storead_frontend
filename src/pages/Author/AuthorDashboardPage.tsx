@@ -14,8 +14,6 @@ import {
 import { navigateToExternalEditor } from "@/utils/navigation";
 import { useMyWorks } from "@/hooks/useExportChapter";
 import { useDeleteWork, useUpdateWork } from "@/hooks/useWorks";
-import { useUpload } from "@/hooks/useUpload";
-import { UPLOAD_TYPES } from "@/constants/upload";
 import {
   ChevronLeft,
   BarChart3,
@@ -41,6 +39,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -75,16 +77,16 @@ const STATUS_LABELS: Record<string, string> = {
 
 // 상태 색상 매핑 - Warm palette
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> =
-{
-  ONGOING: { bg: "bg-sage-100", text: "text-sage-700", dot: "bg-sage-500" },
-  HIATUS: { bg: "bg-amber-100", text: "text-amber-700", dot: "bg-amber-500" },
-  COMPLETED: {
-    bg: "bg-mocha-100",
-    text: "text-mocha-800",
-    dot: "bg-mocha-600",
-  },
-  DRAFT: { bg: "bg-zinc-100", text: "text-zinc-700", dot: "bg-zinc-500" },
-};
+  {
+    ONGOING: { bg: "", text: "text-emerald-700", dot: "bg-emerald-500" },
+    HIATUS: { bg: "", text: "text-amber-700", dot: "bg-amber-600" },
+    COMPLETED: {
+      bg: "",
+      text: "text-mocha-800",
+      dot: "bg-mocha-700",
+    },
+    DRAFT: { bg: "", text: "text-zinc-700", dot: "bg-zinc-600" },
+  };
 
 // 애니메이션 variants
 const containerVariants = {
@@ -137,9 +139,12 @@ export const AuthorDashboardPage = () => {
   const { data: works, isLoading, error } = useMyWorks();
   const deleteWork = useDeleteWork();
   const updateWork = useUpdateWork();
-  const upload = useUpload();
 
   const [activeTab, setActiveTab] = useState<"works" | "insights">("works");
+  const [statusFilter, setStatusFilter] = useState<
+    "ALL" | "ONGOING" | "HIATUS" | "COMPLETED"
+  >("ALL");
+
   const [deleteTarget, setDeleteTarget] = useState<Work | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -228,6 +233,11 @@ export const AuthorDashboardPage = () => {
     works?.reduce((sum, work) => sum + (work.chapterCount || 0), 0) || 0;
   const totalViews =
     works?.reduce((sum, work) => sum + (work.viewCount || 0), 0) || 0;
+
+  const filteredWorks = works?.filter((work) => {
+    if (statusFilter === "ALL") return true;
+    return work.status === statusFilter;
+  });
 
   if (isLoading) {
     return (
@@ -407,14 +417,51 @@ export const AuthorDashboardPage = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {works && works.length > 0 ? (
+              {/* Status Filter Tabs */}
+              <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
+                {[
+                  { key: "ALL", label: "전체" },
+                  { key: "ONGOING", label: "연재중" },
+                  { key: "HIATUS", label: "휴재" },
+                  { key: "COMPLETED", label: "완결" },
+                ].map((filter) => (
+                  <button
+                    key={filter.key}
+                    onClick={() =>
+                      setStatusFilter(
+                        filter.key as
+                          | "ALL"
+                          | "ONGOING"
+                          | "HIATUS"
+                          | "COMPLETED",
+                      )
+                    }
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap",
+                      statusFilter === filter.key
+                        ? "bg-espresso-900 text-white shadow-md shadow-espresso-900/20"
+                        : "bg-white text-mocha-700 hover:bg-mocha-50 border border-mocha-200/50",
+                    )}
+                  >
+                    {filter.label}
+                    <span className="ml-1.5 text-xs opacity-80">
+                      {filter.key === "ALL"
+                        ? works?.length || 0
+                        : works?.filter((w) => w.status === filter.key)
+                            .length || 0}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {filteredWorks && filteredWorks.length > 0 ? (
                 <motion.div
                   variants={containerVariants}
                   initial="hidden"
                   animate="visible"
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
-                  {works.map((work) => (
+                  {filteredWorks.map((work) => (
                     <motion.div
                       variants={itemVariants}
                       key={work.id}
@@ -458,19 +505,25 @@ export const AuthorDashboardPage = () => {
                           <div className="absolute top-4 left-4">
                             <div
                               className={cn(
-                                "flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md text-xs font-bold",
-                                STATUS_STYLES[work.status]?.bg || "bg-zinc-100",
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-md text-xs font-bold border border-black/10 backdrop-blur-sm bg-white/95",
                                 STATUS_STYLES[work.status]?.text ||
                                 "text-zinc-600",
                               )}
                             >
-                              <span
-                                className={cn(
-                                  "w-1.5 h-1.5 rounded-full",
-                                  STATUS_STYLES[work.status]?.dot ||
-                                  "bg-zinc-400",
-                                )}
-                              />
+                              {work.status === "ONGOING" ? (
+                                <span className="relative flex h-2 w-2 mr-0.5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                              ) : (
+                                <span
+                                  className={cn(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    STATUS_STYLES[work.status]?.dot ||
+                                      "bg-zinc-400",
+                                  )}
+                                />
+                              )}
                               {STATUS_LABELS[work.status] || work.status}
                             </div>
                           </div>
@@ -510,6 +563,57 @@ export const AuthorDashboardPage = () => {
                                   <ExternalLink className="w-4 h-4" />
                                   에디터에서 열기
                                 </DropdownMenuItem>
+
+                                <DropdownMenuSeparator />
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger className="flex items-center gap-2 rounded-lg cursor-pointer">
+                                    <Sparkles className="w-4 h-4" />
+                                    작품 상태 변경
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuPortal>
+                                    <DropdownMenuSubContent className="glass-card border border-white/40 rounded-xl shadow-xl min-w-[140px]">
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateWork.mutate({
+                                            workId: work.id,
+                                            params: { status: "ONGOING" },
+                                          });
+                                        }}
+                                        className="flex items-center gap-2 rounded-lg cursor-pointer hover:bg-emerald-50 text-emerald-700 font-medium"
+                                      >
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        연재중
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateWork.mutate({
+                                            workId: work.id,
+                                            params: { status: "HIATUS" },
+                                          });
+                                        }}
+                                        className="flex items-center gap-2 rounded-lg cursor-pointer hover:bg-amber-50 text-amber-700 font-medium"
+                                      >
+                                        <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                        휴재
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateWork.mutate({
+                                            workId: work.id,
+                                            params: { status: "COMPLETED" },
+                                          });
+                                        }}
+                                        className="flex items-center gap-2 rounded-lg cursor-pointer hover:bg-mocha-50 text-mocha-700 font-medium"
+                                      >
+                                        <div className="w-2 h-2 rounded-full bg-mocha-500" />
+                                        완결
+                                      </DropdownMenuItem>
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuPortal>
+                                </DropdownMenuSub>
                                 <DropdownMenuSeparator />
                                 {/* 이름 변경 */}
                                 <DropdownMenuItem
@@ -960,7 +1064,10 @@ export const AuthorDashboardPage = () => {
               취소
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
               disabled={deleteWork.isPending}
               className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl h-11 font-medium disabled:opacity-50"
             >

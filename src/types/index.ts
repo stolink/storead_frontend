@@ -59,6 +59,9 @@ export interface Work {
   tags?: string[]; // Added
   createdAt: string;
   updatedAt: string;
+  // 유료/무료 관련 필드
+  isFree?: boolean;
+  accessType?: ChapterAccessType;
   // 프론트엔드 계산/확장 필드
   avgRating?: number;
   author?: User;
@@ -178,6 +181,8 @@ export interface CreateWorkRequest {
   synopsis: string;
   genre: Genre;
   coverImageUrl?: string;
+  isFree?: boolean;
+  accessType?: ChapterAccessType;
 }
 
 export interface CreateChapterRequest {

@@ -708,6 +708,7 @@ function SinglePublishView({
 
   const [showGraphModal, setShowGraphModal] = useState(false);
   const [accessType, setAccessType] = useState<"FREE" | "PAID">("FREE");
+  const [workAccessType, setWorkAccessType] = useState<"FREE" | "PAID">("FREE");
   const [price, setPrice] = useState<number>(100);
 
   // 작품 정보는 상위 WritePage에서 제공받거나 필요시 내부에서 조회 (현재는 상위에서 로딩 처리)
@@ -723,58 +724,20 @@ function SinglePublishView({
 
   // 게시하기 핸들러
   const handlePublish = async () => {
-    if (isBatchMode && allDrafts.length > 0) {
-      // === 다중 게시 모드 (첫 배포 시) ===
-      try {
-        // 첫 번째 Draft 배포 (Work 생성이 필요함)
-        const firstDraft = allDrafts[0];
-        const result = await publishMutation.mutateAsync({
-          draftId: firstDraft.id,
-          title: firstDraft.title || firstDraft.workTitle || "제목 없음",
-          accessType,
-          price: accessType === "PAID" ? price : 0,
-        });
-
-        const firstChapterId = result.chapterId;
-
-        // 첫 번째 배포가 Work 생성을 포함하므로, 백엔드 안정화를 위해 대기
-        if (result.workCreated) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
-
-        // 나머지 Draft들을 순차적으로 배포
-        for (const nextDraft of allDrafts.slice(1)) {
-          await publishMutation.mutateAsync({
-            draftId: nextDraft.id,
-            title: nextDraft.title || nextDraft.workTitle || "제목 없음",
-            accessType,
-            price: accessType === "PAID" ? price : 0,
-          });
-        }
-
-        // 모든 배포 완료 후 이동
-        setTimeout(() => {
-          navigate(`/chapters/${firstChapterId}`);
-        }, 1500);
-      } catch (error) {
-        console.error("일괄 게시 실패:", error);
-      }
-    } else {
-      // === 단일 게시 모드 ===
-      try {
-        const result = await publishMutation.mutateAsync({
-          draftId,
-          title: draft?.title || draft?.workTitle || "제목 없음",
-          accessType,
-          price: accessType === "PAID" ? price : 0,
-        });
-        // 1.5초 후 이동
-        setTimeout(() => {
-          navigate(`/chapters/${result.chapterId}`);
-        }, 1500);
-      } catch (error) {
-        console.error("게시 실패:", error);
-      }
+    try {
+      const result = await publishMutation.mutateAsync({
+        draftId,
+        title: draft?.title || draft?.workTitle || "제목 없음",
+        accessType,
+        price: accessType === "PAID" ? price : 0,
+        workAccessType: !existingWork ? workAccessType : undefined,
+      });
+      // 1.5초 후 이동
+      setTimeout(() => {
+        navigate(`/chapters/${result.chapterId}`);
+      }, 1500);
+    } catch (error) {
+      console.error("게시 실패:", error);
     }
   };
 
@@ -953,6 +916,43 @@ function SinglePublishView({
               className="min-h-[160px] rounded-lg resize-none"
             />
           </div>
+
+          {/* 작품 공개 설정 (신규 작품일 때만) */}
+          {!existingWork && !isWorkLoading && (
+            <div className="glass-card p-6 rounded-2xl border border-mocha-200/50 space-y-4">
+              <h3 className="font-bold text-espresso-900 flex items-center gap-2">
+                <div className="p-1 bg-mocha-100 rounded">
+                  <BookOpen className="w-3.5 h-3.5 text-mocha-600" />
+                </div>
+                작품 성격 설정 (신규 생성)
+              </h3>
+              <div className="flex bg-mocha-900/5 p-1 rounded-xl w-fit">
+                <button
+                  onClick={() => setWorkAccessType("FREE")}
+                  className={`px-6 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
+                    workAccessType === "FREE"
+                      ? "bg-white text-emerald-600 shadow-sm transform scale-105"
+                      : "text-mocha-400 hover:text-mocha-600"
+                  }`}
+                >
+                  무료 작품
+                </button>
+                <button
+                  onClick={() => setWorkAccessType("PAID")}
+                  className={`px-6 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
+                    workAccessType === "PAID"
+                      ? "bg-white text-mocha-600 shadow-sm transform scale-105"
+                      : "text-mocha-400 hover:text-mocha-600"
+                  }`}
+                >
+                  유료 작품
+                </button>
+              </div>
+              <p className="text-xs text-mocha-400/80 pl-1">
+                * 작품 대문에 표시될 유료/무료 성격입니다. (나중에 수정 가능)
+              </p>
+            </div>
+          )}
 
           {/* 접근 권한 및 가격 설정 (Glass) */}
           <div className="glass-card p-6 rounded-2xl border border-mocha-200/50 space-y-4">

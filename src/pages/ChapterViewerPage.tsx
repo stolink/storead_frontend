@@ -231,9 +231,41 @@ export const ChapterViewerPage = () => {
     index: number;
     text: string;
   } | null>(null);
-  const [inlineComments, setInlineComments] = useState<Record<number, unknown[]>>(
-    {},
-  );
+  const [inlineComments, setInlineComments] = useState<
+    Record<number, unknown[]>
+  >({});
+
+  // 뷰어 동적 툴바 상태 (스크롤 다운 시 숨김)
+  const [isToolbarVisible, setIsToolbarVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  // 스와이프 네비게이션 상태
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleSwipeEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      if (viewMode === "page") goToNextPage(); // For next chapter: removed to avoid accidental chapter skip while reading
+    }
+    if (isRightSwipe) {
+      if (viewMode === "page") goToPrevPage(); // For prev chapter: removed to avoid accidental chapter skip
+    }
+  }, [touchStart, touchEnd, viewMode, goToNextPage, goToPrevPage]);
 
   const { openAuthModal } = useAuthModalStore();
 
@@ -348,7 +380,7 @@ export const ChapterViewerPage = () => {
 
   // 책 모드 콘텐츠 렌더 후 실제 페이지 수 계산 (ResizeObserver 사용으로 안정성 향상)
   useEffect(() => {
-    if (viewMode === 'page' && bookModeContentRef.current) {
+    if (viewMode === "page" && bookModeContentRef.current) {
       const container = bookModeContentRef.current;
 
       // 페이지 수 계산 함수
@@ -391,26 +423,43 @@ export const ChapterViewerPage = () => {
     }
   }, [currentPage, calculatedTotalPages]);
 
-  // 읽은 위치 저장
+  // 읽은 위치 저장 및 툴바 숨김/표시 처리
   const lastSavedPosition = useRef<number>(0);
   useEffect(() => {
     if (!id || !isAuthenticated || viewMode !== "scroll") return;
 
     let timeoutId: ReturnType<typeof setTimeout>;
+    let isScrollingLocked = false;
+
     const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      if (Math.abs(scrollPosition - lastSavedPosition.current) > 100) {
-        lastSavedPosition.current = scrollPosition;
-        saveBookmark.mutate({ chapterId: id, position: scrollPosition });
+      const currentScrollY = window.scrollY;
+
+      // 동적 툴바 처리 (위로 스크롤 시 표시, 아래로 스크롤 시 숨김)
+      if (!isScrollingLocked) {
+        if (currentScrollY > lastScrollY.current + 10 && currentScrollY > 100) {
+          setIsToolbarVisible(false);
+        } else if (
+          currentScrollY < lastScrollY.current - 10 ||
+          currentScrollY < 50
+        ) {
+          setIsToolbarVisible(true);
+        }
+        lastScrollY.current = currentScrollY;
+      }
+
+      // 북마크 저장 처리
+      if (Math.abs(currentScrollY - lastSavedPosition.current) > 100) {
+        lastSavedPosition.current = currentScrollY;
+        saveBookmark.mutate({ chapterId: id, position: currentScrollY });
       }
     };
 
     const debouncedScroll = () => {
       clearTimeout(timeoutId);
-      timeoutId = setTimeout(handleScroll, 1000);
+      timeoutId = setTimeout(handleScroll, 200);
     };
 
-    window.addEventListener("scroll", debouncedScroll);
+    window.addEventListener("scroll", debouncedScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", debouncedScroll);
       clearTimeout(timeoutId);
@@ -452,13 +501,17 @@ export const ChapterViewerPage = () => {
         theme === "dark" && "dark",
         styles.container,
       )}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={handleSwipeEnd}
     >
       {/* ====== 미니멀 상단 헤더 ====== */}
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-40 backdrop-blur-md border-b transition-colors duration-300",
+          "fixed top-0 left-0 right-0 z-40 backdrop-blur-md border-b transition-all duration-300 transform",
           styles.bg,
           "bg-opacity-80 border-mocha-100/20",
+          isToolbarVisible ? "translate-y-0" : "-translate-y-full",
         )}
       >
         <div className="flex items-center justify-between px-3 h-12">
@@ -700,7 +753,9 @@ export const ChapterViewerPage = () => {
                     {/* 오른쪽 클릭 영역 (다음 페이지) */}
                     <button
                       onClick={goToNextPage}
-                      disabled={currentPage >= calculatedTotalPages - 1 && !nextChapter}
+                      disabled={
+                        currentPage >= calculatedTotalPages - 1 && !nextChapter
+                      }
                       className={cn(
                         "hidden md:flex items-center justify-end pr-4 transition-colors",
                         currentPage < calculatedTotalPages - 1 || nextChapter
@@ -727,10 +782,10 @@ export const ChapterViewerPage = () => {
                     className="h-full transition-transform duration-300 ease-out"
                     style={{
                       columnCount: 2,
-                      columnGap: '2.5rem',
-                      columnFill: 'auto',
+                      columnGap: "2.5rem",
+                      columnFill: "auto",
                       columnRule: `1px solid ${styles.columnRule}`,
-                      height: '100%',
+                      height: "100%",
                       // 전체 콘텐츠 너비: 페이지 수 × 100%
                       width: `${calculatedTotalPages * 100}%`,
                       // 현재 페이지로 슬라이드 이동
@@ -771,7 +826,6 @@ export const ChapterViewerPage = () => {
                 )}
               </>
             )}
-
 
             {/* 페이지 번호 (하단 중앙, 희미하게) */}
             <div className="text-center py-4">
@@ -833,8 +887,13 @@ export const ChapterViewerPage = () => {
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {(inlineComments[activeInlineComment.index] || []).length >
-                  0 ? (
-                  (inlineComments[activeInlineComment.index] as { content: string; createdAt: string }[]).map((c, i) => (
+                0 ? (
+                  (
+                    inlineComments[activeInlineComment.index] as {
+                      content: string;
+                      createdAt: string;
+                    }[]
+                  ).map((c, i) => (
                     <div key={i} className="space-y-1">
                       <p className="text-xs font-bold text-mocha-600">
                         익명 독자
@@ -888,7 +947,14 @@ export const ChapterViewerPage = () => {
       </main>
 
       {/* ====== 우측 하단 FAB (설정) ====== */}
-      <div className="fixed bottom-6 right-6 z-40">
+      <div
+        className={cn(
+          "fixed right-6 z-40 transition-all duration-300",
+          isToolbarVisible
+            ? "bottom-6"
+            : "-bottom-20 opacity-0 pointer-events-none",
+        )}
+      >
         <Button
           size="icon"
           onClick={() => setShowSettings(!showSettings)}

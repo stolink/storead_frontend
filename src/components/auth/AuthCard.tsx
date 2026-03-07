@@ -228,6 +228,7 @@ export function AuthCard({
                     <Input
                       id="email"
                       type="email"
+                      inputMode="email"
                       placeholder="name@example.com"
                       className="h-10 text-sm transition-all font-medium"
                       style={{
@@ -312,6 +313,7 @@ export function AuthCard({
                     <Input
                       id="reg-email"
                       type="email"
+                      inputMode="email"
                       className="h-10 text-sm transition-all font-medium"
                       style={{
                         border: "1px solid #F1F0EC",

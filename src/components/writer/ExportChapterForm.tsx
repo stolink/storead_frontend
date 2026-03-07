@@ -275,6 +275,7 @@ export const ExportChapterForm = ({
                 </label>
                 <Input
                   type="number"
+                  inputMode="numeric"
                   min={1}
                   {...register("chapterNumber", { valueAsNumber: true })}
                   placeholder="1"
@@ -396,6 +397,7 @@ export const ExportChapterForm = ({
                   <div className="relative">
                     <Input
                       type="number"
+                      inputMode="numeric"
                       step={100}
                       {...register("price", { valueAsNumber: true })}
                       placeholder="100"

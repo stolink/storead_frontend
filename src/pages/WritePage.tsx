@@ -363,19 +363,21 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
               <div className="flex bg-mocha-900/5 p-1 rounded-xl">
                 <button
                   onClick={() => setAccessType("FREE")}
-                  className={`px-5 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${accessType === "FREE"
-                    ? "bg-white text-emerald-600 shadow-md transform scale-105"
-                    : "text-mocha-400 hover:text-mocha-600"
-                    }`}
+                  className={`px-5 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
+                    accessType === "FREE"
+                      ? "bg-white text-emerald-600 shadow-md transform scale-105"
+                      : "text-mocha-400 hover:text-mocha-600"
+                  }`}
                 >
                   무료
                 </button>
                 <button
                   onClick={() => setAccessType("PAID")}
-                  className={`px-5 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${accessType === "PAID"
-                    ? "bg-white text-mocha-600 shadow-md transform scale-105"
-                    : "text-mocha-400 hover:text-mocha-600"
-                    }`}
+                  className={`px-5 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
+                    accessType === "PAID"
+                      ? "bg-white text-mocha-600 shadow-md transform scale-105"
+                      : "text-mocha-400 hover:text-mocha-600"
+                  }`}
                 >
                   유료
                 </button>
@@ -451,14 +453,15 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
                   variants={itemVariants}
                   whileHover="hover"
                   key={draft.id}
-                  className={`flex flex-col p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group ${isPublished
-                    ? "bg-emerald-50/80 border-emerald-200/60"
-                    : errorMessage
-                      ? "bg-red-50/80 border-red-200/60 shadow-red-100"
-                      : isPublishing
-                        ? "bg-white border-mocha-400 ring-2 ring-mocha-100 shadow-lg"
-                        : "bg-white/80 border-white/40 hover:border-mocha-300 hover:bg-white hover:shadow-lg hover:shadow-mocha-900/5 backdrop-blur-sm"
-                    }`}
+                  className={`flex flex-col p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden group ${
+                    isPublished
+                      ? "bg-emerald-50/80 border-emerald-200/60"
+                      : errorMessage
+                        ? "bg-red-50/80 border-red-200/60 shadow-red-100"
+                        : isPublishing
+                          ? "bg-white border-mocha-400 ring-2 ring-mocha-100 shadow-lg"
+                          : "bg-white/80 border-white/40 hover:border-mocha-300 hover:bg-white hover:shadow-lg hover:shadow-mocha-900/5 backdrop-blur-sm"
+                  }`}
                 >
                   {isPublishing && (
                     <motion.div
@@ -475,12 +478,13 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
                   <div className="flex items-center gap-5 relative z-10">
                     {/* 순서 번호 */}
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm flex-shrink-0 transition-colors duration-300 ${isPublished
-                        ? "bg-emerald-500 text-white shadow-emerald-200"
-                        : errorMessage
-                          ? "bg-red-500 text-white shadow-red-200"
-                          : "bg-mocha-100 text-mocha-600 group-hover:bg-mocha-500 group-hover:text-white"
-                        }`}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm flex-shrink-0 transition-colors duration-300 ${
+                        isPublished
+                          ? "bg-emerald-500 text-white shadow-emerald-200"
+                          : errorMessage
+                            ? "bg-red-500 text-white shadow-red-200"
+                            : "bg-mocha-100 text-mocha-600 group-hover:bg-mocha-500 group-hover:text-white"
+                      }`}
                     >
                       {isPublished ? (
                         <motion.div
@@ -971,19 +975,21 @@ function SinglePublishView({
                 <div className="flex bg-mocha-900/5 p-1 rounded-xl">
                   <button
                     onClick={() => setAccessType("FREE")}
-                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${accessType === "FREE"
-                      ? "bg-white text-emerald-600 shadow-sm transform scale-105"
-                      : "text-mocha-400 hover:text-mocha-600"
-                      }`}
+                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
+                      accessType === "FREE"
+                        ? "bg-white text-emerald-600 shadow-sm transform scale-105"
+                        : "text-mocha-400 hover:text-mocha-600"
+                    }`}
                   >
                     무료
                   </button>
                   <button
                     onClick={() => setAccessType("PAID")}
-                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${accessType === "PAID"
-                      ? "bg-white text-mocha-600 shadow-sm transform scale-105"
-                      : "text-mocha-400 hover:text-mocha-600"
-                      }`}
+                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
+                      accessType === "PAID"
+                        ? "bg-white text-mocha-600 shadow-sm transform scale-105"
+                        : "text-mocha-400 hover:text-mocha-600"
+                    }`}
                   >
                     유료
                   </button>
@@ -1005,6 +1011,7 @@ function SinglePublishView({
                     <div className="relative w-32 group">
                       <Input
                         type="number"
+                        inputMode="numeric"
                         min={0}
                         step={100}
                         value={price}
@@ -1113,15 +1120,15 @@ function SinglePublishView({
         characters={
           draft?.graphSnapshot
             ? (adaptGraphSnapshot(
-              draft.graphSnapshot as Parameters<typeof adaptGraphSnapshot>[0],
-            )?.characters ?? [])
+                draft.graphSnapshot as Parameters<typeof adaptGraphSnapshot>[0],
+              )?.characters ?? [])
             : []
         }
         links={
           draft?.graphSnapshot
             ? (adaptGraphSnapshot(
-              draft.graphSnapshot as Parameters<typeof adaptGraphSnapshot>[0],
-            )?.links ?? [])
+                draft.graphSnapshot as Parameters<typeof adaptGraphSnapshot>[0],
+              )?.links ?? [])
             : []
         }
         graphSnapshot={draft?.graphSnapshot as GraphSnapshotDTO | undefined}

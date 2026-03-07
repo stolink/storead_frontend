@@ -1,4 +1,3 @@
-
 import { Trophy } from "lucide-react";
 
 import { useUserGamification } from "@/hooks/useGamification";
@@ -32,7 +31,7 @@ export const ReaderLevelBar = () => {
         </div>
         <div className="flex flex-col">
           <span className="text-[10px] font-bold opacity-70 uppercase tracking-tighter">
-            Reader Title
+            닉네임
           </span>
           <span className="text-sm font-black leading-tight flex items-center gap-1">
             {title}

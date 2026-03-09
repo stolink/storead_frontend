@@ -3,7 +3,7 @@
  * 내 작품 목록 관리 (조회, 수정, 삭제)
  * Premium Glassmorphism Design
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   motion,
@@ -14,6 +14,8 @@ import {
 import { navigateToExternalEditor } from "@/utils/navigation";
 import { useMyWorks } from "@/hooks/useExportChapter";
 import { useDeleteWork, useUpdateWork } from "@/hooks/useWorks";
+import { useUpload } from "@/hooks/useUpload";
+import { UPLOAD_TYPES } from "@/constants/upload";
 import {
   ChevronLeft,
   BarChart3,
@@ -28,8 +30,11 @@ import {
   Edit3,
   Eye,
   ExternalLink,
+  Type,
+  ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -132,9 +137,11 @@ const AnimatedCounter = ({ value }: { value: number }) => {
 
 export const AuthorDashboardPage = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: works, isLoading, error } = useMyWorks();
   const deleteWork = useDeleteWork();
   const updateWork = useUpdateWork();
+  const upload = useUpload();
 
   const [activeTab, setActiveTab] = useState<"works" | "insights">("works");
   const [statusFilter, setStatusFilter] = useState<
@@ -143,6 +150,14 @@ export const AuthorDashboardPage = () => {
 
   const [deleteTarget, setDeleteTarget] = useState<Work | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // 이름 변경 상태
+  const [editTitleTarget, setEditTitleTarget] = useState<Work | null>(null);
+  const [newTitle, setNewTitle] = useState<string>("");
+  const [titleError, setTitleError] = useState<string | null>(null);
+
+  // 표지 변경 상태
+  const [editCoverTarget, setEditCoverTarget] = useState<Work | null>(null);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -160,6 +175,60 @@ export const AuthorDashboardPage = () => {
   const handleCloseModal = () => {
     setDeleteTarget(null);
     setDeleteError(null);
+  };
+
+  // 이름 변경 핸들러
+  const handleTitleEdit = async () => {
+    if (!editTitleTarget || !newTitle.trim()) return;
+    setTitleError(null);
+
+    try {
+      await updateWork.mutateAsync({
+        workId: editTitleTarget.id,
+        params: { title: newTitle.trim() },
+      });
+      setEditTitleTarget(null);
+      setNewTitle("");
+    } catch (err) {
+      console.error("작품 이름 변경 실패:", err);
+      setTitleError("이름 변경에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  // 표지 변경 핸들러 (서버 전송)
+  const handleCoverUpload = async (workId: string, file: File) => {
+    try {
+      // 1. 파일 업로드 (multipart/form-data)
+      const { url } = await upload.mutateAsync({ file, type: UPLOAD_TYPES.COVER });
+
+      // 2. 업로드된 URL로 작품 정보 업데이트
+      // URL에 쿼리 파라미터를 붙여 브라우저 캐시 방지 (필요 시)
+      const urlWithCacheBust = `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
+
+      await updateWork.mutateAsync({
+        workId,
+        params: { coverImageUrl: urlWithCacheBust },
+      });
+    } catch (err) {
+      console.error("표지 변경 실패:", err);
+    } finally {
+      setEditCoverTarget(null);
+    }
+  };
+
+  // 이미지 선택 시 호출되는 핸들러
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editCoverTarget) {
+      setEditCoverTarget(null);
+      return;
+    }
+
+    // 파일을 직접 전달
+    handleCoverUpload(editCoverTarget.id, file);
+
+    // 같은 파일을 다시 선택할 수 있도록 초기화
+    e.target.value = "";
   };
 
   // 통계 계산
@@ -410,6 +479,14 @@ export const AuthorDashboardPage = () => {
                       >
                         {/* Cover Image */}
                         <div className="aspect-[4/5] relative overflow-hidden">
+                          {/* Loading Overlay */}
+                          {updateWork.isPending &&
+                            updateWork.variables?.workId === work.id && (
+                              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                                <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+                              </div>
+                            )}
+
                           {work.coverImageUrl ? (
                             <img
                               src={work.coverImageUrl}
@@ -433,7 +510,7 @@ export const AuthorDashboardPage = () => {
                               className={cn(
                                 "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-md text-xs font-bold border border-black/10 backdrop-blur-sm bg-white/95",
                                 STATUS_STYLES[work.status]?.text ||
-                                  "text-zinc-600",
+                                "text-zinc-600",
                               )}
                             >
                               {work.status === "ONGOING" ? (
@@ -540,6 +617,31 @@ export const AuthorDashboardPage = () => {
                                     </DropdownMenuSubContent>
                                   </DropdownMenuPortal>
                                 </DropdownMenuSub>
+                                <DropdownMenuSeparator />
+                                {/* 이름 변경 */}
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditTitleTarget(work);
+                                    setNewTitle(work.title);
+                                  }}
+                                  className="flex items-center gap-2 rounded-lg cursor-pointer"
+                                >
+                                  <Type className="w-4 h-4" />
+                                  이름 변경
+                                </DropdownMenuItem>
+                                {/* 표지 변경 */}
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditCoverTarget(work);
+                                    fileInputRef.current?.click();
+                                  }}
+                                  className="flex items-center gap-2 rounded-lg cursor-pointer"
+                                >
+                                  <ImageIcon className="w-4 h-4" />
+                                  표지 변경
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={(e) => {
@@ -823,9 +925,9 @@ export const AuthorDashboardPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center h-[200px] gap-10">
+                  <div className="flex flex-col md:flex-row items-center justify-center h-auto md:h-[200px] gap-6 md:gap-10 py-4">
                     {/* Donut Chart */}
-                    <div className="relative w-36 h-36">
+                    <div className="relative w-36 h-36 shrink-0">
                       <svg
                         viewBox="0 0 36 36"
                         className="w-full h-full transform -rotate-90"
@@ -977,6 +1079,69 @@ export const AuthorDashboardPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 이름 변경 모달 */}
+      <AlertDialog
+        open={!!editTitleTarget}
+        onOpenChange={() => {
+          setEditTitleTarget(null);
+          setNewTitle("");
+          setTitleError(null);
+        }}
+      >
+        <AlertDialogContent className="glass-card border border-white/40 rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <div className="w-14 h-14 bg-mocha-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Type className="w-7 h-7 text-mocha-600" />
+            </div>
+            <AlertDialogTitle className="text-center text-xl">
+              작품 이름 변경
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center leading-relaxed">
+              새로운 작품 이름을 입력해주세요.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="작품 이름"
+              className="rounded-xl h-12 text-base px-4"
+              autoFocus
+            />
+          </div>
+          {titleError && (
+            <div className="text-sm text-red-600 bg-red-50 p-4 rounded-xl text-center">
+              {titleError}
+            </div>
+          )}
+          <AlertDialogFooter className="flex gap-3 sm:gap-3">
+            <AlertDialogCancel
+              disabled={updateWork.isPending}
+              className="flex-1 rounded-xl h-11 font-medium"
+            >
+              취소
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleTitleEdit}
+              disabled={updateWork.isPending || !newTitle.trim()}
+              className="flex-1 bg-mocha-500 hover:bg-mocha-600 text-white rounded-xl h-11 font-medium disabled:opacity-50"
+            >
+              {updateWork.isPending ? "변경 중..." : "변경"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
+      {/* Hidden File Input for Cover Upload */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageUpload}
+      />
     </div>
   );
 };

@@ -170,6 +170,8 @@ export const ProfilePage = () => {
                       <FormLabel>프로필 이미지 URL</FormLabel>
                       <FormControl>
                         <Input
+                          type="url"
+                          inputMode="url"
                           placeholder="https://example.com/avatar.jpg"
                           {...field}
                         />

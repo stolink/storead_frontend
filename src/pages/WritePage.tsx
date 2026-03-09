@@ -53,6 +53,7 @@ import {
   Pencil,
   Info,
   Upload,
+  BookOpen,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -210,12 +211,58 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
     }
   };
 
-  // 전체 게시
+  // 전체 게시 (첫 작품 생성 시 Race Condition 방지)
   const handlePublishAll = async () => {
     const unpublished = drafts.filter(
       (d) => !publishedIds.has(d.id) && !errorMessages.has(d.id),
     );
-    for (const draft of unpublished) {
+
+    if (unpublished.length === 0) return;
+
+    // 첫 번째 Draft 배포 (Work 생성이 필요할 수 있음)
+    const firstDraft = unpublished[0];
+    setCurrentPublishingId(firstDraft.id);
+    setErrorMessages((prev) => {
+      const next = new Map(prev);
+      next.delete(firstDraft.id);
+      return next;
+    });
+
+    let isFirstWorkCreated = false;
+
+    try {
+      const result = await publishMutation.mutateAsync({
+        draftId: firstDraft.id,
+        title: firstDraft.title || firstDraft.workTitle || "제목 없음",
+        accessType,
+        price: accessType === "PAID" ? price : 0,
+      });
+      setPublishedIds((prev) => new Set([...prev, firstDraft.id]));
+      isFirstWorkCreated = result.workCreated;
+      if (result.workId) setLastWorkId(result.workId);
+    } catch (error: unknown) {
+      console.error("첫 번째 게시 실패:", firstDraft.id, error);
+      const err = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+      const msg =
+        err?.response?.data?.message || err?.message || "알 수 없는 에러";
+      setErrorMessages((prev) => new Map(prev).set(firstDraft.id, msg));
+      setCurrentPublishingId(null);
+      return; // 첫 번째 실패 시 중단
+    }
+
+    setCurrentPublishingId(null);
+
+    // 첫 번째 배포가 Work 생성을 포함한 경우,
+    // 백엔드 트랜잭션 커밋 완료를 위한 대기 시간 추가
+    if (isFirstWorkCreated) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    // 나머지 Draft들은 순차 처리
+    for (const draft of unpublished.slice(1)) {
       await handlePublishOne(draft);
     }
   };
@@ -606,9 +653,16 @@ function BatchPublishView({ drafts, onComplete }: BatchPublishViewProps) {
 interface SinglePublishViewProps {
   draft: Draft;
   draftId: string;
+  allDrafts?: Draft[];
+  isBatchMode?: boolean;
 }
 
-function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
+function SinglePublishView({
+  draft,
+  draftId,
+  allDrafts: _allDrafts = [],
+  isBatchMode = false,
+}: SinglePublishViewProps) {
   const navigate = useNavigate();
 
   // [IMAGE UPLOAD] Handle local file to Base64 conversion
@@ -659,6 +713,7 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
 
   const [showGraphModal, setShowGraphModal] = useState(false);
   const [accessType, setAccessType] = useState<"FREE" | "PAID">("FREE");
+  const [workAccessType, setWorkAccessType] = useState<"FREE" | "PAID">("FREE");
   const [price, setPrice] = useState<number>(100);
 
   // 작품 정보는 상위 WritePage에서 제공받거나 필요시 내부에서 조회 (현재는 상위에서 로딩 처리)
@@ -680,6 +735,7 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
         title: draft?.title || draft?.workTitle || "제목 없음",
         accessType,
         price: accessType === "PAID" ? price : 0,
+        workAccessType: !existingWork ? workAccessType : undefined,
       });
       // 1.5초 후 이동
       setTimeout(() => {
@@ -708,7 +764,7 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
   };
 
   return (
-    <div className="py-8 w-full max-w-6xl mx-auto">
+    <div className="py-8 px-4 md:px-6 w-full max-w-6xl mx-auto">
       {/* 페이지 헤더 */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold font-heading text-foreground">
@@ -866,6 +922,43 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
             />
           </div>
 
+          {/* 작품 공개 설정 (신규 작품일 때만) */}
+          {!existingWork && !isWorkLoading && (
+            <div className="glass-card p-6 rounded-2xl border border-mocha-200/50 space-y-4">
+              <h3 className="font-bold text-espresso-900 flex items-center gap-2">
+                <div className="p-1 bg-mocha-100 rounded">
+                  <BookOpen className="w-3.5 h-3.5 text-mocha-600" />
+                </div>
+                작품 성격 설정 (신규 생성)
+              </h3>
+              <div className="flex bg-mocha-900/5 p-1 rounded-xl w-fit">
+                <button
+                  onClick={() => setWorkAccessType("FREE")}
+                  className={`px-6 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
+                    workAccessType === "FREE"
+                      ? "bg-white text-emerald-600 shadow-sm transform scale-105"
+                      : "text-mocha-400 hover:text-mocha-600"
+                  }`}
+                >
+                  무료 작품
+                </button>
+                <button
+                  onClick={() => setWorkAccessType("PAID")}
+                  className={`px-6 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
+                    workAccessType === "PAID"
+                      ? "bg-white text-mocha-600 shadow-sm transform scale-105"
+                      : "text-mocha-400 hover:text-mocha-600"
+                  }`}
+                >
+                  유료 작품
+                </button>
+              </div>
+              <p className="text-xs text-mocha-400/80 pl-1">
+                * 작품 대문에 표시될 유료/무료 성격입니다. (나중에 수정 가능)
+              </p>
+            </div>
+          )}
+
           {/* 접근 권한 및 가격 설정 (Glass) */}
           <div className="glass-card p-6 rounded-2xl border border-mocha-200/50 space-y-4">
             <h3 className="font-bold text-espresso-900 flex items-center gap-2">
@@ -919,6 +1012,7 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
                     <div className="relative w-32 group">
                       <Input
                         type="number"
+                        inputMode="numeric"
                         min={0}
                         step={100}
                         value={price}
@@ -1005,11 +1099,14 @@ function SinglePublishView({ draft, draftId }: SinglePublishViewProps) {
               }
             >
               {publishMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <div className="flex items-center gap-1.5 ">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>게시 중...</span>
+                </div>
               ) : (
                 <div className="flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4" />
-                  <span>게시하기</span>
+                  <span>{isBatchMode ? "전체 게시하기" : "게시하기"}</span>
                 </div>
               )}
             </Button>
@@ -1196,6 +1293,8 @@ export const WritePage = () => {
           <SinglePublishView
             draft={draftForWork}
             draftId={draftId || draftForWork.id}
+            allDrafts={allDrafts}
+            isBatchMode={isBatchMode}
           />
         )}
 

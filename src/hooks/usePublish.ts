@@ -14,6 +14,7 @@ export interface PublishRequest {
   title?: string;
   accessType?: "FREE" | "PAID";
   price?: number;
+  workAccessType?: "FREE" | "PAID";
 }
 
 /**

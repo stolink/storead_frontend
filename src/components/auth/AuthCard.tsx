@@ -228,6 +228,7 @@ export function AuthCard({
                     <Input
                       id="email"
                       type="email"
+                      inputMode="email"
                       placeholder="name@example.com"
                       className="h-10 text-sm transition-all font-medium"
                       style={{
@@ -261,6 +262,7 @@ export function AuthCard({
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
                         className="h-10 text-sm transition-all"
                         style={{
                           border: "1px solid #F1F0EC",
@@ -312,6 +314,7 @@ export function AuthCard({
                     <Input
                       id="reg-email"
                       type="email"
+                      inputMode="email"
                       className="h-10 text-sm transition-all font-medium"
                       style={{
                         border: "1px solid #F1F0EC",
@@ -357,6 +360,7 @@ export function AuthCard({
                     <Input
                       id="reg-pass"
                       type="password"
+                      autoComplete="new-password"
                       placeholder="8자 이상"
                       className="h-10 text-sm transition-all"
                       style={{
@@ -381,6 +385,7 @@ export function AuthCard({
                     <Input
                       id="reg-confirm"
                       type="password"
+                      autoComplete="new-password"
                       className="h-10 text-sm transition-all"
                       style={{
                         border: "1px solid #F1F0EC",

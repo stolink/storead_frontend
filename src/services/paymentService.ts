@@ -23,9 +23,15 @@ export const paymentService = {
   preparePayment: async (
     request: PaymentPrepareRequest,
   ): Promise<ApiResponse<PaymentPrepareResponse>> => {
+    const idempotencyKey = window.crypto.randomUUID();
     const response = await api.post<ApiResponse<PaymentPrepareResponse>>(
       "/payments/prepare",
       request,
+      {
+        headers: {
+          "Idempotency-Key": idempotencyKey,
+        },
+      } as AxiosRequestConfig,
     );
     return response.data;
   },

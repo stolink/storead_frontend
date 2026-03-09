@@ -14,3 +14,17 @@ export interface JobResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+/**
+ * API 에러 응답 타입
+ * catch 블록에서 타입 안전하게 에러 처리 가능
+ */
+export interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+      code?: number;
+    };
+  };
+  message?: string;
+}

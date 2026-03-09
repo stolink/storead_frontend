@@ -53,6 +53,7 @@ import {
   Pencil,
   Info,
   Upload,
+  BookOpen,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -659,7 +660,7 @@ interface SinglePublishViewProps {
 function SinglePublishView({
   draft,
   draftId,
-  allDrafts = [],
+  allDrafts: _allDrafts = [],
   isBatchMode = false,
 }: SinglePublishViewProps) {
   const navigate = useNavigate();

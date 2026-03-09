@@ -14,6 +14,8 @@ import {
 import { navigateToExternalEditor } from "@/utils/navigation";
 import { useMyWorks } from "@/hooks/useExportChapter";
 import { useDeleteWork, useUpdateWork } from "@/hooks/useWorks";
+import { useUpload } from "@/hooks/useUpload";
+import { UPLOAD_TYPES } from "@/constants/upload";
 import {
   ChevronLeft,
   BarChart3,
@@ -139,6 +141,7 @@ export const AuthorDashboardPage = () => {
   const { data: works, isLoading, error } = useMyWorks();
   const deleteWork = useDeleteWork();
   const updateWork = useUpdateWork();
+  const upload = useUpload();
 
   const [activeTab, setActiveTab] = useState<"works" | "insights">("works");
   const [statusFilter, setStatusFilter] = useState<

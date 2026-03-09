@@ -253,20 +253,6 @@ export const ChapterViewerPage = () => {
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
-  const handleSwipeEnd = useCallback(() => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      if (viewMode === "page") goToNextPage(); // For next chapter: removed to avoid accidental chapter skip while reading
-    }
-    if (isRightSwipe) {
-      if (viewMode === "page") goToPrevPage(); // For prev chapter: removed to avoid accidental chapter skip
-    }
-  }, [touchStart, touchEnd, viewMode, goToNextPage, goToPrevPage]);
-
   const { openAuthModal } = useAuthModalStore();
 
   // 로그인 필수 체크
@@ -422,6 +408,20 @@ export const ChapterViewerPage = () => {
       setCurrentPage((prev) => prev + 1);
     }
   }, [currentPage, calculatedTotalPages]);
+
+  const handleSwipeEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      if (viewMode === "page") goToNextPage();
+    }
+    if (isRightSwipe) {
+      if (viewMode === "page") goToPrevPage();
+    }
+  }, [touchStart, touchEnd, viewMode, goToNextPage, goToPrevPage]);
 
   // 읽은 위치 저장 및 툴바 숨김/표시 처리
   const lastSavedPosition = useRef<number>(0);

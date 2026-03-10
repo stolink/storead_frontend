@@ -34,6 +34,7 @@ import OAuth2Callback from "@/pages/Auth/OAuth2Callback";
 
 // 작가 페이지
 import AuthorDashboardPage from "@/pages/Author/AuthorDashboardPage";
+import SettlementDashboardPage from "@/pages/Author/SettlementDashboardPage";
 import ChapterManagePage from "@/pages/Author/ChapterManagePage";
 
 // 프로필 페이지
@@ -133,6 +134,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <AuthorDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/author/settlements"
+          element={
+            <ProtectedRoute>
+              <SettlementDashboardPage />
             </ProtectedRoute>
           }
         />

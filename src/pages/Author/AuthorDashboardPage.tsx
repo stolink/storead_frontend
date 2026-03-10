@@ -32,6 +32,7 @@ import {
   ExternalLink,
   Type,
   ImageIcon,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -199,7 +200,10 @@ export const AuthorDashboardPage = () => {
   const handleCoverUpload = async (workId: string, file: File) => {
     try {
       // 1. 파일 업로드 (multipart/form-data)
-      const { url } = await upload.mutateAsync({ file, type: UPLOAD_TYPES.COVER });
+      const { url } = await upload.mutateAsync({
+        file,
+        type: UPLOAD_TYPES.COVER,
+      });
 
       // 2. 업로드된 URL로 작품 정보 업데이트
       // URL에 쿼리 파라미터를 붙여 브라우저 캐시 방지 (필요 시)
@@ -326,7 +330,16 @@ export const AuthorDashboardPage = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
+              className="flex items-center gap-3"
             >
+              <Button
+                onClick={() => navigate("/author/settlements")}
+                variant="outline"
+                className="bg-white/50 hover:bg-white text-mocha-700 border-mocha-200/50 hover:border-mocha-300 rounded-xl px-4 h-11 font-medium shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 flex items-center gap-2"
+              >
+                <Wallet className="w-4 h-4" />
+                정산 관리
+              </Button>
               <Button
                 onClick={() => navigateToExternalEditor()}
                 className="bg-espresso-900 hover:bg-mocha-900 text-white rounded-xl px-5 h-11 font-medium shadow-lg shadow-espresso-900/20 hover:shadow-xl hover:shadow-espresso-900/30 transition-all hover:-translate-y-0.5 flex items-center gap-2"
@@ -510,7 +523,7 @@ export const AuthorDashboardPage = () => {
                               className={cn(
                                 "flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-md text-xs font-bold border border-black/10 backdrop-blur-sm bg-white/95",
                                 STATUS_STYLES[work.status]?.text ||
-                                "text-zinc-600",
+                                  "text-zinc-600",
                               )}
                             >
                               {work.status === "ONGOING" ? (
@@ -1132,7 +1145,6 @@ export const AuthorDashboardPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
 
       {/* Hidden File Input for Cover Upload */}
       <input
